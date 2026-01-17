@@ -2,6 +2,10 @@
 
 ClaudeCode用の個人Skillマーケットプレイスです。
 
+## 🚀 クイックスタート
+
+新規プロジェクトでこのMarketplaceを使いたい場合は、[INSTALL.md](INSTALL.md)を参照してください。
+
 ## ディレクトリ構造
 
 ```

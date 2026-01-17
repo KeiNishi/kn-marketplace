@@ -13,6 +13,28 @@
       "tags": ["example", "template"],
       "created": "2026-01-18",
       "updated": "2026-01-18"
+    },
+    {
+      "id": "godot-gdscript-patterns",
+      "name": "Godot GDScript Patterns",
+      "description": "Godot GDScript patterns and best practices",
+      "path": "skills/godot-gdscript-patterns/skill.md",
+      "version": "1.0.0",
+      "author": "wshobson",
+      "tags": ["gamedev", "godot"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
+    },
+    {
+      "id":"create-pr",
+      "name":"Create PR",
+      "description":"Create a pull request on GitHub",
+      "path":"skills/create-pr/skill.md",
+      "version":"1.0.0",
+      "author":"n8n-io",
+      "tags":["github"],
+      "created":"2026-01-18",
+      "updated":"2026-01-18"
     }
   ]
 }
