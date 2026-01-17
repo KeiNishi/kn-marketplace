@@ -1,13 +1,13 @@
 {
   "name": "KN Marketplace",
   "version": "1.0.0",
-  "description": "Personal marketplace for Claude Code skills",
-  "skills": [
+  "description": "Personal marketplace for Claude Code plugins",
+  "plugins": [
     {
       "id": "example-skill",
       "name": "Example Skill",
       "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
-      "path": "skills/example/skill.md",
+      "path": "plugins/example",
       "version": "1.0.0",
       "author": "KN",
       "tags": ["example", "template"],
@@ -18,7 +18,7 @@
       "id": "godot-gdscript-patterns",
       "name": "Godot GDScript Patterns",
       "description": "Godot GDScript patterns and best practices",
-      "path": "skills/godot-gdscript-patterns/skill.md",
+      "path": "plugins/godot-gdscript-patterns",
       "version": "1.0.0",
       "author": "wshobson",
       "tags": ["gamedev", "godot"],
@@ -26,15 +26,26 @@
       "updated": "2026-01-18"
     },
     {
-      "id":"create-pr",
-      "name":"Create PR",
-      "description":"Create a pull request on GitHub",
-      "path":"skills/create-pr/skill.md",
-      "version":"1.0.0",
-      "author":"n8n-io",
-      "tags":["github"],
-      "created":"2026-01-18",
-      "updated":"2026-01-18"
+      "id": "create-pr",
+      "name": "Create PR",
+      "description": "Create a pull request on GitHub",
+      "path": "plugins/create-pr",
+      "version": "1.0.0",
+      "author": "n8n-io",
+      "tags": ["github"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
+    },
+    {
+      "id": "skill-lookup",
+      "name": "Skill Lookup",
+      "description": "Look up skills in the marketplace",
+      "path": "plugins/skill-lookup",
+      "version": "1.0.0",
+      "author": "f",
+      "tags": ["claude"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # KN Marketplace for Claude Code
 
-ClaudeCode用の個人Skillマーケットプレイスです。
+ClaudeCode用の個人Pluginマーケットプレイスです。
 
 ## 🚀 クイックスタート
 
@@ -10,54 +10,116 @@ ClaudeCode用の個人Skillマーケットプレイスです。
 
 ```
 kn-marketplace/
-├── skills/              # スキルファイルを配置するディレクトリ
+├── plugins/                    # プラグインを配置するディレクトリ
 │   ├── example/
-│   │   └── skill.md
-│   └── your-skill/
-│       └── skill.md
-├── marketplace.json     # マーケットプレイスの設定ファイル
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json    # プラグインメタデータ
+│   │   ├── skills/            # スキルディレクトリ（オプション）
+│   │   │   └── my-skill/
+│   │   │       └── SKILL.md
+│   │   ├── commands/          # スラッシュコマンド（オプション）
+│   │   ├── agents/            # 専用エージェント（オプション）
+│   │   └── README.md
+│   └── your-plugin/
+│       └── .claude-plugin/
+│           └── plugin.json
+├── marketplace.json           # マーケットプレイスの設定ファイル
+├── INSTALL.md                 # インストールガイド
 └── README.md
 ```
 
-## 外部からskills.mdをコピーして使う方法
+## 📦 Plugin構造について
 
-### 1. スキルファイルの配置
+ClaudeCodeのPluginは以下の構造を持ちます：
 
-外部から入手した `skills.md` や `skill.md` ファイルは以下の場所に配置してください：
+### 必須ファイル
+- `.claude-plugin/plugin.json` - プラグインのメタデータ（必須）
+
+### オプショナルディレクトリ
+- `skills/` - Agent Skillsを配置
+- `commands/` - スラッシュコマンド
+- `agents/` - 専用エージェント
+- `hooks/` - イベントハンドラ
+- `.mcp.json` - 外部ツール設定
+
+⚠️ **重要**: これらのディレクトリは `.claude-plugin/` の**外側**に配置します！
+
+## 外部からPluginをコピーして使う方法
+
+### 1. Pluginファイルの配置
+
+外部から入手したPluginは以下の場所に配置してください：
 
 ```
-skills/<skill-name>/skill.md
+plugins/<plugin-name>/
+├── .claude-plugin/
+│   └── plugin.json
+└── ... (その他のファイル)
 ```
 
-例：
-- `skills/pdf-converter/skill.md`
-- `skills/code-review/skill.md`
-- `skills/git-helper/skill.md`
+### 2. Skills専用の場合
 
-### 2. マーケットプレイスへの登録
+外部から `SKILL.md` だけを入手した場合：
 
-`marketplace.json` にスキル情報を追加します：
+```bash
+mkdir -p plugins/my-plugin/.claude-plugin
+mkdir -p plugins/my-plugin/skills/my-skill
+
+# plugin.jsonを作成
+# SKILL.mdをコピー
+cp path/to/SKILL.md plugins/my-plugin/skills/my-skill/
+```
+
+**plugin.jsonの例:**
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "プラグインの説明",
+  "author": "Your Name",
+  "tags": ["tag1", "tag2"]
+}
+```
+
+### 3. マーケットプレイスへの登録
+
+`marketplace.json` にプラグイン情報を追加します：
 
 ```json
 {
-  "skills": [
+  "plugins": [
     {
-      "id": "your-skill-name",
-      "name": "Your Skill Display Name",
-      "description": "スキルの説明",
-      "path": "skills/your-skill-name/skill.md",
+      "id": "your-plugin-name",
+      "name": "Your Plugin Display Name",
+      "description": "プラグインの説明",
+      "path": "plugins/your-plugin-name",
       "version": "1.0.0",
       "author": "Your Name",
-      "tags": ["tag1", "tag2"]
+      "tags": ["tag1", "tag2"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
     }
   ]
 }
 ```
 
-### 3. スキルの使い方
+### 4. Pluginの使い方
 
-ClaudeCodeでスキルを使用する際は、`skill.md`ファイルのパスを指定します。
+ClaudeCodeでプラグインを使用する際は、プラグインディレクトリを指定します：
+
+```bash
+# プラグイン全体をロード
+claude --plugin plugins/your-plugin-name
+
+# 特定のスキルだけを使用
+claude --skill plugins/your-plugin-name/skills/my-skill/SKILL.md
+```
+
+## 📚 参考リンク
+
+- [公式Plugin作成ガイド](https://code.claude.com/docs/en/plugins)
+- [Plugin Marketplace公式ドキュメント](https://code.claude.com/docs/ja/plugin-marketplaces)
 
 ## 例
 
-`skills/example/skill.md` にサンプルスキルを用意しています。参考にしてください。
+`plugins/example/` にサンプルプラグインを用意しています。参考にしてください。

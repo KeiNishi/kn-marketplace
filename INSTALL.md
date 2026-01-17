@@ -1,6 +1,6 @@
 # インストールガイド
 
-新規プロジェクトでKN Marketplaceのスキルを使用する方法を説明します。
+新規プロジェクトでKN Marketplaceのプラグインを使用する方法を説明します。
 
 ## 方法1: Git Submoduleとして追加（推奨）
 
@@ -14,11 +14,14 @@ git submodule add <このリポジトリのURL> .claude/marketplace
 git submodule update --init --recursive
 ```
 
-### 2. スキルを参照
+### 2. プラグインを参照
 
 ```bash
-# 例: Godot GDScriptスキルを使用
-claude --skill .claude/marketplace/skills/godot-gdscript-patterns/skill.md
+# プラグイン全体を使用
+claude --plugin .claude/marketplace/plugins/godot-gdscript-patterns
+
+# 特定のスキルのみ使用
+claude --skill .claude/marketplace/plugins/godot-gdscript-patterns/skills/my-skill/SKILL.md
 ```
 
 ### 3. サブモジュールの更新
@@ -60,28 +63,28 @@ cd /path/to/your-new-project
 ln -s ~/Documents/kn-marketplace .claude/marketplace
 ```
 
-### 3. スキルを参照
+### 3. プラグインを参照
 
 ```bash
-claude --skill .claude/marketplace/skills/godot-gdscript-patterns/skill.md
+claude --plugin .claude/marketplace/plugins/godot-gdscript-patterns
 ```
 
 ## 方法3: 直接コピー
 
-特定のスキルだけを使いたい場合：
+特定のプラグインだけを使いたい場合：
 
-### 1. 必要なスキルをコピー
+### 1. 必要なプラグインをコピー
 
 ```bash
 cd /path/to/your-new-project
-mkdir -p .claude/skills
-cp D:\Projects\kn-marketplace\skills/godot-gdscript-patterns/skill.md .claude/skills/
+mkdir -p .claude/plugins
+cp -r D:\Projects\kn-marketplace\plugins\godot-gdscript-patterns .claude/plugins/
 ```
 
-### 2. スキルを参照
+### 2. プラグインを参照
 
 ```bash
-claude --skill .claude/skills/skill.md
+claude --plugin .claude/plugins/godot-gdscript-patterns
 ```
 
 ## 方法4: 環境変数で共通パスを設定
@@ -100,11 +103,11 @@ $env:CLAUDE_MARKETPLACE_PATH = "D:\Projects\kn-marketplace"
 export CLAUDE_MARKETPLACE_PATH="$HOME/Documents/kn-marketplace"
 ```
 
-### 2. スキルを参照（どのプロジェクトからでも）
+### 2. プラグインを参照（どのプロジェクトからでも）
 
 ```bash
-claude --skill $env:CLAUDE_MARKETPLACE_PATH/skills/godot-gdscript-patterns/skill.md  # PowerShell
-claude --skill $CLAUDE_MARKETPLACE_PATH/skills/godot-gdscript-patterns/skill.md      # bash/zsh
+claude --plugin $env:CLAUDE_MARKETPLACE_PATH/plugins/godot-gdscript-patterns  # PowerShell
+claude --plugin $CLAUDE_MARKETPLACE_PATH/plugins/godot-gdscript-patterns      # bash/zsh
 ```
 
 ## 推奨される構造
@@ -115,63 +118,147 @@ claude --skill $CLAUDE_MARKETPLACE_PATH/skills/godot-gdscript-patterns/skill.md 
 your-project/
 ├── .claude/
 │   ├── marketplace/          # サブモジュールまたはシンボリックリンク
-│   │   ├── skills/
+│   │   ├── plugins/
 │   │   └── marketplace.json
-│   └── project-skills/       # プロジェクト固有のスキル
-│       └── custom-skill.md
+│   └── project-plugins/      # プロジェクト固有のプラグイン
+│       └── custom-plugin/
+│           └── .claude-plugin/
+│               └── plugin.json
 ├── src/
 └── README.md
 ```
 
-## 利用可能なスキル一覧の確認
+## 利用可能なプラグイン一覧の確認
 
 ```bash
 # marketplace.jsonを確認
 cat .claude/marketplace/marketplace.json
 
-# または、JSONを整形して表示
-cat .claude/marketplace/marketplace.json | jq '.skills[] | {id, name, description}'
+# または、JSONを整形して表示（jqが必要）
+cat .claude/marketplace/marketplace.json | jq '.plugins[] | {id, name, description}'
 ```
 
-## スキルの使用例
+**Windows PowerShellの場合:**
+```powershell
+Get-Content .claude\marketplace\marketplace.json | ConvertFrom-Json | Select-Object -ExpandProperty plugins | Format-Table id, name, description
+```
 
-### ClaudeCodeでスキルを直接指定
+## プラグインの使用例
+
+### ClaudeCodeでプラグインを直接指定
 
 ```bash
-# Godot GDScriptパターンを使用
-claude code --skill .claude/marketplace/skills/godot-gdscript-patterns/skill.md "Implement a state machine"
+# Godot GDScriptプラグインを使用
+claude code --plugin .claude/marketplace/plugins/godot-gdscript-patterns
 
-# PR作成スキルを使用
-claude code --skill .claude/marketplace/skills/create-pr/skill.md "Create PR for feature X"
+# PR作成プラグインを使用
+claude code --plugin .claude/marketplace/plugins/create-pr
+```
+
+### 特定のスキルだけを使用
+
+```bash
+# プラグイン内の特定のスキルを使用
+claude code --skill .claude/marketplace/plugins/godot-gdscript-patterns/skills/state-machine/SKILL.md
 ```
 
 ### プロジェクト内でのエイリアス作成
 
 **PowerShellの場合 (プロジェクトルートで):**
 ```powershell
-# skills-alias.ps1
-function Use-GodotSkill {
-    claude code --skill .claude/marketplace/skills/godot-gdscript-patterns/skill.md $args
+# plugins-alias.ps1
+function Use-GodotPlugin {
+    claude code --plugin .claude/marketplace/plugins/godot-gdscript-patterns $args
 }
 
-function Use-PRSkill {
-    claude code --skill .claude/marketplace/skills/create-pr/skill.md $args
+function Use-PRPlugin {
+    claude code --plugin .claude/marketplace/plugins/create-pr $args
 }
 
 # 使用方法
-. .\skills-alias.ps1
-Use-GodotSkill "Create a player controller"
+. .\plugins-alias.ps1
+Use-GodotPlugin "Create a player controller"
 ```
 
 **Bash/Zshの場合:**
 ```bash
 # .envrc または .aliases
-alias claude-godot='claude code --skill .claude/marketplace/skills/godot-gdscript-patterns/skill.md'
-alias claude-pr='claude code --skill .claude/marketplace/skills/create-pr/skill.md'
+alias claude-godot='claude code --plugin .claude/marketplace/plugins/godot-gdscript-patterns'
+alias claude-pr='claude code --plugin .claude/marketplace/plugins/create-pr'
 
 # 使用方法
 source .aliases
 claude-godot "Create a player controller"
+```
+
+## Plugin構造の理解
+
+各プラグインは以下の構造を持ちます：
+
+```
+plugin-name/
+├── .claude-plugin/
+│   └── plugin.json          # メタデータ（必須）
+├── skills/                   # スキル（オプション）
+│   └── my-skill/
+│       └── SKILL.md
+├── commands/                 # スラッシュコマンド（オプション）
+├── agents/                   # 専用エージェント（オプション）
+├── hooks/                    # イベントハンドラ（オプション）
+└── README.md
+```
+
+⚠️ **注意**: `skills/`, `commands/`, `agents/`, `hooks/` は `.claude-plugin/` の**外側**に配置します！
+
+## 外部からSKILL.mdをコピーする場合
+
+外部から入手した `SKILL.md` ファイルをプラグインとして追加する方法：
+
+### 1. プラグイン構造を作成
+
+```bash
+cd D:\Projects\kn-marketplace
+mkdir -p plugins/my-new-plugin/.claude-plugin
+mkdir -p plugins/my-new-plugin/skills/my-skill
+```
+
+### 2. plugin.jsonを作成
+
+```bash
+# plugins/my-new-plugin/.claude-plugin/plugin.json
+{
+  "name": "my-new-plugin",
+  "version": "1.0.0",
+  "description": "プラグインの説明",
+  "author": "Your Name",
+  "tags": ["tag1"]
+}
+```
+
+### 3. SKILL.mdをコピー
+
+```bash
+cp /path/to/SKILL.md plugins/my-new-plugin/skills/my-skill/
+```
+
+### 4. marketplace.jsonに登録
+
+```json
+{
+  "plugins": [
+    {
+      "id": "my-new-plugin",
+      "name": "My New Plugin",
+      "description": "プラグインの説明",
+      "path": "plugins/my-new-plugin",
+      "version": "1.0.0",
+      "author": "Your Name",
+      "tags": ["tag1"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
+    }
+  ]
+}
 ```
 
 ## トラブルシューティング
@@ -191,7 +278,18 @@ git submodule update --init --recursive
 
 絶対パスを使用してください：
 ```bash
-claude --skill D:\Projects\kn-marketplace\skills\godot-gdscript-patterns\skill.md
+claude --plugin D:\Projects\kn-marketplace\plugins\godot-gdscript-patterns
+```
+
+### プラグインが認識されない場合
+
+`.claude-plugin/plugin.json` が正しく配置されているか確認：
+```bash
+# 正しい構造
+plugins/my-plugin/.claude-plugin/plugin.json  ✓
+
+# 間違った構造
+plugins/my-plugin/plugin.json                  ✗
 ```
 
 ## 更新の取得
@@ -211,3 +309,9 @@ git pull origin main
 ```
 
 これで全てのプロジェクトに自動的に反映されます！
+
+## 📚 参考資料
+
+- [公式Plugin作成ガイド](https://code.claude.com/docs/en/plugins)
+- [Plugin Marketplace公式ドキュメント](https://code.claude.com/docs/ja/plugin-marketplaces)
+- [Skills vs Plugins解説記事](https://www.youngleaders.tech/p/claude-skills-commands-subagents-plugins)

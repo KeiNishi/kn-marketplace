@@ -1,0 +1,7 @@
+{
+  "name": "godot-gdscript-patterns",
+  "version": "1.0.0",
+  "description": "Godot GDScript patterns and best practices",
+  "author": "wshobson",
+  "tags": ["gamedev", "godot"]
+}
