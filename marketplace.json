@@ -1,0 +1,18 @@
+{
+  "name": "KN Marketplace",
+  "version": "1.0.0",
+  "description": "Personal marketplace for Claude Code skills",
+  "skills": [
+    {
+      "id": "example-skill",
+      "name": "Example Skill",
+      "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
+      "path": "skills/example/skill.md",
+      "version": "1.0.0",
+      "author": "KN",
+      "tags": ["example", "template"],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
+    }
+  ]
+}
