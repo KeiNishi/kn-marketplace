@@ -10,7 +10,10 @@
       "path": "plugins/example",
       "version": "1.0.0",
       "author": "KN",
-      "tags": ["example", "template"],
+      "tags": [
+        "example",
+        "template"
+      ],
       "created": "2026-01-18",
       "updated": "2026-01-18"
     },
@@ -21,7 +24,10 @@
       "path": "plugins/godot-gdscript-patterns",
       "version": "1.0.0",
       "author": "wshobson",
-      "tags": ["gamedev", "godot"],
+      "tags": [
+        "gamedev",
+        "godot"
+      ],
       "created": "2026-01-18",
       "updated": "2026-01-18"
     },
@@ -32,7 +38,9 @@
       "path": "plugins/create-pr",
       "version": "1.0.0",
       "author": "n8n-io",
-      "tags": ["github"],
+      "tags": [
+        "github"
+      ],
       "created": "2026-01-18",
       "updated": "2026-01-18"
     },
@@ -43,7 +51,23 @@
       "path": "plugins/skill-lookup",
       "version": "1.0.0",
       "author": "f",
-      "tags": ["claude"],
+      "tags": [
+        "claude"
+      ],
+      "created": "2026-01-18",
+      "updated": "2026-01-18"
+    },
+    {
+      "id": "unity-gamedev-standards",
+      "name": "Unity Gamedev Standards",
+      "description": "Unity Gamedev Standards",
+      "path": "plugins/unity-gamedev-standards",
+      "version": "1.0.0",
+      "author": "KN",
+      "tags": [
+        "gamedev",
+        "unity"
+      ],
       "created": "2026-01-18",
       "updated": "2026-01-18"
     }
