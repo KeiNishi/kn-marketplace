@@ -328,8 +328,8 @@ Unityのフレーム内の実行順序を理解することが重要です。以
 ```
 1. FixedUpdate()                          - 固定タイムステップで実行（0回、1回、または複数回）
 2. Internal physics update                - 物理演算の更新
-3. OnTriggerXxx / OnCollisionXxx          - 物理コールバック
-4. Internal animation update              - Animator Update Modeが"Animate Physics"の場合
+3. Internal animation update              - Animator Update Modeが"Animate Physics"の場合
+4. OnTriggerXxx / OnCollisionXxx          - 物理コールバック
 5. Update()                               - 毎フレーム1回実行（入力処理、状態管理）
 6. Internal animation update              - Animator Update Modeが"Normal"の場合
 7. LateUpdate()                           - Updateの後に実行（カメラ追従など）
