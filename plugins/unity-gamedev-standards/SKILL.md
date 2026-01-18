@@ -200,47 +200,405 @@ public class PlayerController : MonoBehaviour
 }
 ```
 
-### 非同期処理（Unity 6 Awaitable）
+### 非同期処理（UniTask）
+
+#### UniTaskのインストール
+
+Package Managerから以下のURLでインストール:
+```
+https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask
+```
+
+または`manifest.json`に追加:
+```json
+{
+  "dependencies": {
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask"
+  }
+}
+```
+
+#### 基本的な使い方
 
 ```csharp
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class AsyncExample : MonoBehaviour
 {
-    // Unity 6のAwaitableを使用（GCアロケーションが少ない）
-    private async Awaitable LoadLevelAsync()
+    // UniTaskを使用（GCアロケーションがゼロ）
+    private async UniTask LoadLevelAsync()
     {
         // フレーム待機
-        await Awaitable.NextFrameAsync();
-        
+        await UniTask.Yield();
+
         // 時間待機
-        await Awaitable.WaitForSecondsAsync(1f);
-        
-        // メインスレッドに戻る
-        await Awaitable.MainThreadAsync();
-        
+        await UniTask.Delay(System.TimeSpan.FromSeconds(1f));
+
+        // 次のフレームまで待機
+        await UniTask.NextFrame();
+
         // バックグラウンドスレッドで実行
-        await Awaitable.BackgroundThreadAsync();
+        await UniTask.SwitchToThreadPool();
+
+        // メインスレッドに戻る
+        await UniTask.SwitchToMainThread();
     }
-    
+
     // CancellationTokenでキャンセル可能に
-    private async Awaitable FetchDataAsync(CancellationToken token)
+    private async UniTask FetchDataAsync(CancellationToken token)
     {
-        await Awaitable.WaitForSecondsAsync(2f, token);
+        await UniTask.Delay(System.TimeSpan.FromSeconds(2f), cancellationToken: token);
     }
-    
+
     private void OnDestroy()
     {
         // コンポーネント破棄時にdestroyCancellationTokenが自動キャンセル
     }
-    
+
     private async void Start()
     {
-        // destroyCancellationTokenを渡してオブジェクト破棄時に自動キャンセル
-        await FetchDataAsync(destroyCancellationToken);
+        // this.GetCancellationTokenOnDestroy()でオブジェクト破棄時に自動キャンセル
+        await FetchDataAsync(this.GetCancellationTokenOnDestroy());
     }
 }
 ```
+
+#### UniTaskの便利な機能
+
+```csharp
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+public class UniTaskFeatures : MonoBehaviour
+{
+    // 複数の非同期処理を並列実行
+    private async UniTaskVoid ParallelExample()
+    {
+        var (result1, result2, result3) = await UniTask.WhenAll(
+            FetchData1Async(),
+            FetchData2Async(),
+            FetchData3Async()
+        );
+    }
+
+    // タイムアウト処理
+    private async UniTask TimeoutExample()
+    {
+        var cts = new CancellationTokenSource();
+        cts.CancelAfterSlim(System.TimeSpan.FromSeconds(5f)); // 5秒でタイムアウト
+
+        try
+        {
+            await LongRunningTaskAsync(cts.Token);
+        }
+        catch (System.OperationCanceledException)
+        {
+            Debug.Log("Timeout!");
+        }
+    }
+
+    // Coroutineとの相互運用
+    private async UniTask CoroutineInterop()
+    {
+        // CoroutineをUniTaskに変換
+        await SomeCoroutine().ToUniTask();
+    }
+
+    private System.Collections.IEnumerator SomeCoroutine()
+    {
+        yield return new WaitForSeconds(1f);
+    }
+
+    private async UniTask<int> FetchData1Async() => await UniTask.Delay(100).ContinueWith(() => 1);
+    private async UniTask<int> FetchData2Async() => await UniTask.Delay(200).ContinueWith(() => 2);
+    private async UniTask<int> FetchData3Async() => await UniTask.Delay(300).ContinueWith(() => 3);
+    private async UniTask LongRunningTaskAsync(CancellationToken token) => await UniTask.Delay(10000, cancellationToken: token);
+}
+```
+
+---
+
+## Animationと更新処理のタイミング
+
+### Unityの更新処理順序
+
+Unityのフレーム内の実行順序を理解することが重要です。以下は1フレーム内の主要な実行順序:
+
+```
+1. FixedUpdate()                          - 固定タイムステップで実行（0回、1回、または複数回）
+2. Internal physics update                - 物理演算の更新
+3. Internal animation update              - Animator Update Modeが"Animate Physics"の場合
+4. OnTriggerXxx / OnCollisionXxx          - 物理コールバック
+5. Update()                               - 毎フレーム1回実行（入力処理、状態管理）
+6. Internal animation update              - Animator Update Modeが"Normal"の場合
+7. LateUpdate()                           - Updateの後に実行（カメラ追従など）
+8. Rendering                              - レンダリング処理
+```
+
+**重要なポイント:**
+- **FixedUpdate**は固定時間間隔（デフォルト0.02秒 = 50Hz）で実行されるため、フレームレートに応じて0回以上実行される可能性があります
+- 高フレームレート時（例：120fps）: FixedUpdateが実行されないフレームが存在
+- 低フレームレート時（例：30fps）: 1フレーム内でFixedUpdateが複数回実行される
+- **物理演算**はFixedUpdateの直後に実行されるため、物理的な力の適用はFixedUpdate内で行う
+- **Animator**の更新タイミングはUpdate Modeによって変わる（後述）
+
+### Animator Update Mode
+
+Animatorコンポーネントの`Update Mode`設定によってアニメーション更新タイミングが変わる:
+
+| Update Mode | 更新タイミング | 用途 |
+|-------------|---------------|------|
+| **Normal** | Update()の後 | 通常のキャラクター |
+| **Animate Physics** | FixedUpdate()の後 | 物理演算と連動するキャラクター |
+| **Unscaled Time** | Update()の後（Time.timeScaleを無視） | ポーズメニューなど |
+
+### 標準的な移動・アニメーション処理
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// 標準的な移動とアニメーション処理の例
+/// </summary>
+public class CharacterMovement : MonoBehaviour
+{
+    [SerializeField] private float _moveSpeed = 5f;
+    [SerializeField] private Animator _animator;
+
+    private Rigidbody _rigidbody;
+    private Vector3 _moveInput;
+
+    // Animator Parameters（ハッシュ化でパフォーマンス向上）
+    private static readonly int Speed = Animator.StringToHash("Speed");
+    private static readonly int IsGrounded = Animator.StringToHash("IsGrounded");
+
+    private void Awake()
+    {
+        _rigidbody = GetComponent<Rigidbody>();
+    }
+
+    private void Update()
+    {
+        // 入力処理（Update内で実行）
+        _moveInput.x = Input.GetAxisRaw("Horizontal");
+        _moveInput.z = Input.GetAxisRaw("Vertical");
+
+        // Animatorパラメータ更新（Update内で実行）
+        // ※ Animator Update Modeが"Normal"の場合、Updateの後にアニメーションが更新される
+        var speed = _moveInput.magnitude * _moveSpeed;
+        _animator.SetFloat(Speed, speed);
+        _animator.SetBool(IsGrounded, IsGrounded());
+    }
+
+    private void FixedUpdate()
+    {
+        // 物理移動処理（FixedUpdate内で実行）
+        // ※ FixedUpdateはUpdateより前に実行される可能性があるため、
+        //    前フレームの入力値を使用することに注意
+        var velocity = _moveInput.normalized * _moveSpeed;
+        velocity.y = _rigidbody.linearVelocity.y;
+        _rigidbody.linearVelocity = velocity;
+    }
+
+    private bool IsGrounded()
+    {
+        return Physics.Raycast(transform.position, Vector3.down, 1.1f);
+    }
+}
+```
+
+### 物理演算と連動するキャラクター
+
+Rigidbodyを使用し、アニメーションが物理に影響を与える場合:
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// 物理演算と連動するキャラクター
+/// Animator Update Mode: "Animate Physics"
+/// </summary>
+public class PhysicsCharacter : MonoBehaviour
+{
+    [SerializeField] private Animator _animator;
+    [SerializeField] private Rigidbody _rigidbody;
+
+    private Vector3 _moveInput;
+    private static readonly int MoveX = Animator.StringToHash("MoveX");
+    private static readonly int MoveZ = Animator.StringToHash("MoveZ");
+
+    private void Update()
+    {
+        // 入力処理（Update）
+        _moveInput.x = Input.GetAxisRaw("Horizontal");
+        _moveInput.z = Input.GetAxisRaw("Vertical");
+
+        // Animatorパラメータを更新
+        _animator.SetFloat(MoveX, _moveInput.x);
+        _animator.SetFloat(MoveZ, _moveInput.z);
+    }
+
+    private void FixedUpdate()
+    {
+        // 物理処理（FixedUpdate内で実行）
+        // ※ Animator Update Modeが"Animate Physics"の場合、
+        //    FixedUpdateの後、物理演算の更新の後にアニメーションが更新される
+        //    そのため、物理的な力の適用はここで行う
+
+        // 追加の物理処理があればここに記述
+    }
+}
+```
+
+### RootMotion対応
+
+Root MotionはAnimatorが直接Transformを制御する機能。`OnAnimatorMove()`で処理:
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// Root Motion対応キャラクター
+/// Animator設定: Apply Root Motion = true
+/// Animator Update Mode: "Animate Physics"（物理使用時）
+/// </summary>
+public class RootMotionCharacter : MonoBehaviour
+{
+    [Header("Components")]
+    [SerializeField] private Animator _animator;
+    [SerializeField] private Rigidbody _rigidbody;
+
+    [Header("Settings")]
+    [SerializeField] private bool _usePhysics = true;
+
+    private Vector3 _moveInput;
+    private static readonly int MoveX = Animator.StringToHash("MoveX");
+    private static readonly int MoveZ = Animator.StringToHash("MoveZ");
+
+    private void Update()
+    {
+        // 入力処理（Update）
+        _moveInput.x = Input.GetAxisRaw("Horizontal");
+        _moveInput.z = Input.GetAxisRaw("Vertical");
+
+        // Animatorに入力を渡す
+        _animator.SetFloat(MoveX, _moveInput.x);
+        _animator.SetFloat(MoveZ, _moveInput.z);
+    }
+
+    /// <summary>
+    /// Root Motionの移動・回転を処理
+    /// Animatorの更新後、LateUpdate前に呼ばれる
+    /// </summary>
+    private void OnAnimatorMove()
+    {
+        if (!_animator) return;
+
+        if (_usePhysics)
+        {
+            // 物理演算を使用する場合
+            // Root Motionの移動量をRigidbodyに適用
+            var deltaPosition = _animator.deltaPosition;
+
+            // Y軸は物理エンジンに任せる（重力など）
+            deltaPosition.y = _rigidbody.linearVelocity.y * Time.deltaTime;
+
+            // 速度として適用（Time.deltaTimeで除算）
+            _rigidbody.linearVelocity = deltaPosition / Time.deltaTime;
+
+            // Root Motionの回転をRigidbodyに適用
+            var deltaRotation = _animator.deltaRotation;
+            _rigidbody.MoveRotation(_rigidbody.rotation * deltaRotation);
+        }
+        else
+        {
+            // 物理演算を使用しない場合（Transformに直接適用）
+            transform.position += _animator.deltaPosition;
+            transform.rotation *= _animator.deltaRotation;
+        }
+    }
+}
+```
+
+### Root Motion + 外部制御のハイブリッド
+
+Root Motionと外部制御を組み合わせる例（回転のみ外部制御など）:
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// Root Motionと外部制御のハイブリッド
+/// 移動はRoot Motion、回転は外部制御
+/// </summary>
+public class HybridRootMotion : MonoBehaviour
+{
+    [SerializeField] private Animator _animator;
+    [SerializeField] private Rigidbody _rigidbody;
+    [SerializeField] private Transform _cameraTransform;
+    [SerializeField] private float _rotationSpeed = 720f;
+
+    private Vector3 _moveInput;
+    private Quaternion _targetRotation;
+
+    private static readonly int Speed = Animator.StringToHash("Speed");
+
+    private void Update()
+    {
+        // 入力処理
+        _moveInput.x = Input.GetAxisRaw("Horizontal");
+        _moveInput.z = Input.GetAxisRaw("Vertical");
+
+        // カメラ基準の移動方向を計算
+        var cameraForward = Vector3.Scale(_cameraTransform.forward, new Vector3(1, 0, 1)).normalized;
+        var cameraRight = Vector3.Scale(_cameraTransform.right, new Vector3(1, 0, 1)).normalized;
+        var moveDirection = (cameraForward * _moveInput.z + cameraRight * _moveInput.x).normalized;
+
+        // Animatorに速度を渡す
+        _animator.SetFloat(Speed, moveDirection.magnitude);
+
+        // 目標回転を計算（外部制御）
+        if (moveDirection != Vector3.zero)
+        {
+            _targetRotation = Quaternion.LookRotation(moveDirection);
+        }
+    }
+
+    private void OnAnimatorMove()
+    {
+        if (!_animator) return;
+
+        // Root Motionの移動量を適用
+        var deltaPosition = _animator.deltaPosition;
+        deltaPosition.y = _rigidbody.linearVelocity.y * Time.deltaTime;
+        _rigidbody.linearVelocity = deltaPosition / Time.deltaTime;
+
+        // 回転は外部制御（Root Motionの回転は無視）
+        var rotation = Quaternion.RotateTowards(
+            _rigidbody.rotation,
+            _targetRotation,
+            _rotationSpeed * Time.deltaTime
+        );
+        _rigidbody.MoveRotation(rotation);
+    }
+}
+```
+
+### ベストプラクティス
+
+#### Do's
+
+- **Animatorパラメータはハッシュ化** - `Animator.StringToHash()`でパフォーマンス向上
+- **Update Modeを適切に設定** - 物理使用時は"Animate Physics"
+- **Root Motion使用時はOnAnimatorMove()を実装** - デフォルト動作を上書き
+- **Y軸移動は物理エンジンに任せる** - 重力やジャンプと競合しないように
+
+#### Don'ts
+
+- **LateUpdate()で移動処理をしない** - カメラ追従などのみ
+- **Root Motionと手動移動を混在させない** - どちらかに統一するか、明確に役割を分ける
+- **毎フレームGetComponent<Animator>()しない** - Awake/Startでキャッシュ
 
 ---
 
@@ -394,6 +752,389 @@ public class Bullet : MonoBehaviour
     }
 }
 ```
+
+---
+
+## Character設計パターン（MVC分離）
+
+### 設計思想
+
+キャラクターを**Controller層（入力処理）**、**View層（見た目・アニメーション）**、**Model層（ステータス・データ）**に分離することで、堅牢で拡張しやすい構造を実現します。
+
+```
+┌─────────────┐
+│  Controller │ ← 入力処理・AI制御
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│    Model    │ ← ステータス・データ・ロジック
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│     View    │ ← アニメーション・エフェクト・UI
+└─────────────┘
+```
+
+**依存関係のルール:**
+- Controller → Model → View（一方向のみ）
+- View/Controllerは相互に依存しない
+- 各層は単一責任の原則に従う
+
+### Model層（ステータス・データ）
+
+キャラクターのデータとビジネスロジックを保持。
+
+```csharp
+using System;
+using UnityEngine;
+
+/// <summary>
+/// キャラクターのステータスとデータを管理（Model層）
+/// </summary>
+public class CharacterModel : MonoBehaviour
+{
+    #region Events
+
+    // Model層からのイベント通知（Viewが購読）
+    public event Action<float, float> OnHealthChanged;  // (current, max)
+    public event Action OnDied;
+    public event Action<float> OnStaminaChanged;        // (current)
+
+    #endregion
+
+    #region Properties
+
+    public float CurrentHealth { get; private set; }
+    public float MaxHealth { get; private set; }
+    public float CurrentStamina { get; private set; }
+    public float MaxStamina { get; private set; }
+    public bool IsDead => CurrentHealth <= 0;
+
+    // 移動関連のステータス
+    public float MoveSpeed { get; private set; }
+    public float SprintMultiplier { get; private set; }
+    public bool CanSprint => CurrentStamina > 0 && !IsDead;
+
+    #endregion
+
+    #region Initialization
+
+    public void Initialize(float maxHealth, float maxStamina, float moveSpeed, float sprintMultiplier)
+    {
+        MaxHealth = maxHealth;
+        CurrentHealth = maxHealth;
+        MaxStamina = maxStamina;
+        CurrentStamina = maxStamina;
+        MoveSpeed = moveSpeed;
+        SprintMultiplier = sprintMultiplier;
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    public void TakeDamage(float amount)
+    {
+        if (IsDead) return;
+
+        CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+        OnHealthChanged?.Invoke(CurrentHealth, MaxHealth);
+
+        if (IsDead)
+        {
+            OnDied?.Invoke();
+        }
+    }
+
+    public void Heal(float amount)
+    {
+        if (IsDead) return;
+
+        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+        OnHealthChanged?.Invoke(CurrentHealth, MaxHealth);
+    }
+
+    public void ConsumeStamina(float amount)
+    {
+        CurrentStamina = Mathf.Max(0, CurrentStamina - amount);
+        OnStaminaChanged?.Invoke(CurrentStamina);
+    }
+
+    public void RecoverStamina(float amount)
+    {
+        CurrentStamina = Mathf.Min(MaxStamina, CurrentStamina + amount);
+        OnStaminaChanged?.Invoke(CurrentStamina);
+    }
+
+    #endregion
+}
+```
+
+### Controller層（入力処理）
+
+入力を受け取り、Modelを操作する。
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// プレイヤーの入力を処理（Controller層）
+/// </summary>
+public class PlayerController : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private CharacterModel _model;
+    [SerializeField] private Rigidbody _rigidbody;
+
+    [Header("Settings")]
+    [SerializeField] private float _staminaDrainRate = 10f;
+    [SerializeField] private float _staminaRecoveryRate = 5f;
+
+    private Vector3 _moveInput;
+    private bool _isSprintInput;
+
+    #region Unity Lifecycle
+
+    private void Update()
+    {
+        // 入力処理
+        HandleInput();
+
+        // スタミナ管理
+        HandleStamina();
+    }
+
+    private void FixedUpdate()
+    {
+        // 物理移動処理
+        ApplyMovement();
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private void HandleInput()
+    {
+        if (_model.IsDead) return;
+
+        _moveInput.x = Input.GetAxisRaw("Horizontal");
+        _moveInput.z = Input.GetAxisRaw("Vertical");
+        _isSprintInput = Input.GetKey(KeyCode.LeftShift);
+    }
+
+    private void HandleStamina()
+    {
+        if (_isSprintInput && _moveInput.magnitude > 0 && _model.CanSprint)
+        {
+            // スプリント中はスタミナ消費
+            _model.ConsumeStamina(_staminaDrainRate * Time.deltaTime);
+        }
+        else if (_model.CurrentStamina < _model.MaxStamina)
+        {
+            // スプリント中でなければスタミナ回復
+            _model.RecoverStamina(_staminaRecoveryRate * Time.deltaTime);
+        }
+    }
+
+    private void ApplyMovement()
+    {
+        if (_model.IsDead) return;
+
+        // スプリント判定
+        var speed = _model.MoveSpeed;
+        if (_isSprintInput && _model.CanSprint)
+        {
+            speed *= _model.SprintMultiplier;
+        }
+
+        // 移動適用
+        var velocity = _moveInput.normalized * speed;
+        velocity.y = _rigidbody.linearVelocity.y;
+        _rigidbody.linearVelocity = velocity;
+    }
+
+    #endregion
+}
+```
+
+### View層（見た目・アニメーション）
+
+Modelの状態を監視し、ビジュアルを更新する。
+
+```csharp
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// キャラクターの見た目を管理（View層）
+/// </summary>
+public class CharacterView : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private CharacterModel _model;
+    [SerializeField] private Animator _animator;
+    [SerializeField] private Rigidbody _rigidbody;
+
+    [Header("UI")]
+    [SerializeField] private Slider _healthBar;
+    [SerializeField] private Slider _staminaBar;
+
+    [Header("VFX")]
+    [SerializeField] private ParticleSystem _damageEffect;
+    [SerializeField] private ParticleSystem _deathEffect;
+
+    // Animator Parameters（ハッシュ化）
+    private static readonly int Speed = Animator.StringToHash("Speed");
+    private static readonly int IsDead = Animator.StringToHash("IsDead");
+
+    #region Unity Lifecycle
+
+    private void OnEnable()
+    {
+        // Modelのイベントを購読
+        _model.OnHealthChanged += HandleHealthChanged;
+        _model.OnStaminaChanged += HandleStaminaChanged;
+        _model.OnDied += HandleDied;
+    }
+
+    private void OnDisable()
+    {
+        // イベント購読解除（メモリリーク防止）
+        _model.OnHealthChanged -= HandleHealthChanged;
+        _model.OnStaminaChanged -= HandleStaminaChanged;
+        _model.OnDied -= HandleDied;
+    }
+
+    private void Update()
+    {
+        // アニメーションパラメータ更新
+        UpdateAnimation();
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private void HandleHealthChanged(float current, float max)
+    {
+        // HPバー更新
+        if (_healthBar != null)
+        {
+            _healthBar.value = current / max;
+        }
+
+        // ダメージエフェクト
+        if (_damageEffect != null && current < max)
+        {
+            _damageEffect.Play();
+        }
+    }
+
+    private void HandleStaminaChanged(float current)
+    {
+        // スタミナバー更新
+        if (_staminaBar != null)
+        {
+            _staminaBar.value = current / _model.MaxStamina;
+        }
+    }
+
+    private void HandleDied()
+    {
+        // 死亡アニメーション
+        _animator.SetBool(IsDead, true);
+
+        // 死亡エフェクト
+        if (_deathEffect != null)
+        {
+            _deathEffect.Play();
+        }
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private void UpdateAnimation()
+    {
+        // 移動速度に応じてアニメーション更新
+        var speed = _rigidbody.linearVelocity.magnitude;
+        _animator.SetFloat(Speed, speed);
+    }
+
+    #endregion
+}
+```
+
+### 使用例（統合）
+
+3つの層を1つのPrefabにアタッチして使用:
+
+```csharp
+using UnityEngine;
+
+/// <summary>
+/// キャラクター全体の初期化を管理
+/// </summary>
+public class CharacterBootstrap : MonoBehaviour
+{
+    [SerializeField] private CharacterModel _model;
+    [SerializeField] private PlayerController _controller;
+    [SerializeField] private CharacterView _view;
+
+    [Header("Initial Stats")]
+    [SerializeField] private float _maxHealth = 100f;
+    [SerializeField] private float _maxStamina = 100f;
+    [SerializeField] private float _moveSpeed = 5f;
+    [SerializeField] private float _sprintMultiplier = 1.5f;
+
+    private void Awake()
+    {
+        // Model初期化（最初に実行）
+        _model.Initialize(_maxHealth, _maxStamina, _moveSpeed, _sprintMultiplier);
+    }
+}
+```
+
+### MVC分離のメリット
+
+1. **テスタビリティ向上** - 各層を独立してテスト可能
+2. **再利用性** - Controller層を差し替えてAI/Player切り替え可能
+3. **拡張性** - 新機能追加時に影響範囲が明確
+4. **デバッグしやすい** - 責務が明確なので問題箇所を特定しやすい
+5. **チーム開発** - 各層を異なるメンバーが並行開発可能
+
+### AI切り替え例
+
+Player ControllerとAI Controllerを切り替える:
+
+```csharp
+/// <summary>
+/// AI制御（Controller層の別実装）
+/// </summary>
+public class AIController : MonoBehaviour
+{
+    [SerializeField] private CharacterModel _model;
+    [SerializeField] private Rigidbody _rigidbody;
+    [SerializeField] private Transform _target;
+
+    private void FixedUpdate()
+    {
+        if (_model.IsDead) return;
+
+        // ターゲットに向かって移動
+        var direction = (_target.position - transform.position).normalized;
+        var velocity = direction * _model.MoveSpeed;
+        velocity.y = _rigidbody.linearVelocity.y;
+        _rigidbody.linearVelocity = velocity;
+    }
+}
+```
+
+同じModel・ViewをPlayer/AI両方で使用可能。Controllerのみ切り替え。
 
 ---
 
