@@ -323,16 +323,25 @@ public class UniTaskFeatures : MonoBehaviour
 
 ### Unityの更新処理順序
 
-Unityのフレーム内の実行順序を理解することが重要:
+Unityのフレーム内の実行順序を理解することが重要です。以下は1フレーム内の主要な実行順序:
 
 ```
-1. Update()           - 入力処理、状態管理、非物理系の処理
-2. LateUpdate()       - カメラ追従など、Update後に実行したい処理
-3. FixedUpdate()      - 物理演算（固定タイムステップで実行）
-4. Animation Update   - Animatorの更新（Update ModeとタイミングでUpdate/LateUpdateに影響）
+1. FixedUpdate()                          - 固定タイムステップで実行（0回、1回、または複数回）
+2. Internal physics update                - 物理演算の更新
+3. OnTriggerXxx / OnCollisionXxx          - 物理コールバック
+4. Internal animation update              - Animator Update Modeが"Animate Physics"の場合
+5. Update()                               - 毎フレーム1回実行（入力処理、状態管理）
+6. Internal animation update              - Animator Update Modeが"Normal"の場合
+7. LateUpdate()                           - Updateの後に実行（カメラ追従など）
+8. Rendering                              - レンダリング処理
 ```
 
-**重要**: FixedUpdateは可変フレームレートで0回以上実行される可能性があります。
+**重要なポイント:**
+- **FixedUpdate**は固定時間間隔（デフォルト0.02秒 = 50Hz）で実行されるため、フレームレートに応じて0回以上実行される可能性があります
+- 高フレームレート時（例：120fps）: FixedUpdateが実行されないフレームが存在
+- 低フレームレート時（例：30fps）: 1フレーム内でFixedUpdateが複数回実行される
+- **物理演算**はFixedUpdateの直後に実行されるため、物理的な力の適用はFixedUpdate内で行う
+- **Animator**の更新タイミングはUpdate Modeによって変わる（後述）
 
 ### Animator Update Mode
 
@@ -371,12 +380,12 @@ public class CharacterMovement : MonoBehaviour
 
     private void Update()
     {
-        // 1. 入力処理（Update）
+        // 入力処理（Update内で実行）
         _moveInput.x = Input.GetAxisRaw("Horizontal");
         _moveInput.z = Input.GetAxisRaw("Vertical");
 
-        // 2. Animatorパラメータ更新（Update）
-        // ※ Animator Update Modeが"Normal"の場合、この後にアニメーションが更新される
+        // Animatorパラメータ更新（Update内で実行）
+        // ※ Animator Update Modeが"Normal"の場合、Updateの後にアニメーションが更新される
         var speed = _moveInput.magnitude * _moveSpeed;
         _animator.SetFloat(Speed, speed);
         _animator.SetBool(IsGrounded, IsGrounded());
@@ -384,7 +393,9 @@ public class CharacterMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // 3. 物理移動処理（FixedUpdate）
+        // 物理移動処理（FixedUpdate内で実行）
+        // ※ FixedUpdateはUpdateより前に実行される可能性があるため、
+        //    前フレームの入力値を使用することに注意
         var velocity = _moveInput.normalized * _moveSpeed;
         velocity.y = _rigidbody.linearVelocity.y;
         _rigidbody.linearVelocity = velocity;
@@ -430,9 +441,10 @@ public class PhysicsCharacter : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // 物理処理（FixedUpdate）
+        // 物理処理（FixedUpdate内で実行）
         // ※ Animator Update Modeが"Animate Physics"の場合、
-        //    この後にアニメーションが更新される
+        //    FixedUpdateの後、物理演算の更新の後にアニメーションが更新される
+        //    そのため、物理的な力の適用はここで行う
 
         // 追加の物理処理があればここに記述
     }
