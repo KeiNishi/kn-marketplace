@@ -10,6 +10,8 @@ ClaudeCode用の個人Pluginマーケットプレイスです。
 
 ```
 kn-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json       # マーケットプレイスの設定ファイル
 ├── plugins/                    # プラグインを配置するディレクトリ
 │   ├── example/
 │   │   ├── .claude-plugin/
@@ -23,7 +25,6 @@ kn-marketplace/
 │   └── your-plugin/
 │       └── .claude-plugin/
 │           └── plugin.json
-├── marketplace.json           # マーケットプレイスの設定ファイル
 ├── INSTALL.md                 # インストールガイド
 └── README.md
 ```
@@ -76,28 +77,29 @@ cp path/to/SKILL.md plugins/my-plugin/skills/my-skill/
   "name": "my-plugin",
   "version": "1.0.0",
   "description": "プラグインの説明",
-  "author": "Your Name",
+  "author": {
+    "name": "Your Name"
+  },
   "tags": ["tag1", "tag2"]
 }
 ```
 
 ### 3. マーケットプレイスへの登録
 
-`marketplace.json` にプラグイン情報を追加します：
+`.claude-plugin/marketplace.json` にプラグイン情報を追加します：
 
 ```json
 {
   "plugins": [
     {
-      "id": "your-plugin-name",
-      "name": "Your Plugin Display Name",
+      "name": "your-plugin-name",
+      "source": "./plugins/your-plugin-name",
       "description": "プラグインの説明",
-      "path": "plugins/your-plugin-name",
       "version": "1.0.0",
-      "author": "Your Name",
-      "tags": ["tag1", "tag2"],
-      "created": "2026-01-18",
-      "updated": "2026-01-18"
+      "author": {
+        "name": "Your Name"
+      },
+      "tags": ["tag1", "tag2"]
     }
   ]
 }
@@ -105,14 +107,14 @@ cp path/to/SKILL.md plugins/my-plugin/skills/my-skill/
 
 ### 4. Pluginの使い方
 
-ClaudeCodeでプラグインを使用する際は、プラグインディレクトリを指定します：
+ClaudeCodeでプラグインをインストールするには：
 
 ```bash
-# プラグイン全体をロード
-claude --plugin plugins/your-plugin-name
+# マーケットプレイスを追加
+/plugin marketplace add <マーケットプレイスのパスまたはURL>
 
-# 特定のスキルだけを使用
-claude --skill plugins/your-plugin-name/skills/my-skill/SKILL.md
+# プラグインをインストール
+/plugin install your-plugin-name@kn-marketplace
 ```
 
 ## 📚 参考リンク

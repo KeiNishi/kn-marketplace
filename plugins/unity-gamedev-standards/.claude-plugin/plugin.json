@@ -2,7 +2,9 @@
     "name": "unity-gamedev-standards",
     "version": "1.0.0",
     "description": "Unity 6 game development standards and coding rules",
-    "author": "KN",
+    "author": {
+        "name": "KN"
+    },
     "tags": [
         "gamedev",
         "unity"

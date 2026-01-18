@@ -2,6 +2,11 @@
   "name": "example-skill",
   "version": "1.0.0",
   "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
-  "author": "KN",
-  "tags": ["example", "template"]
+  "author": {
+    "name": "KN"
+  },
+  "tags": [
+    "example",
+    "template"
+  ]
 }
