@@ -10,19 +10,6 @@
   },
   "plugins": [
     {
-      "name": "example-skill",
-      "source": "./plugins/example",
-      "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
-      "version": "1.0.0",
-      "author": {
-        "name": "KN"
-      },
-      "tags": [
-        "example",
-        "template"
-      ]
-    },
-    {
       "name": "godot-gdscript-patterns",
       "source": "./plugins/godot-gdscript-patterns",
       "description": "Godot GDScript patterns and best practices",
@@ -45,18 +32,6 @@
       },
       "tags": [
         "github"
-      ]
-    },
-    {
-      "name": "skill-lookup",
-      "source": "./plugins/skill-lookup",
-      "description": "Look up skills in the marketplace",
-      "version": "1.0.0",
-      "author": {
-        "name": "f"
-      },
-      "tags": [
-        "claude"
       ]
     },
     {
