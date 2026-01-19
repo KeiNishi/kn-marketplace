@@ -1,6 +1,6 @@
 ---
 name: unity-gamedev-standards
-description: Unity 6ゲーム開発の基本ルールとコーディング規約。新規プロジェクト作成、スクリプト実装、アーキテクチャ設計、パフォーマンス最適化時に使用。2D/3D/VR/ARすべてのジャンルに対応。ECS使用時はreferences/ecs-patterns.md、エディタ拡張はreferences/editor-extensions.md、テストはreferences/testing-standards.mdを参照。
+description: Unity 6ゲーム開発の基本ルールとコーディング規約。新規プロジェクト作成、スクリプト実装、アーキテクチャ設計、パフォーマンス最適化時に使用。2D/3D/VR/ARすべてのジャンルに対応。ECS使用時はreferences/ecs-patterns.md、エディタ拡張はreferences/editor-extensions.md、テストはreferences/testing-standards.mdを参照。Unityを用いたプロジェクトの実装計画・実装・コードレビュー作業の際に必ず利用すること。
 ---
 
 # Unity GameDev Standards

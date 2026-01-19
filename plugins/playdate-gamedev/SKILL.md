@@ -1,6 +1,6 @@
 ---
 name: playdate-gamedev
-description: Playdate C言語ゲーム開発の包括的ガイド。プロジェクト初期化、ビルドフロー、コーディング規約、Playdate API使用パターン、アセット管理、パフォーマンス最適化を含む。初心者から経験者まで対応。
+description: Playdate C言語ゲーム開発の包括的ガイド。プロジェクト初期化、ビルドフロー、コーディング規約、Playdate API使用パターン、アセット管理、パフォーマンス最適化を含む。初心者から経験者まで対応。Playdateのゲームプロジェクトの実装計画・実装・コードレビューをするときに必ず参照すること。
 ---
 
 # Playdate Game Development Guide
