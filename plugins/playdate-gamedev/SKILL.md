@@ -1,6 +1,7 @@
 ---
 name: playdate-gamedev
-description: Playdate C言語ゲーム開発の包括的ガイド。プロジェクト初期化、ビルドフロー、コーディング規約、Playdate API使用パターン、アセット管理、パフォーマンス最適化を含む。初心者から経験者まで対応。Playdateのゲームプロジェクトの実装計画・実装・コードレビューをするときに必ず参照すること。
+description: Playdate C言語ゲーム開発の包括的ガイド。プロジェクト初期化、ビルドフロー、コーディング規約、Playdate API使用パターン、アセット管理、パフォーマンス最適化を含む。Use this skill when: (1) setting up a Playdate project, (2) creating or editing C code for Playdate, (3) user mentions "Playdate", "playdate", ".pdx", or "pdc", (4) working with Playdate SDK APIs, sprites, graphics, sound, or input handling, (5) user says /playdate or asks about Playdate game development. 
+allowed-tools: Bash(make*), Bash(pdc*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Playdate Game Development Guide

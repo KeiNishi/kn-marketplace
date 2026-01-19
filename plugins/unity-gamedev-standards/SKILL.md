@@ -1,6 +1,7 @@
 ---
 name: unity-gamedev-standards
-description: Unity 6ゲーム開発の基本ルールとコーディング規約。新規プロジェクト作成、スクリプト実装、アーキテクチャ設計、パフォーマンス最適化時に使用。2D/3D/VR/ARすべてのジャンルに対応。ECS使用時はreferences/ecs-patterns.md、エディタ拡張はreferences/editor-extensions.md、テストはreferences/testing-standards.mdを参照。Unityを用いたプロジェクトの実装計画・実装・コードレビュー作業の際に必ず利用すること。
+description: Unity 6ゲーム開発の基本ルールとコーディング規約。新規プロジェクト作成、スクリプト実装、アーキテクチャ設計、パフォーマンス最適化時に使用。2D/3D/VR/ARすべてのジャンルに対応。Use this skill when: (1) setting up a Unity project, (2) creating or editing C# scripts for Unity, (3) user mentions "Unity", ".cs", ".unity", "C#", "MonoBehaviour", "ScriptableObject", or "GameObject", (4) working with Unity APIs, scenes, prefabs, or assets, (5) user says /unity or asks about Unity game development. ECS使用時はreferences/ecs-patterns.md、エディタ拡張はreferences/editor-extensions.md、テストはreferences/testing-standards.mdを参照。このスキルはUnity関連のファイル作成・コード生成・実装計画・コードレビュー時に必ず使用すること。
+allowed-tools: Bash(dotnet*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Unity GameDev Standards
