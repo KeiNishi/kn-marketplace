@@ -71,6 +71,20 @@
         "gamedev",
         "unity"
       ]
+    },
+    {
+      "name": "playdate-gamedev",
+      "source": "./plugins/playdate-gamedev",
+      "description": "Playdate game development with C language - project setup, build workflow, coding standards, API patterns, asset management, and performance optimization",
+      "version": "1.0.0",
+      "author": {
+        "name": "KN"
+      },
+      "tags": [
+        "gamedev",
+        "playdate",
+        "c"
+      ]
     }
   ]
 }
