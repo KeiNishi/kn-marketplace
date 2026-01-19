@@ -4,9 +4,5 @@
   "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
   "author": {
     "name": "KN"
-  },
-  "tags": [
-    "example",
-    "template"
-  ]
+  }
 }

@@ -4,10 +4,5 @@
     "description": "Playdate game development with C language - project setup, build workflow, coding standards, API patterns, asset management, and performance optimization",
     "author": {
         "name": "KN"
-    },
-    "tags": [
-        "gamedev",
-        "playdate",
-        "c"
-    ]
+    }
 }
