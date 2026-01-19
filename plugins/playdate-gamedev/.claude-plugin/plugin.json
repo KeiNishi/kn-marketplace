@@ -1,8 +1,9 @@
 {
-    "name": "playdate-gamedev",
-    "version": "1.0.0",
-    "description": "Playdate game development with C language - project setup, build workflow, coding standards, API patterns, asset management, and performance optimization",
-    "author": {
-        "name": "KN"
-    }
+  "name": "playdate-gamedev",
+  "version": "2.0.0",
+  "description": "Playdate game development with C language - project setup, build workflow, coding standards, API patterns, asset management, and performance optimization",
+  "author": {
+    "name": "KN"
+  },
+  "keywords": ["playdate", "game-development", "c-language", "embedded", "handheld"]
 }

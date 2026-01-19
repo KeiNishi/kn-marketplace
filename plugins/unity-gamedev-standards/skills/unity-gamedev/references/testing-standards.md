@@ -1,50 +1,38 @@
 # Testing Standards
 
-Unity Test Framework（Edit Mode / Play Mode）のルールとベストプラクティス。
+Unity Test Framework rules and best practices for Edit Mode and Play Mode testing.
 
-## 目次
-
-1. [フォルダ構造](#フォルダ構造)
-2. [Edit Mode Test](#edit-mode-test)
-3. [Play Mode Test](#play-mode-test)
-4. [命名規則](#命名規則)
-5. [Arrange-Act-Assert](#arrange-act-assert)
-6. [Mock/Stub](#mockstub)
-7. [非同期テスト](#非同期テスト)
-
----
-
-## フォルダ構造
+## Folder Structure
 
 ```
 Assets/
 ├── _Project/
 │   └── Scripts/
-│       └── ...
 └── Tests/
     ├── EditMode/
-    │   ├── Tests.EditMode.asmdef    # Edit Mode Test用Assembly
+    │   ├── Tests.EditMode.asmdef
     │   ├── Core/
     │   │   └── HealthSystemTests.cs
     │   └── Utilities/
     │       └── MathUtilsTests.cs
     └── PlayMode/
-        ├── Tests.PlayMode.asmdef    # Play Mode Test用Assembly
+        ├── Tests.PlayMode.asmdef
         ├── Integration/
         │   └── PlayerMovementTests.cs
         └── UI/
             └── MenuNavigationTests.cs
 ```
 
-### Assembly Definition設定
+## Assembly Definitions
 
-**Tests.EditMode.asmdef:**
+### Edit Mode (Tests.EditMode.asmdef)
+
 ```json
 {
     "name": "Tests.EditMode",
     "rootNamespace": "Tests.EditMode",
     "references": [
-        "GUID:<プロジェクトのAssembly GUID>"
+        "GUID:<project-assembly-guid>"
     ],
     "includePlatforms": [
         "Editor"
@@ -58,13 +46,14 @@ Assets/
 }
 ```
 
-**Tests.PlayMode.asmdef:**
+### Play Mode (Tests.PlayMode.asmdef)
+
 ```json
 {
     "name": "Tests.PlayMode",
     "rootNamespace": "Tests.PlayMode",
     "references": [
-        "GUID:<プロジェクトのAssembly GUID>"
+        "GUID:<project-assembly-guid>"
     ],
     "includePlatforms": [],
     "defineConstraints": [
@@ -76,83 +65,76 @@ Assets/
 }
 ```
 
----
+## Edit Mode Tests
 
-## Edit Mode Test
-
-### ロジックのユニットテスト
+### Basic Unit Test
 
 ```csharp
 using NUnit.Framework;
 
 namespace Tests.EditMode.Core
 {
-    /// <summary>
-    /// HealthSystemのユニットテスト
-    /// </summary>
     [TestFixture]
     public class HealthSystemTests
     {
         private HealthSystem _healthSystem;
-        
+
         [SetUp]
         public void SetUp()
         {
-            // 各テスト前に初期化
             _healthSystem = new HealthSystem(maxHealth: 100);
         }
-        
+
         [TearDown]
         public void TearDown()
         {
-            // 各テスト後にクリーンアップ
             _healthSystem = null;
         }
-        
+
         [Test]
         public void TakeDamage_WhenDamageIsPositive_ReducesHealth()
         {
             // Arrange
             var initialHealth = _healthSystem.CurrentHealth;
             var damage = 30;
-            
+
             // Act
             _healthSystem.TakeDamage(damage);
-            
+
             // Assert
             Assert.AreEqual(initialHealth - damage, _healthSystem.CurrentHealth);
         }
-        
+
         [Test]
         public void TakeDamage_WhenDamageExceedsHealth_SetsHealthToZero()
         {
             // Arrange & Act
             _healthSystem.TakeDamage(150);
-            
+
             // Assert
             Assert.AreEqual(0, _healthSystem.CurrentHealth);
         }
-        
+
         [Test]
         public void IsDead_WhenHealthIsZero_ReturnsTrue()
         {
             // Arrange
             _healthSystem.TakeDamage(100);
-            
-            // Act & Assert
+
+            // Assert
             Assert.IsTrue(_healthSystem.IsDead);
         }
-        
+
         [TestCase(0)]
         [TestCase(-10)]
         public void TakeDamage_WhenDamageIsZeroOrNegative_DoesNotChangeHealth(int damage)
         {
             // Arrange
             var initialHealth = _healthSystem.CurrentHealth;
-            
+
             // Act
             _healthSystem.TakeDamage(damage);
-            
+
             // Assert
             Assert.AreEqual(initialHealth, _healthSystem.CurrentHealth);
         }
@@ -160,7 +142,7 @@ namespace Tests.EditMode.Core
 }
 ```
 
-### ScriptableObjectのテスト
+### ScriptableObject Test
 
 ```csharp
 using NUnit.Framework;
@@ -176,12 +158,12 @@ namespace Tests.EditMode.Data
         {
             // Arrange & Act
             var weaponData = ScriptableObject.CreateInstance<WeaponData>();
-            
+
             // Assert
             Assert.IsNotNull(weaponData);
             Assert.GreaterOrEqual(weaponData.Damage, 0);
             Assert.Greater(weaponData.AttackSpeed, 0f);
-            
+
             // Cleanup
             Object.DestroyImmediate(weaponData);
         }
@@ -189,11 +171,9 @@ namespace Tests.EditMode.Data
 }
 ```
 
----
+## Play Mode Tests
 
-## Play Mode Test
-
-### GameObjectを使ったテスト
+### GameObject Test
 
 ```csharp
 using System.Collections;
@@ -208,52 +188,50 @@ namespace Tests.PlayMode.Integration
     {
         private GameObject _playerObject;
         private PlayerController _playerController;
-        
+
         [SetUp]
         public void SetUp()
         {
-            // プレイヤーオブジェクトを作成
             _playerObject = new GameObject("TestPlayer");
             _playerObject.AddComponent<Rigidbody>();
             _playerController = _playerObject.AddComponent<PlayerController>();
         }
-        
+
         [TearDown]
         public void TearDown()
         {
-            // クリーンアップ
             if (_playerObject != null)
             {
                 Object.Destroy(_playerObject);
             }
         }
-        
+
         [UnityTest]
         public IEnumerator Move_WhenInputApplied_ChangesPosition()
         {
             // Arrange
             var initialPosition = _playerObject.transform.position;
-            
-            // Act - 入力をシミュレート（1フレーム待機）
+
+            // Act
             _playerController.SetMoveInput(Vector3.forward);
             yield return new WaitForFixedUpdate();
             yield return new WaitForFixedUpdate();
-            
+
             // Assert
             Assert.AreNotEqual(initialPosition, _playerObject.transform.position);
         }
-        
+
         [UnityTest]
         public IEnumerator Jump_WhenGrounded_AppliesUpwardForce()
         {
             // Arrange
             _playerController.SetGrounded(true);
             var rb = _playerObject.GetComponent<Rigidbody>();
-            
+
             // Act
             _playerController.Jump();
             yield return new WaitForFixedUpdate();
-            
+
             // Assert
             Assert.Greater(rb.linearVelocity.y, 0f);
         }
@@ -261,7 +239,7 @@ namespace Tests.PlayMode.Integration
 }
 ```
 
-### シーンロードテスト
+### Scene Load Test
 
 ```csharp
 using System.Collections;
@@ -280,68 +258,59 @@ namespace Tests.PlayMode.Scenes
         {
             yield return SceneManager.LoadSceneAsync("MainMenu");
         }
-        
+
         [UnityTest]
         public IEnumerator MainMenu_WhenLoaded_HasStartButton()
         {
-            // Act
             var startButton = GameObject.Find("StartButton");
-            
-            // Assert
-            Assert.IsNotNull(startButton, "Start button should exist in MainMenu scene");
+
+            Assert.IsNotNull(startButton, "Start button should exist");
             yield return null;
         }
     }
 }
 ```
 
----
+## Naming Conventions
 
-## 命名規則
-
-### テストメソッド命名
+### Test Method Naming
 
 ```
-[テスト対象メソッド]_[条件/シナリオ]_[期待される結果]
+[MethodUnderTest]_[Scenario]_[ExpectedResult]
 ```
 
-| 例 | 説明 |
-|----|------|
-| `TakeDamage_WhenDamageIsPositive_ReducesHealth` | ダメージが正の値の時、HPが減少する |
-| `Jump_WhenNotGrounded_DoesNothing` | 地面にいない時、ジャンプしない |
-| `GetItem_WhenInventoryFull_ReturnsFalse` | インベントリ満杯時、falseを返す |
+Examples:
+- `TakeDamage_WhenDamageIsPositive_ReducesHealth`
+- `Jump_WhenNotGrounded_DoesNothing`
+- `GetItem_WhenInventoryFull_ReturnsFalse`
 
-### テストクラス命名
+### Test Class Naming
 
 ```
-[テスト対象クラス名]Tests
+[ClassUnderTest]Tests
 ```
 
-例：`PlayerControllerTests`, `InventorySystemTests`, `WeaponDataTests`
+Examples: `PlayerControllerTests`, `InventorySystemTests`
 
----
-
-## Arrange-Act-Assert
-
-### 基本パターン
+## Arrange-Act-Assert Pattern
 
 ```csharp
 [Test]
 public void MethodName_Scenario_ExpectedResult()
 {
-    // Arrange - テストの準備
+    // Arrange - Set up test
     var target = new TargetClass();
     var input = CreateTestInput();
-    
-    // Act - テスト対象の実行
+
+    // Act - Execute test
     var result = target.MethodUnderTest(input);
-    
-    // Assert - 結果の検証
+
+    // Assert - Verify result
     Assert.AreEqual(expectedValue, result);
 }
 ```
 
-### 複数のAssert
+### Multiple Assertions
 
 ```csharp
 [Test]
@@ -349,165 +318,92 @@ public void CreatePlayer_WithValidData_InitializesCorrectly()
 {
     // Arrange
     var data = new PlayerData { Name = "Hero", Level = 1, MaxHealth = 100 };
-    
+
     // Act
     var player = PlayerFactory.Create(data);
-    
-    // Assert - 関連する複数の検証をグループ化
+
+    // Assert
     Assert.Multiple(() =>
     {
         Assert.AreEqual("Hero", player.Name);
         Assert.AreEqual(1, player.Level);
         Assert.AreEqual(100, player.MaxHealth);
-        Assert.AreEqual(100, player.CurrentHealth);
     });
 }
 ```
 
----
+## Mocking
 
-## Mock/Stub
-
-### インターフェースを使ったテスト可能設計
+### Simple Mock Implementation
 
 ```csharp
-// プロダクションコード
 public interface IDamageCalculator
 {
     int Calculate(int baseDamage, float multiplier);
 }
 
-public class CombatSystem
+public class MockDamageCalculator : IDamageCalculator
 {
-    private readonly IDamageCalculator _damageCalculator;
-    
-    public CombatSystem(IDamageCalculator damageCalculator)
+    public int ReturnValue { get; set; } = 10;
+    public int LastBaseDamage { get; private set; }
+    public float LastMultiplier { get; private set; }
+
+    public int Calculate(int baseDamage, float multiplier)
     {
-        _damageCalculator = damageCalculator;
-    }
-    
-    public void Attack(IHealth target, int baseDamage, float multiplier)
-    {
-        var damage = _damageCalculator.Calculate(baseDamage, multiplier);
-        target.TakeDamage(damage);
+        LastBaseDamage = baseDamage;
+        LastMultiplier = multiplier;
+        return ReturnValue;
     }
 }
-```
 
-```csharp
-// テストコード
-namespace Tests.EditMode.Combat
-{
-    // シンプルなMock実装
-    public class MockDamageCalculator : IDamageCalculator
-    {
-        public int ReturnValue { get; set; } = 10;
-        public int LastBaseDamage { get; private set; }
-        public float LastMultiplier { get; private set; }
-        
-        public int Calculate(int baseDamage, float multiplier)
-        {
-            LastBaseDamage = baseDamage;
-            LastMultiplier = multiplier;
-            return ReturnValue;
-        }
-    }
-    
-    public class MockHealth : IHealth
-    {
-        public int LastDamageTaken { get; private set; }
-        
-        public void TakeDamage(int damage)
-        {
-            LastDamageTaken = damage;
-        }
-    }
-    
-    [TestFixture]
-    public class CombatSystemTests
-    {
-        [Test]
-        public void Attack_UsesDamageCalculator_AndAppliesDamageToTarget()
-        {
-            // Arrange
-            var mockCalculator = new MockDamageCalculator { ReturnValue = 25 };
-            var mockTarget = new MockHealth();
-            var combatSystem = new CombatSystem(mockCalculator);
-            
-            // Act
-            combatSystem.Attack(mockTarget, baseDamage: 10, multiplier: 2.5f);
-            
-            // Assert
-            Assert.AreEqual(10, mockCalculator.LastBaseDamage);
-            Assert.AreEqual(2.5f, mockCalculator.LastMultiplier);
-            Assert.AreEqual(25, mockTarget.LastDamageTaken);
-        }
-    }
-}
-```
-
----
-
-## 非同期テスト
-
-### UnityTest（Coroutine）
-
-```csharp
-[UnityTest]
-public IEnumerator AsyncOperation_WhenCompleted_ReturnsResult()
+[Test]
+public void Attack_UsesDamageCalculator()
 {
     // Arrange
-    var operation = new AsyncGameOperation();
-    
+    var mockCalculator = new MockDamageCalculator { ReturnValue = 25 };
+    var combat = new CombatSystem(mockCalculator);
+
     // Act
-    operation.Start();
-    
-    // 完了まで待機
-    while (!operation.IsCompleted)
-    {
-        yield return null;
-    }
-    
+    combat.Attack(target, baseDamage: 10, multiplier: 2.5f);
+
     // Assert
-    Assert.IsTrue(operation.IsSuccess);
+    Assert.AreEqual(10, mockCalculator.LastBaseDamage);
+    Assert.AreEqual(2.5f, mockCalculator.LastMultiplier);
 }
 ```
 
-### タイムアウト付きテスト
+## Async Testing
+
+### With Timeout
 
 ```csharp
 [UnityTest]
-[Timeout(5000)]  // 5秒でタイムアウト
+[Timeout(5000)]  // 5 second timeout
 public IEnumerator LongOperation_CompletesWithinTimeout()
 {
-    // Arrange
     var operation = new LongRunningOperation();
-    
-    // Act
     operation.Start();
+
     yield return new WaitUntil(() => operation.IsCompleted);
-    
-    // Assert
+
     Assert.IsTrue(operation.IsSuccess);
 }
 ```
 
----
-
-## ベストプラクティス
+## Best Practices
 
 ### Do's
 
-- **1テスト1検証** - 失敗原因を特定しやすくする
-- **独立したテスト** - テスト間の依存を排除
-- **高速なテスト** - Edit Modeテストを優先
-- **意味のある名前** - 何をテストしているか明確に
-- **SetUp/TearDown活用** - 初期化/クリーンアップを共通化
+- One assertion per test (ideally)
+- Independent tests (no shared state)
+- Fast tests (prefer Edit Mode)
+- Meaningful names
+- Use SetUp/TearDown
 
 ### Don'ts
 
-- **テスト間の状態共有** - 不安定なテストの原因
-- **外部リソース依存** - ネットワーク、ファイルI/O
-- **Sleep/固定待機** - WaitUntil/WaitForを使用
-- **過度なMock** - 本当に必要な箇所のみ
-- **テストのテスト** - テストコードのテストは不要
+- Don't share state between tests
+- Don't depend on external resources
+- Don't use fixed Sleep/delays (use WaitUntil)
+- Don't over-mock
+- Don't test framework code

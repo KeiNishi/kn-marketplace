@@ -1,69 +1,50 @@
 # Editor Extensions
 
-Unityエディタ拡張実装のルールとベストプラクティス。
+Unity Editor extension implementation rules and patterns.
 
-## 目次
-
-1. [フォルダ構造](#フォルダ構造)
-2. [CustomEditor](#customeditor)
-3. [PropertyDrawer](#propertydrawer)
-4. [EditorWindow](#editorwindow)
-5. [ScriptableWizard](#scriptablewizard)
-6. [UI Toolkit](#ui-toolkit)
-7. [Menu Items](#menu-items)
-
----
-
-## フォルダ構造
+## Folder Structure
 
 ```
 Assets/
-├── Editor/                   # エディタ専用（ビルドから除外）
+├── Editor/                   # Editor-only (excluded from builds)
 │   └── _Project/
-│       ├── CustomEditors/    # MonoBehaviour用カスタムEditor
-│       ├── PropertyDrawers/  # カスタムPropertyDrawer
-│       ├── Windows/          # EditorWindow
-│       ├── Wizards/          # ScriptableWizard
-│       └── Utilities/        # エディタユーティリティ
+│       ├── CustomEditors/    # MonoBehaviour custom editors
+│       ├── PropertyDrawers/  # Custom property drawers
+│       ├── Windows/          # EditorWindows
+│       ├── Wizards/          # ScriptableWizards
+│       └── Utilities/        # Editor utilities
 ```
 
----
+## Custom Editor
 
-## CustomEditor
-
-### 基本構造
+### Basic Structure
 
 ```csharp
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// PlayerControllerのカスタムエディタ
-/// </summary>
 [CustomEditor(typeof(PlayerController))]
 public class PlayerControllerEditor : Editor
 {
     private SerializedProperty _moveSpeed;
     private SerializedProperty _jumpForce;
     private SerializedProperty _maxHealth;
-    
+
     private bool _showMovementFoldout = true;
     private bool _showCombatFoldout = true;
-    
+
     private void OnEnable()
     {
-        // SerializedPropertyを取得（名前はフィールド名と一致させる）
         _moveSpeed = serializedObject.FindProperty("_moveSpeed");
         _jumpForce = serializedObject.FindProperty("_jumpForce");
         _maxHealth = serializedObject.FindProperty("_maxHealth");
     }
-    
+
     public override void OnInspectorGUI()
     {
-        // 必ず最初に呼び出す
         serializedObject.Update();
-        
-        // Movement セクション
+
+        // Movement section
         _showMovementFoldout = EditorGUILayout.Foldout(_showMovementFoldout, "Movement", true);
         if (_showMovementFoldout)
         {
@@ -72,10 +53,10 @@ public class PlayerControllerEditor : Editor
             EditorGUILayout.PropertyField(_jumpForce);
             EditorGUI.indentLevel--;
         }
-        
+
         EditorGUILayout.Space();
-        
-        // Combat セクション
+
+        // Combat section
         _showCombatFoldout = EditorGUILayout.Foldout(_showCombatFoldout, "Combat", true);
         if (_showCombatFoldout)
         {
@@ -83,19 +64,17 @@ public class PlayerControllerEditor : Editor
             EditorGUILayout.PropertyField(_maxHealth);
             EditorGUI.indentLevel--;
         }
-        
+
         EditorGUILayout.Space();
-        
-        // ボタン
+
         if (GUILayout.Button("Reset to Defaults"))
         {
             ResetToDefaults();
         }
-        
-        // 必ず最後に呼び出す
+
         serializedObject.ApplyModifiedProperties();
     }
-    
+
     private void ResetToDefaults()
     {
         Undo.RecordObject(target, "Reset Player Controller");
@@ -106,7 +85,7 @@ public class PlayerControllerEditor : Editor
 }
 ```
 
-### SceneViewでのギズモ描画
+### Scene GUI (Gizmos)
 
 ```csharp
 [CustomEditor(typeof(SpawnPoint))]
@@ -116,12 +95,12 @@ public class SpawnPointEditor : Editor
     {
         var spawnPoint = (SpawnPoint)target;
         var position = spawnPoint.transform.position;
-        
-        // ハンドル描画
+
+        // Draw handles
         Handles.color = Color.green;
         Handles.DrawWireDisc(position, Vector3.up, spawnPoint.SpawnRadius);
-        
-        // 位置ハンドル（ドラッグ可能）
+
+        // Position handle
         EditorGUI.BeginChangeCheck();
         var newPosition = Handles.PositionHandle(position, Quaternion.identity);
         if (EditorGUI.EndChangeCheck())
@@ -129,21 +108,19 @@ public class SpawnPointEditor : Editor
             Undo.RecordObject(spawnPoint.transform, "Move Spawn Point");
             spawnPoint.transform.position = newPosition;
         }
-        
-        // ラベル
+
+        // Label
         Handles.Label(position + Vector3.up * 2f, spawnPoint.name);
     }
 }
 ```
 
----
+## Property Drawer
 
-## PropertyDrawer
-
-### カスタムAttribute用Drawer
+### Custom Attribute
 
 ```csharp
-// Attribute定義（通常のスクリプトフォルダ）
+// Attribute definition (not in Editor folder)
 using UnityEngine;
 
 public class ReadOnlyAttribute : PropertyAttribute { }
@@ -152,7 +129,7 @@ public class MinMaxAttribute : PropertyAttribute
 {
     public float Min { get; }
     public float Max { get; }
-    
+
     public MinMaxAttribute(float min, float max)
     {
         Min = min;
@@ -161,8 +138,10 @@ public class MinMaxAttribute : PropertyAttribute
 }
 ```
 
+### Drawer Implementation
+
 ```csharp
-// PropertyDrawer定義（Editorフォルダ）
+// In Editor folder
 using UnityEditor;
 using UnityEngine;
 
@@ -183,7 +162,7 @@ public class MinMaxDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         var minMax = (MinMaxAttribute)attribute;
-        
+
         if (property.propertyType == SerializedPropertyType.Float)
         {
             property.floatValue = EditorGUI.Slider(
@@ -198,60 +177,49 @@ public class MinMaxDrawer : PropertyDrawer
 }
 ```
 
-### 使用例
+### Usage
 
 ```csharp
 public class Enemy : MonoBehaviour
 {
     [ReadOnly]
     [SerializeField] private string _uniqueId;
-    
+
     [MinMax(0f, 100f)]
     [SerializeField] private float _health = 50f;
 }
 ```
 
----
-
-## EditorWindow
-
-### 基本構造
+## Editor Window
 
 ```csharp
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// ゲームデータ管理ウィンドウ
-/// </summary>
 public class GameDataWindow : EditorWindow
 {
     private Vector2 _scrollPosition;
     private string _searchFilter = "";
     private int _selectedTab;
     private readonly string[] _tabNames = { "Weapons", "Characters", "Items" };
-    
+
     [MenuItem("Tools/Game Data Manager")]
     public static void ShowWindow()
     {
         var window = GetWindow<GameDataWindow>();
-        window.titleContent = new GUIContent("Game Data", EditorGUIUtility.IconContent("d_ScriptableObject Icon").image);
+        window.titleContent = new GUIContent("Game Data",
+            EditorGUIUtility.IconContent("d_ScriptableObject Icon").image);
         window.minSize = new Vector2(400, 300);
     }
-    
+
     private void OnGUI()
     {
-        // ツールバー
         DrawToolbar();
-        
         EditorGUILayout.Space();
-        
-        // タブ
+
         _selectedTab = GUILayout.Toolbar(_selectedTab, _tabNames);
-        
         EditorGUILayout.Space();
-        
-        // コンテンツ（スクロール）
+
         _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
         {
             switch (_selectedTab)
@@ -263,23 +231,21 @@ public class GameDataWindow : EditorWindow
         }
         EditorGUILayout.EndScrollView();
     }
-    
+
     private void DrawToolbar()
     {
         EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
         {
-            // 検索フィールド
             _searchFilter = EditorGUILayout.TextField(
                 _searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(200));
-            
+
             GUILayout.FlexibleSpace();
-            
-            // ボタン
+
             if (GUILayout.Button("Refresh", EditorStyles.toolbarButton))
             {
                 RefreshData();
             }
-            
+
             if (GUILayout.Button("Create New", EditorStyles.toolbarButton))
             {
                 CreateNewAsset();
@@ -287,56 +253,48 @@ public class GameDataWindow : EditorWindow
         }
         EditorGUILayout.EndHorizontal();
     }
-    
-    private void DrawWeaponsTab() { /* 実装 */ }
-    private void DrawCharactersTab() { /* 実装 */ }
-    private void DrawItemsTab() { /* 実装 */ }
-    private void RefreshData() { /* 実装 */ }
-    private void CreateNewAsset() { /* 実装 */ }
+
+    private void DrawWeaponsTab() { }
+    private void DrawCharactersTab() { }
+    private void DrawItemsTab() { }
+    private void RefreshData() { }
+    private void CreateNewAsset() { }
 }
 ```
 
----
-
-## ScriptableWizard
-
-### 一括処理ウィザード
+## Scriptable Wizard
 
 ```csharp
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// プレハブ一括リネームウィザード
-/// </summary>
 public class RenamePrefabsWizard : ScriptableWizard
 {
-    [Tooltip("【用途】検索するプレフィックス")]
+    [Tooltip("Prefix to search for")]
     public string SearchPrefix = "Old_";
-    
-    [Tooltip("【用途】置換後のプレフィックス")]
+
+    [Tooltip("Replacement prefix")]
     public string ReplacePrefix = "New_";
-    
-    [Tooltip("【用途】対象フォルダ")]
+
+    [Tooltip("Target folder")]
     public string TargetFolder = "Assets/_Project/Prefabs";
-    
+
     [MenuItem("Tools/Rename Prefabs Wizard")]
     public static void ShowWizard()
     {
         DisplayWizard<RenamePrefabsWizard>("Rename Prefabs", "Rename", "Preview");
     }
-    
-    // "Rename"ボタン押下時
+
     private void OnWizardCreate()
     {
         var guids = AssetDatabase.FindAssets("t:Prefab", new[] { TargetFolder });
-        var count = 0;
-        
+        int count = 0;
+
         foreach (var guid in guids)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
-            
+
             if (fileName.StartsWith(SearchPrefix))
             {
                 var newName = ReplacePrefix + fileName.Substring(SearchPrefix.Length);
@@ -344,39 +302,37 @@ public class RenamePrefabsWizard : ScriptableWizard
                 count++;
             }
         }
-        
+
         AssetDatabase.SaveAssets();
         Debug.Log($"Renamed {count} prefabs.");
     }
-    
-    // "Preview"ボタン押下時
+
     private void OnWizardOtherButton()
     {
         var guids = AssetDatabase.FindAssets("t:Prefab", new[] { TargetFolder });
         var preview = new System.Text.StringBuilder();
         preview.AppendLine("Preview of changes:");
-        
+
         foreach (var guid in guids)
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             var fileName = System.IO.Path.GetFileNameWithoutExtension(path);
-            
+
             if (fileName.StartsWith(SearchPrefix))
             {
                 var newName = ReplacePrefix + fileName.Substring(SearchPrefix.Length);
-                preview.AppendLine($"  {fileName} → {newName}");
+                preview.AppendLine($"  {fileName} -> {newName}");
             }
         }
-        
+
         Debug.Log(preview.ToString());
     }
-    
-    // バリデーション
+
     private void OnWizardUpdate()
     {
         helpString = "Search and replace prefab name prefixes.";
         isValid = !string.IsNullOrEmpty(SearchPrefix) && !string.IsNullOrEmpty(TargetFolder);
-        
+
         if (!isValid)
         {
             errorString = "Please fill in all required fields.";
@@ -385,109 +341,31 @@ public class RenamePrefabsWizard : ScriptableWizard
 }
 ```
 
----
-
-## UI Toolkit
-
-### Editor Window with UI Toolkit
-
-```csharp
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.UIElements;
-
-public class UIToolkitWindow : EditorWindow
-{
-    [SerializeField] private VisualTreeAsset _visualTree;
-    [SerializeField] private StyleSheet _styleSheet;
-    
-    [MenuItem("Tools/UI Toolkit Window")]
-    public static void ShowWindow()
-    {
-        GetWindow<UIToolkitWindow>("UI Toolkit");
-    }
-    
-    private void CreateGUI()
-    {
-        // UXMLからUIを構築
-        if (_visualTree != null)
-        {
-            _visualTree.CloneTree(rootVisualElement);
-        }
-        
-        // スタイルシートを適用
-        if (_styleSheet != null)
-        {
-            rootVisualElement.styleSheets.Add(_styleSheet);
-        }
-        
-        // 要素を取得してイベント設定
-        var searchField = rootVisualElement.Q<TextField>("search-field");
-        searchField?.RegisterValueChangedCallback(OnSearchChanged);
-        
-        var refreshButton = rootVisualElement.Q<Button>("refresh-button");
-        refreshButton?.clicked += OnRefreshClicked;
-    }
-    
-    private void OnSearchChanged(ChangeEvent<string> evt)
-    {
-        Debug.Log($"Search: {evt.newValue}");
-    }
-    
-    private void OnRefreshClicked()
-    {
-        Debug.Log("Refresh clicked");
-    }
-}
-```
-
-### UXML例（UIToolkitWindow.uxml）
-
-```xml
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <ui:VisualElement class="container">
-        <ui:VisualElement class="toolbar">
-            <ui:TextField name="search-field" placeholder-text="Search..." />
-            <ui:Button name="refresh-button" text="Refresh" />
-        </ui:VisualElement>
-        <ui:ScrollView name="content-area" />
-    </ui:VisualElement>
-</ui:UXML>
-```
-
----
-
 ## Menu Items
 
-### メニュー項目の追加
-
 ```csharp
-using UnityEditor;
-using UnityEngine;
-
 public static class CustomMenuItems
 {
-    // メニューに追加
     [MenuItem("Tools/Custom/Do Something")]
     private static void DoSomething()
     {
         Debug.Log("Something done!");
     }
-    
-    // バリデーション（有効/無効の切り替え）
+
+    // With validation
     [MenuItem("Tools/Custom/Process Selected", validate = true)]
     private static bool ProcessSelectedValidate()
     {
         return Selection.activeGameObject != null;
     }
-    
+
     [MenuItem("Tools/Custom/Process Selected")]
     private static void ProcessSelected()
     {
         Debug.Log($"Processing: {Selection.activeGameObject.name}");
     }
-    
-    // コンテキストメニュー（右クリック）
+
+    // Context menu
     [MenuItem("CONTEXT/Rigidbody/Reset Mass")]
     private static void ResetMass(MenuCommand command)
     {
@@ -495,9 +373,9 @@ public static class CustomMenuItems
         Undo.RecordObject(rb, "Reset Mass");
         rb.mass = 1f;
     }
-    
-    // ショートカット付き
-    [MenuItem("Tools/Custom/Quick Action %#q")]  // Ctrl+Shift+Q
+
+    // With shortcut (Ctrl+Shift+Q)
+    [MenuItem("Tools/Custom/Quick Action %#q")]
     private static void QuickAction()
     {
         Debug.Log("Quick action!");
@@ -505,30 +383,27 @@ public static class CustomMenuItems
 }
 ```
 
-### ショートカットキー記法
+### Shortcut Keys
 
-| 記号 | キー |
-|------|------|
-| `%` | Ctrl (Windows) / Cmd (Mac) |
+| Symbol | Key |
+|--------|-----|
+| `%` | Ctrl (Win) / Cmd (Mac) |
 | `#` | Shift |
 | `&` | Alt |
-| `_` | 修飾キーなし（Function keyのみ） |
+| `_` | No modifier (function keys) |
 
----
-
-## ベストプラクティス
+## Best Practices
 
 ### Do's
 
-- **Undo対応** - `Undo.RecordObject`で変更を記録
-- **SerializedPropertyを使用** - 直接フィールドアクセスを避ける
-- **EditorGUILayout使用** - 自動レイアウト
-- **アイコン活用** - `EditorGUIUtility.IconContent`
-- **プロパティはTooltipAttributeを活用して説明を付加する** - `[Tooltip("説明")]`
-- **値範囲に制限がある場合には、RangeAttributeを使用する** - `[Range(min, max)]`
+- Use `Undo.RecordObject` for changes
+- Use `SerializedProperty` for data access
+- Use `EditorGUILayout` for auto-layout
+- Use `EditorGUIUtility.IconContent` for icons
+- Add `[Tooltip]` to wizard fields
 
 ### Don'ts
 
-- **OnGUIで重い処理をしない** - 毎フレーム呼ばれる
-- **Editorフォルダ外に配置しない** - ビルドエラーになる
-- **直接フィールド変更しない** - Undo/Prefabが壊れる
+- Don't do heavy processing in OnGUI (called frequently)
+- Don't place editor scripts outside Editor folder
+- Don't modify fields directly (use SerializedProperty)
