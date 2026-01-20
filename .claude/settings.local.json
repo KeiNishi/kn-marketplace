@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Skill(plugin-dev:create-plugin)",
-      "Skill(plugin-dev:command-development)"
+      "Skill(plugin-dev:command-development)",
+      "WebFetch(domain:sdk.play.date)"
     ]
   }
 }

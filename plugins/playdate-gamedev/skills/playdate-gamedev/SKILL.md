@@ -1,7 +1,7 @@
 ---
 name: playdate-gamedev
 description: This skill should be used when the user asks to "create a Playdate game", "set up a Playdate project", "write C code for Playdate", mentions "Playdate SDK", ".pdx", "pdc compiler", or works with Playdate APIs like sprites, graphics, crank input, or sound. Also triggers on "/playdate" command or questions about Playdate game development patterns and optimization.
-allowed-tools: Bash(make*), Bash(pdc*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
+allowed-tools: Bash(cmake*), Bash(nmake*), Bash(make*), Bash(pdc*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Playdate Game Development Guide
@@ -9,6 +9,20 @@ allowed-tools: Bash(make*), Bash(pdc*), Bash(mkdir*), Bash(ls*), Read, Write, Ed
 Comprehensive guide for Playdate C language game development. Covers project setup, coding standards, Playdate SDK APIs, asset management, and performance optimization.
 
 ## Prerequisites
+
+### Required Tools
+
+**Windows**:
+- Visual Studio 2019 or 2022 with C/C++ tools
+- GNU Arm Embedded Toolchain (`gcc-arm-none-eabi`)
+- CMake (added to PATH)
+
+**Linux/macOS**:
+- GCC or Clang compiler
+- GNU Arm Embedded Toolchain (`gcc-arm-none-eabi`)
+- CMake and Make
+
+### Environment Setup
 
 - Playdate SDK installed
 - Environment variable `PLAYDATE_SDK_PATH` configured
@@ -20,19 +34,18 @@ Recommended directory layout for Playdate projects:
 
 ```
 YourGame/
+├── CMakeLists.txt             # Build configuration (CMake)
 ├── Source/                    # Source code
 │   ├── main.c                 # Entry point
 │   ├── game.c/h               # Game logic
 │   ├── player.c/h             # Player
-│   └── utils.c/h              # Utilities
+│   ├── utils.c/h              # Utilities
+│   └── pdxinfo                # Game metadata
 ├── assets/                    # Raw assets (pre-build)
 │   ├── images/
 │   ├── sounds/
 │   └── fonts/
-├── builds/                    # Build artifacts (gitignore)
-├── Makefile                   # Build configuration
-├── pdxinfo                    # Game metadata
-└── README.md
+└── build/                     # Build artifacts (gitignore)
 ```
 
 For detailed templates and initialization commands, see `references/project-structure.md`.
@@ -70,23 +83,43 @@ For complete coding standards including error handling patterns, see `references
 
 ## Build Workflow
 
+**Windows**: Use "x64 Native Tools Command Prompt for VS 2019/2022"
+
 ### Simulator Build
 
 ```bash
+# Windows
+mkdir build && cd build
+cmake .. -G "NMake Makefiles"
+nmake
+"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" YourGame.pdx
+
+# Linux/macOS
+mkdir build && cd build
+cmake ..
 make
-"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" builds/YourGame.pdx
+"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" YourGame.pdx
 ```
 
 ### Device Build
 
 ```bash
-make DEVICE=1
+# Windows
+cmake .. -G "NMake Makefiles" --toolchain="%PLAYDATE_SDK_PATH%/C_API/buildsupport/arm.cmake"
+nmake
+
+# Linux/macOS
+cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
+make
 ```
 
 ### Clean Build
 
 ```bash
-make clean && make
+# Remove build directory and rebuild
+rm -rf build && mkdir build && cd build
+cmake .. -G "NMake Makefiles"  # Windows
+cmake ..                        # Linux/macOS
 ```
 
 ### Debug Logging
@@ -255,11 +288,18 @@ See `references/advanced-patterns.md`.
 ### Common Build Errors
 
 ```bash
-# "SDK not found"
+# "SDK Path not found" - Set environment variable
+# Windows (System Environment Variables or PowerShell)
+$env:PLAYDATE_SDK_PATH = "C:\Users\<Username>\Documents\PlaydateSDK"
+
+# Linux/macOS
 export PLAYDATE_SDK_PATH=/path/to/PlaydateSDK
 
-# Makefile include
-include $(SDK)/C_API/buildsupport/common.mk
+# "nmake not found" (Windows)
+# Use "x64 Native Tools Command Prompt for VS 2019/2022"
+
+# CMakeLists.txt must include
+include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 ```
 
 ### Runtime Issues
@@ -273,7 +313,7 @@ include $(SDK)/C_API/buildsupport/common.mk
 ### Reference Files
 
 Detailed documentation in `references/`:
-- **`project-structure.md`** - Project templates, pdxinfo, Makefile
+- **`project-structure.md`** - Project templates, pdxinfo, CMakeLists.txt
 - **`coding-standards.md`** - Complete coding conventions
 - **`playdate-api.md`** - Comprehensive API patterns
 - **`asset-management.md`** - Asset handling and animations

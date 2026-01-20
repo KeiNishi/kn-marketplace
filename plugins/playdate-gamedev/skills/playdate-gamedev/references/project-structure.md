@@ -6,31 +6,30 @@ Detailed project setup templates and configuration for Playdate C development.
 
 ```
 YourGame/
+├── CMakeLists.txt             # Build configuration (CMake)
 ├── Source/                    # Source code
 │   ├── main.c                 # Entry point
 │   ├── game.c/h               # Game logic
 │   ├── player.c/h             # Player
 │   ├── enemy.c/h              # Enemies
 │   ├── utils.c/h              # Utilities
-│   └── assets/                # Assets referenced from source
+│   ├── pdxinfo                # Game metadata
+│   └── images/                # Assets copied to build
+│       ├── player.png
+│       └── tileset.png
 ├── assets/                    # Raw assets (pre-build)
 │   ├── images/
-│   │   ├── player.png
-│   │   └── tileset.png
 │   ├── sounds/
 │   │   ├── bgm.wav
 │   │   └── sfx/
 │   └── fonts/
 │       └── custom-font/
-├── builds/                    # Build artifacts (gitignore)
-├── Makefile                   # Build configuration
-├── pdxinfo                    # Game metadata
-└── README.md
+└── build/                     # Build artifacts (gitignore)
 ```
 
 ## pdxinfo Template
 
-Game metadata file at project root:
+Game metadata file in `Source/` directory:
 
 ```ini
 # pdxinfo - Game metadata
@@ -40,35 +39,59 @@ description=Game description
 bundleID=com.yourname.yourgame
 version=1.0
 buildNumber=1
-imagePath=assets/images/
+imagePath=images/
 ```
 
-## Makefile Template
+## CMakeLists.txt Template
 
-Standard Playdate Makefile:
+Standard Playdate CMake configuration:
 
-```makefile
-# Playdate SDK path
-SDK = ${PLAYDATE_SDK_PATH}
+```cmake
+cmake_minimum_required(VERSION 3.14)
+set(CMAKE_C_STANDARD 11)
 
-# Game name (.pdx will be created)
-GAME = YourGame
+# Find SDK path
+set(ENVSDK $ENV{PLAYDATE_SDK_PATH})
+
+if (NOT ${ENVSDK} STREQUAL "")
+    # Convert path from Windows
+    file(TO_CMAKE_PATH ${ENVSDK} SDK)
+else()
+    execute_process(
+        COMMAND bash -c "egrep '^\\s*SDKRoot' $HOME/.Playdate/config"
+        COMMAND head -n 1
+        COMMAND cut -c9-
+        OUTPUT_VARIABLE SDK
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+endif()
+
+if (NOT EXISTS ${SDK})
+    message(FATAL_ERROR "SDK Path not found; set ENV value PLAYDATE_SDK_PATH")
+    return()
+endif()
+
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
+set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
+
+# Game Name Customization
+set(PLAYDATE_GAME_NAME YourGame)
+set(PLAYDATE_GAME_DEVICE YourGame_DEVICE)
+
+project(${PLAYDATE_GAME_NAME} C ASM)
 
 # Source files
-SRC = Source/main.c \
-      Source/game.c \
-      Source/player.c \
-      Source/enemy.c \
-      Source/utils.c
+file(GLOB SOURCES
+    Source/*.c
+)
 
-# Include paths
-INCLUDE = -ISource
+if (TOOLCHAIN STREQUAL "armgcc")
+    add_executable(${PLAYDATE_GAME_DEVICE} ${SOURCES})
+else()
+    add_library(${PLAYDATE_GAME_NAME} SHARED ${SOURCES})
+endif()
 
-# Compiler flags
-CFLAGS = -O2 -Wall -Wextra -Werror
-
-# Include Playdate SDK Makefile
-include $(SDK)/C_API/buildsupport/common.mk
+include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 ```
 
 ## Project Initialization Commands
@@ -77,31 +100,21 @@ Create a new project from scratch:
 
 ```bash
 # Create directories
-mkdir -p YourGame/{Source,assets/{images,sounds,fonts},builds}
+mkdir -p YourGame/{Source,assets/{images,sounds,fonts}}
 cd YourGame
 
-# Create pdxinfo
-cat > pdxinfo << 'EOF'
+# Create Source/pdxinfo
+cat > Source/pdxinfo << 'EOF'
 name=YourGame
 author=YourName
 description=A Playdate Game
 bundleID=com.yourname.yourgame
 version=1.0
 buildNumber=1
-imagePath=assets/images/
 EOF
 
-# Create Makefile
-cat > Makefile << 'EOF'
-SDK = ${PLAYDATE_SDK_PATH}
-GAME = YourGame
-SRC = Source/main.c Source/game.c
-INCLUDE = -ISource
-CFLAGS = -O2 -Wall -Wextra -Werror
-include $(SDK)/C_API/buildsupport/common.mk
-EOF
-
-# Create main.c template (see main.c template below)
+# Create CMakeLists.txt (see template above)
+# Create main.c template (see below)
 ```
 
 ## main.c Template
@@ -197,7 +210,7 @@ int game_update(void* userdata) {
 
 ```gitignore
 # Build artifacts
-builds/
+build/
 *.pdx/
 
 # Playdate Simulator cache
@@ -219,36 +232,63 @@ Thumbs.db
 
 ## Build Commands
 
+**Windows**: Use "x64 Native Tools Command Prompt for VS 2019/2022"
+
 ### Simulator Build
 
 ```bash
-# Build for simulator
+# Windows
+mkdir build
+cd build
+cmake .. -G "NMake Makefiles"
+nmake
+
+# Linux/macOS
+mkdir build
+cd build
+cmake ..
 make
+```
 
-# Run in simulator (macOS)
-open builds/YourGame.pdx
+### Run in Simulator
 
-# Run in simulator (Windows/Linux)
-"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" builds/YourGame.pdx
+```bash
+# Windows
+"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" YourGame.pdx
+
+# macOS
+open YourGame.pdx
+
+# Linux
+"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" YourGame.pdx
 ```
 
 ### Device Build
 
 ```bash
-# Build for device (optimized)
-make DEVICE=1
+# Windows
+cmake .. -G "NMake Makefiles" --toolchain="%PLAYDATE_SDK_PATH%/C_API/buildsupport/arm.cmake"
+nmake
+
+# Linux/macOS
+cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
+make
 ```
 
 ### Clean and Rebuild
 
 ```bash
-make clean
-make
+# Remove build directory and rebuild
+rm -rf build
+mkdir build
+cd build
+cmake .. -G "NMake Makefiles"  # Windows
+cmake ..                        # Linux/macOS
 ```
 
-### Watch Mode (with entr)
+### Watch Mode (with entr - Linux/macOS)
 
 ```bash
 # Auto-rebuild on file changes
-find Source -name '*.c' -o -name '*.h' | entr -c make
+find Source -name '*.c' -o -name '*.h' | entr -c sh -c 'cd build && make'
 ```
