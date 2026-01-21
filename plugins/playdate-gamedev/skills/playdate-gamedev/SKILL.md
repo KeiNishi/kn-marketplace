@@ -30,10 +30,18 @@ Comprehensive guide for Playdate C language game development. Covers project set
 
 ## Project Structure
 
+Use the template repository for new projects:
+
+**Template**: https://github.com/KeiNishi/kn-pd-template-c.git
+
+Run `/playdate-init [project-name]` to create a new project from this template.
+
 Recommended directory layout for Playdate projects:
 
 ```
 YourGame/
+├── .vscode/
+│   └── tasks.json             # VSCode build tasks (Ctrl+Shift+B)
 ├── CMakeLists.txt             # Build configuration (CMake)
 ├── Source/                    # Source code
 │   ├── main.c                 # Entry point
@@ -83,43 +91,31 @@ For complete coding standards including error handling patterns, see `references
 
 ## Build Workflow
 
-**Windows**: Use "x64 Native Tools Command Prompt for VS 2019/2022"
+The template includes pre-configured VSCode tasks for building. Use **Ctrl+Shift+B** (or Cmd+Shift+B on macOS) to access build tasks.
 
-### Simulator Build
+### VSCode Build Tasks (Recommended)
 
-```bash
-# Windows
-mkdir build && cd build
-cmake .. -G "NMake Makefiles"
-nmake
-"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" YourGame.pdx
+1. Open the project in VSCode
+2. Press **Ctrl+Shift+B**
+3. Select the appropriate task:
+   - **Playdate: Build Simulator** - Build for simulator (default)
+   - **Playdate: Build Device** - Build for Playdate hardware
+   - **Playdate: Clean Build** - Remove build directory and rebuild
+   - **Playdate: Run Simulator** - Build and launch simulator
 
-# Linux/macOS
-mkdir build && cd build
-cmake ..
-make
-"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" YourGame.pdx
-```
+### Run in Simulator
 
-### Device Build
+After building, run the simulator:
 
 ```bash
 # Windows
-cmake .. -G "NMake Makefiles" --toolchain="%PLAYDATE_SDK_PATH%/C_API/buildsupport/arm.cmake"
-nmake
+"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/YourGame.pdx
 
-# Linux/macOS
-cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
-make
-```
+# macOS
+open build/YourGame.pdx
 
-### Clean Build
-
-```bash
-# Remove build directory and rebuild
-rm -rf build && mkdir build && cd build
-cmake .. -G "NMake Makefiles"  # Windows
-cmake ..                        # Linux/macOS
+# Linux
+"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" build/YourGame.pdx
 ```
 
 ### Debug Logging

@@ -2,10 +2,27 @@
 
 Detailed project setup templates and configuration for Playdate C development.
 
+## Template Repository
+
+**Recommended**: Use the official template repository for new projects.
+
+**Repository**: https://github.com/KeiNishi/kn-pd-template-c.git
+
+Run `/playdate-init [project-name]` to create a new project from this template.
+
+The template includes:
+- Pre-configured CMakeLists.txt for the official SDK build system
+- VSCode tasks for one-click build (Ctrl+Shift+B)
+- Starter source code templates
+- Recommended directory structure
+- .gitignore configuration
+
 ## Directory Structure
 
 ```
 YourGame/
+├── .vscode/
+│   └── tasks.json             # VSCode build tasks (Ctrl+Shift+B)
 ├── CMakeLists.txt             # Build configuration (CMake)
 ├── Source/                    # Source code
 │   ├── main.c                 # Entry point
@@ -94,13 +111,34 @@ endif()
 include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 ```
 
-## Project Initialization Commands
+## Project Initialization
+
+### Using Template (Recommended)
+
+```bash
+# Clone the template
+git clone https://github.com/KeiNishi/kn-pd-template-c.git YourGame
+
+# Remove the template's git history
+cd YourGame
+rm -rf .git
+
+# Update project name in Source/pdxinfo and CMakeLists.txt
+# (The /playdate-init command does this automatically)
+
+# Initialize new git repository (optional)
+git init
+git add .
+git commit -m "Initial commit"
+```
+
+### Manual Setup (Alternative)
 
 Create a new project from scratch:
 
 ```bash
 # Create directories
-mkdir -p YourGame/{Source,assets/{images,sounds,fonts}}
+mkdir -p YourGame/{Source,assets/{images,sounds,fonts},.vscode}
 cd YourGame
 
 # Create Source/pdxinfo
@@ -115,6 +153,7 @@ EOF
 
 # Create CMakeLists.txt (see template above)
 # Create main.c template (see below)
+# Create .vscode/tasks.json (see VSCode Tasks section)
 ```
 
 ## main.c Template
@@ -216,8 +255,9 @@ build/
 # Playdate Simulator cache
 *.pdx.zip
 
-# IDE
-.vscode/
+# IDE (keep .vscode for tasks.json)
+.vscode/*
+!.vscode/tasks.json
 .idea/
 *.swp
 *.swo
@@ -230,65 +270,28 @@ Thumbs.db
 *.log
 ```
 
-## Build Commands
+## VSCode Tasks Configuration
 
-**Windows**: Use "x64 Native Tools Command Prompt for VS 2019/2022"
+The template includes `.vscode/tasks.json` for one-click building.
 
-### Simulator Build
+### Build Commands (Ctrl+Shift+B)
 
-```bash
-# Windows
-mkdir build
-cd build
-cmake .. -G "NMake Makefiles"
-nmake
-
-# Linux/macOS
-mkdir build
-cd build
-cmake ..
-make
-```
+| Task Name | Description |
+|-----------|-------------|
+| Playdate: Build Simulator | Build for simulator (default) |
+| Playdate: Build Device | Build for Playdate hardware |
+| Playdate: Clean Build | Remove build directory and rebuild |
+| Playdate: Run Simulator | Build and launch simulator |
 
 ### Run in Simulator
 
 ```bash
 # Windows
-"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" YourGame.pdx
+"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/YourGame.pdx
 
 # macOS
-open YourGame.pdx
+open build/YourGame.pdx
 
 # Linux
-"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" YourGame.pdx
-```
-
-### Device Build
-
-```bash
-# Windows
-cmake .. -G "NMake Makefiles" --toolchain="%PLAYDATE_SDK_PATH%/C_API/buildsupport/arm.cmake"
-nmake
-
-# Linux/macOS
-cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
-make
-```
-
-### Clean and Rebuild
-
-```bash
-# Remove build directory and rebuild
-rm -rf build
-mkdir build
-cd build
-cmake .. -G "NMake Makefiles"  # Windows
-cmake ..                        # Linux/macOS
-```
-
-### Watch Mode (with entr - Linux/macOS)
-
-```bash
-# Auto-rebuild on file changes
-find Source -name '*.c' -o -name '*.h' | entr -c sh -c 'cd build && make'
+"${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" build/YourGame.pdx
 ```

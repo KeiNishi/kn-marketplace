@@ -1,13 +1,13 @@
 ---
 name: playdate-build
-description: Build a Playdate project using CMake and NMake. Use this command when the user asks to "build", "compile", "make" a Playdate game, or when you need to build the .pdx bundle.
+description: Build a Playdate project using VSCode tasks. Use this command when the user asks to "build", "compile", "make" a Playdate game, or when you need to build the .pdx bundle.
 argument-hint: "[--device] [--clean] [--run]"
 allowed-tools: Bash, Read, Glob
 ---
 
 # Playdate Project Build
 
-Build a Playdate C project using the SDK's official CMake build system.
+Build a Playdate C project using VSCode's integrated build tasks.
 
 ## Prerequisites
 
@@ -31,10 +31,10 @@ Set `PLAYDATE_SDK_PATH` to your SDK installation directory.
 
 When the user runs `/playdate-build` or when you need to build a Playdate project:
 
-1. **Detect platform and locate project**:
-   - Determine if running on Windows or Unix (Linux/macOS)
+1. **Detect and locate project**:
    - Look for `CMakeLists.txt` in the current directory or parent directories
    - Verify it's a Playdate project by checking for Playdate SDK references or `pdxinfo`
+   - Verify `.vscode/tasks.json` exists for VSCode build tasks
    - If no Playdate project found, inform the user
 
 2. **Parse arguments**:
@@ -42,77 +42,48 @@ When the user runs `/playdate-build` or when you need to build a Playdate projec
    - `--clean`: Remove build directory before building
    - `--run`: Launch simulator after successful build
 
-3. **Execute build**:
+3. **Execute build using VSCode tasks**:
 
-   ### Windows
+   ### Recommended Method: VSCode Build Tasks
 
-   **IMPORTANT**: On Windows, you MUST use the **"x64 Native Tools Command Prompt for VS 2019/2022"** for building. This is required for 64-bit simulator builds.
+   The template project includes pre-configured VSCode tasks. Users can build directly from VSCode:
 
-   **Setup build directory** (first time only):
+   1. Open the project in VSCode
+   2. Press **Ctrl+Shift+B** (or Cmd+Shift+B on macOS)
+   3. Select the appropriate build task:
+      - **Playdate: Build Simulator** - Build for simulator (default)
+      - **Playdate: Build Device** - Build for Playdate hardware
+      - **Playdate: Clean Build** - Remove build directory and rebuild
+      - **Playdate: Run Simulator** - Build and launch simulator
+
+   ### Build Task Execution
+
+   If the user wants to trigger the build programmatically or from command line:
+
+   **For Simulator build**:
+   The VSCode task runs the equivalent of:
    ```bash
-   mkdir build
+   # Windows (from x64 Native Tools Command Prompt)
+   mkdir build 2>nul
    cd build
-   ```
-
-   **Simulator build** (default):
-   ```bash
    cmake .. -G "NMake Makefiles"
    nmake
+
+   # Linux/macOS
+   mkdir -p build
+   cd build
+   cmake ..
+   make
    ```
 
-   **Device build** (with `--device`):
+   **For Device build** (with `--device`):
    ```bash
+   # Windows
    cmake .. -G "NMake Makefiles" --toolchain="%PLAYDATE_SDK_PATH%/C_API/buildsupport/arm.cmake"
    nmake
-   ```
 
-   **Release build** (optimized):
-   ```bash
-   cmake .. -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
-   nmake
-   ```
-
-   **Clean build** (with `--clean`):
-   ```bash
-   rd /s /q build
-   mkdir build
-   cd build
-   cmake .. -G "NMake Makefiles"
-   nmake
-   ```
-
-   ### Unix (Linux/macOS)
-
-   **Setup build directory** (first time only):
-   ```bash
-   mkdir build
-   cd build
-   ```
-
-   **Simulator build** (default):
-   ```bash
-   cmake ..
-   make
-   ```
-
-   **Device build** (with `--device`):
-   ```bash
+   # Linux/macOS
    cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake"
-   make
-   ```
-
-   **Release build** (optimized):
-   ```bash
-   cmake .. -DCMAKE_BUILD_TYPE=Release
-   make
-   ```
-
-   **Clean build** (with `--clean`):
-   ```bash
-   rm -rf build
-   mkdir build
-   cd build
-   cmake ..
    make
    ```
 
@@ -125,13 +96,24 @@ When the user runs `/playdate-build` or when you need to build a Playdate projec
 
    **Windows**:
    ```bash
-   "%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" <GameName>.pdx
+   "%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/<GameName>.pdx
    ```
 
-   **Unix (Linux/macOS)**:
+   **Linux/macOS**:
    ```bash
-   "${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" <GameName>.pdx
+   "${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" build/<GameName>.pdx
    ```
+
+## VSCode Tasks Configuration
+
+The template includes `.vscode/tasks.json` with the following tasks:
+
+| Task Name | Description | Shortcut |
+|-----------|-------------|----------|
+| Playdate: Build Simulator | Build for simulator | Ctrl+Shift+B → Select |
+| Playdate: Build Device | Build for hardware | Ctrl+Shift+B → Select |
+| Playdate: Clean Build | Clean and rebuild | Ctrl+Shift+B → Select |
+| Playdate: Run Simulator | Build and run | Ctrl+Shift+B → Select |
 
 ## Common Build Errors
 
@@ -171,9 +153,9 @@ Error: 'cmake' is not recognized as an internal or external command
 Error: 'nmake' is not recognized as an internal or external command
 ```
 **Solution**:
-- You must run commands from **"x64 Native Tools Command Prompt for VS 2019/2022"**
-- Find it in Start Menu under Visual Studio folder
-- Do NOT use regular Command Prompt or PowerShell
+- The VSCode tasks are configured to use the Visual Studio environment
+- Ensure Visual Studio 2019/2022 with C++ tools is installed
+- If running manually, use **"x64 Native Tools Command Prompt for VS 2019/2022"**
 
 ### ARM toolchain not found (Device build)
 ```
@@ -195,18 +177,10 @@ Error: undefined reference to 'function_name'
 ```
 **Solution**: Ensure all source files are listed in `CMakeLists.txt` and function declarations match definitions.
 
-### Generator not available
-```
-Error: CMake Error: Could not create named generator NMake Makefiles
-```
-**Solution**:
-- On Windows, ensure you're using the Visual Studio developer command prompt
-- Check that Visual Studio C++ tools are installed
-
 ## Build Output
 
 On successful build:
-- `.pdx` bundle created in the build directory
+- `.pdx` bundle created in the `build/` directory
 - Report the path to the bundle
 - Show file size information
 
@@ -217,8 +191,8 @@ On failed build:
 
 ## Notes
 
-- On Windows, always use **"x64 Native Tools Command Prompt for VS 2019/2022"**
-- The `build` directory contains all build artifacts and can be safely deleted for a clean build
+- **VSCode tasks are the recommended build method** - use Ctrl+Shift+B
+- The `build/` directory contains all build artifacts and can be safely deleted for a clean build
 - The `.pdx` bundle is what runs on the device/simulator
 - Device builds produce ARM binaries, simulator builds produce native (x64) binaries
 - On Windows, the Playdate SDK typically installs to `C:\Users\<Username>\Documents\PlaydateSDK`
