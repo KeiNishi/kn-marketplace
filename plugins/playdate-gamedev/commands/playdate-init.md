@@ -40,18 +40,33 @@ Before creating a project, ensure the following are installed:
 
 When the user runs `/playdate-init [project-name]`:
 
-1. **Determine project name**:
+1. **Determine project name and location**:
    - If `[project-name]` is provided, use it
    - If not provided, ask the user for a project name
    - Validate the name (alphanumeric and underscores only recommended)
+   - **IMPORTANT**: Ask the user where to create the project:
+     - **Current directory** (`.`): Clone directly into the current working directory (directory must be empty or non-existent)
+     - **New subdirectory**: Create a new subdirectory with the project name
 
 2. **Clone the template repository**:
+
+   **Option A: Clone into current directory** (when user wants to use current directory):
+   ```bash
+   # For empty directory or new project root
+   git clone https://github.com/KeiNishi/kn-pd-template-c.git .
+   ```
+
+   **Option B: Clone into new subdirectory** (default behavior):
    ```bash
    git clone https://github.com/KeiNishi/kn-pd-template-c.git ProjectName
    ```
 
 3. **Remove .git directory to start fresh**:
    ```bash
+   # If cloned into current directory
+   rm -rf .git
+
+   # If cloned into subdirectory
    cd ProjectName
    rm -rf .git
    ```
