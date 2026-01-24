@@ -31,16 +31,16 @@ YourGame/
 │   ├── enemy.c/h              # Enemies
 │   ├── utils.c/h              # Utilities
 │   ├── pdxinfo                # Game metadata
-│   └── images/                # Assets copied to build
-│       ├── player.png
-│       └── tileset.png
-├── assets/                    # Raw assets (pre-build)
-│   ├── images/
-│   ├── sounds/
-│   │   ├── bgm.wav
-│   │   └── sfx/
-│   └── fonts/
-│       └── custom-font/
+│   ├── images/                # Image assets
+│   │   ├── player.png
+│   │   └── tileset.png
+│   └── assets/                # Raw assets (pre-build)
+│       ├── images/
+│       ├── sounds/
+│       │   ├── bgm.wav
+│       │   └── sfx/
+│       └── fonts/
+│           └── custom-font/
 └── build/                     # Build artifacts (gitignore)
 ```
 
@@ -138,7 +138,7 @@ Create a new project from scratch:
 
 ```bash
 # Create directories
-mkdir -p YourGame/{Source,assets/{images,sounds,fonts},.vscode}
+mkdir -p YourGame/{Source/{assets/{images,sounds,fonts}},.vscode}
 cd YourGame
 
 # Create Source/pdxinfo

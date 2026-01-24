@@ -1,6 +1,6 @@
 {
   "name": "playdate-gamedev",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Playdate game development with C language - project setup, build workflow, coding standards, API patterns, asset management, and performance optimization",
   "author": {
     "name": "KN"

@@ -48,11 +48,11 @@ YourGame/
 │   ├── game.c/h               # Game logic
 │   ├── player.c/h             # Player
 │   ├── utils.c/h              # Utilities
-│   └── pdxinfo                # Game metadata
-├── assets/                    # Raw assets (pre-build)
-│   ├── images/
-│   ├── sounds/
-│   └── fonts/
+│   ├── pdxinfo                # Game metadata
+│   └── assets/                # Raw assets (pre-build)
+│       ├── images/
+│       ├── sounds/
+│       └── fonts/
 └── build/                     # Build artifacts (gitignore)
 ```
 

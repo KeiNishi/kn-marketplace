@@ -1,4 +1,4 @@
-# KN Marketplace - Claude Code ガイドライン
+# KN Marketplace - エージェント用ガイドライン
 
 ## バージョン管理ルール
 
