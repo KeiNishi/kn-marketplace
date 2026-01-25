@@ -3,7 +3,8 @@
     "allow": [
       "Skill(plugin-dev:create-plugin)",
       "Skill(plugin-dev:command-development)",
-      "WebFetch(domain:sdk.play.date)"
+      "WebFetch(domain:sdk.play.date)",
+      "WebFetch(domain:docs.anthropic.com)"
     ]
   }
 }

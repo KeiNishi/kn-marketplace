@@ -91,9 +91,7 @@ If design-review returns NEEDS_REVISION:
 1. Present the questions/issues to the user using `AskUserQuestion`
 2. Update the documents based on user responses
 3. Re-invoke design-review agent
-4. Repeat until APPROVED (maximum 3 iterations)
-
-If maximum iterations reached, notify the user and proceed with current documents.
+4. Repeat until APPROVED
 
 ## Document Guidelines
 

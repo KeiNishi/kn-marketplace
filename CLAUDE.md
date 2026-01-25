@@ -41,3 +41,24 @@ Pluginを更新した場合、以下の2箇所のバージョンを**必ず同�
 ## スキル記述時のルール
 
 - **必ず英語で記述すること**
+
+## プラグイン開発・レビュー時のルール
+
+### 必須: 公式ドキュメントへの準拠
+
+スキル、コマンド、エージェント、フックなどのプラグインコンポーネントを作成・編集・レビューする際は、**必ずClaude Code公式ドキュメントの記載に沿って行うこと**。
+
+### 参照すべき公式ドキュメント
+
+| コンポーネント | 公式ドキュメントURL |
+|---------------|-------------------|
+| Sub-agents | https://docs.anthropic.com/en/docs/claude-code/sub-agents |
+| Hooks | https://docs.anthropic.com/en/docs/claude-code/hooks |
+| Custom Slash Commands | https://docs.anthropic.com/en/docs/claude-code/custom-slash-commands |
+| Settings | https://docs.anthropic.com/en/docs/claude-code/settings |
+
+### 注意事項
+
+- 公式ドキュメントに記載されていないフィールドやオプションを使用しないこと
+- 不明な点がある場合は、推測せず公式ドキュメントを確認すること
+- レビュー時に公式ドキュメントと矛盾する指摘をしないこと

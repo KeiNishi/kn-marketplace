@@ -55,7 +55,7 @@ The design-workflow skill handles the complete workflow:
 4. **Review Cycle**
    - Invoke design-review agent
    - If NEEDS_REVISION: present questions to user, update docs, re-review
-   - Repeat until APPROVED (max 3 iterations)
+   - Repeat until APPROVED
 
 5. **Completion**
    - Confirm documents are ready
