@@ -50,12 +50,32 @@ Pluginを更新した場合、以下の2箇所のバージョンを**必ず同�
 
 ### 参照すべき公式ドキュメント
 
+#### プラグイン・マーケットプレース関連
+
 | コンポーネント | 公式ドキュメントURL |
 |---------------|-------------------|
-| Sub-agents | https://docs.anthropic.com/en/docs/claude-code/sub-agents |
-| Hooks | https://docs.anthropic.com/en/docs/claude-code/hooks |
-| Custom Slash Commands | https://docs.anthropic.com/en/docs/claude-code/custom-slash-commands |
-| Settings | https://docs.anthropic.com/en/docs/claude-code/settings |
+| Plugins (プラグイン作成) | https://code.claude.com/docs/en/plugins |
+| Plugins Reference (プラグイン仕様) | https://code.claude.com/docs/en/plugins-reference |
+| Plugin Marketplaces (マーケットプレース作成) | https://code.claude.com/docs/en/plugin-marketplaces |
+| Discover Plugins (プラグインのインストール) | https://code.claude.com/docs/en/discover-plugins |
+
+#### コンポーネント別
+
+| コンポーネント | 公式ドキュメントURL |
+|---------------|-------------------|
+| Skills (スキル) | https://code.claude.com/docs/en/skills |
+| Sub-agents (サブエージェント) | https://code.claude.com/docs/en/sub-agents |
+| Hooks Guide (フック入門) | https://code.claude.com/docs/en/hooks-guide |
+| Hooks Reference (フック仕様) | https://code.claude.com/docs/en/hooks |
+| MCP (外部ツール連携) | https://code.claude.com/docs/en/mcp |
+
+#### 設定・その他
+
+| コンポーネント | 公式ドキュメントURL |
+|---------------|-------------------|
+| Settings (設定) | https://code.claude.com/docs/en/settings |
+| Memory (CLAUDE.md) | https://code.claude.com/docs/en/memory |
+| IAM (権限管理) | https://code.claude.com/docs/en/iam |
 
 ### 注意事項
 
