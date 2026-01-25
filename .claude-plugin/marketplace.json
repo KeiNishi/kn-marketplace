@@ -51,7 +51,7 @@
       "name": "playdate-gamedev",
       "source": "./plugins/playdate-gamedev",
       "description": "Playdate game development with C language - template-based project setup, VSCode build tasks, coding standards, API patterns, asset management, and performance optimization",
-      "version": "3.0.2",
+      "version": "3.1.0",
       "author": {
         "name": "KN"
       },

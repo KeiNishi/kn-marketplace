@@ -16,8 +16,9 @@ Initialize a new Playdate C project by cloning the official template repository.
 This template includes:
 - Pre-configured CMakeLists.txt for the official SDK build system
 - VSCode tasks for one-click build (Ctrl+Shift+B)
-- Starter source code templates
+- Starter source code templates with utility libraries
 - Recommended directory structure
+- Build setup scripts for Windows
 - .gitignore configuration
 
 ## Prerequisites
@@ -75,7 +76,7 @@ When the user runs `/playdate-init [project-name]`:
 
    Replace the template name with the user's project name in the following files:
 
-   ### Source/pdxinfo
+   ### source/pdxinfo
    Update the following fields:
    - `name=ProjectName`
    - `bundleID=com.developer.projectname` (lowercase)
@@ -97,7 +98,7 @@ When the user runs `/playdate-init [project-name]`:
 6. **Provide next steps**:
 
    ```
-   ✓ Project "ProjectName" has been created!
+   Project "ProjectName" has been created!
 
    Next steps:
    1. Open the project folder in VSCode
@@ -117,23 +118,43 @@ After cloning, the project structure will be:
 ```
 ProjectName/
 ├── .vscode/
-│   └── tasks.json           # VSCode build tasks (Ctrl+Shift+B)
-├── CMakeLists.txt           # Build configuration
-├── Source/
-│   ├── main.c               # Entry point with eventHandler
-│   ├── game.h               # Game header
-│   ├── game.c               # Game loop implementation
-│   └── pdxinfo              # Game metadata
-├── assets/
-│   ├── images/
-│   ├── sounds/
-│   └── fonts/
-└── .gitignore
+│   └── tasks.json             # VSCode build tasks (Ctrl+Shift+B)
+├── source/                    # Source code and resources (bundled into .pdx)
+│   ├── main.c                 # Entry point (eventHandler)
+│   ├── game.c/h               # Game loop (init, update)
+│   ├── types.h                # Common type definitions (fixed-point, Vector2, etc.)
+│   ├── pools/                 # Object pool utilities
+│   │   └── pool.h             # Generic macro-based object pool
+│   ├── utils/                 # Utility libraries (math, rng, spatial grid, etc.)
+│   ├── resources/             # Game assets
+│   │   ├── fonts/             # Custom bitmap fonts
+│   │   ├── images/            # Image assets (PNG/GIF)
+│   │   ├── sounds/            # Audio files (WAV/MP3)
+│   │   └── <custom>/          # Custom asset folders (e.g., player/, enemies/)
+│   └── pdxinfo                # Game metadata
+├── CMakeLists.txt             # Build configuration (CMake)
+├── build-dev-setup.bat        # Windows: Create build-dev directory
+├── build-sim-setup.bat        # Windows: Create build-sim directory
+└── .gitignore                 # Git ignore rules
 ```
+
+## Directory Descriptions
+
+### source/
+The main source directory containing all C code and resources. Everything in this directory is bundled into the final `.pdx` file.
+
+### source/pools/
+Contains object pool utilities for efficient memory management. Pools avoid dynamic allocation (malloc) which is problematic on Playdate's limited memory.
+
+### source/utils/
+Contains utility libraries for common game development tasks: math functions, random number generation, spatial partitioning for collision detection, etc.
+
+### source/resources/
+Contains all game assets. Subdirectories can be organized by type (fonts, images, sounds) or by game entity (player, enemies, ui).
 
 ## Files to Update After Clone
 
-### Source/pdxinfo
+### source/pdxinfo
 ```ini
 name=ProjectName
 author=Developer
@@ -156,6 +177,6 @@ set(PLAYDATE_GAME_DEVICE ProjectName_DEVICE)
 - The `bundleID` should be lowercase and use reverse domain notation
 - VSCode tasks are pre-configured - use Ctrl+Shift+B to build
 - The template targets 30 FPS by default (recommended for battery life)
-- All source files go in the `Source/` directory
-- Assets are placed in `assets/` subdirectories
+- All source files go in the `source/` directory
+- Assets are placed in `source/resources/` subdirectories
 - For more examples, refer to `$PLAYDATE_SDK_PATH/C_API/Examples/`

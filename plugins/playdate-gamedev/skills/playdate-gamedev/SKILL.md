@@ -42,18 +42,23 @@ Recommended directory layout for Playdate projects:
 YourGame/
 ├── .vscode/
 │   └── tasks.json             # VSCode build tasks (Ctrl+Shift+B)
+├── source/                    # Source code and resources (bundled into .pdx)
+│   ├── main.c                 # Entry point (eventHandler)
+│   ├── game.c/h               # Game loop (init, update)
+│   ├── types.h                # Common type definitions (fixed-point, Vector2, etc.)
+│   ├── pools/                 # Object pool utilities
+│   │   └── pool.h             # Generic macro-based object pool
+│   ├── utils/                 # Utility libraries (math, rng, spatial grid, etc.)
+│   ├── resources/             # Game assets
+│   │   ├── fonts/             # Custom bitmap fonts
+│   │   ├── images/            # Image assets (PNG/GIF)
+│   │   ├── sounds/            # Audio files (WAV/MP3)
+│   │   └── <custom>/          # Custom asset folders (e.g., player/, enemies/)
+│   └── pdxinfo                # Game metadata
 ├── CMakeLists.txt             # Build configuration (CMake)
-├── Source/                    # Source code
-│   ├── main.c                 # Entry point
-│   ├── game.c/h               # Game logic
-│   ├── player.c/h             # Player
-│   ├── utils.c/h              # Utilities
-│   ├── pdxinfo                # Game metadata
-│   └── assets/                # Raw assets (pre-build)
-│       ├── images/
-│       ├── sounds/
-│       └── fonts/
-└── build/                     # Build artifacts (gitignore)
+├── build-dev-setup.bat        # Windows: Create build-dev directory
+├── build-sim-setup.bat        # Windows: Create build-sim directory
+└── .gitignore                 # Git ignore rules
 ```
 
 For detailed templates and initialization commands, see `references/project-structure.md`.
