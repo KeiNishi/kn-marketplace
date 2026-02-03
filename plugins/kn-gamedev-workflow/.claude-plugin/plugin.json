@@ -1,7 +1,7 @@
 {
   "name": "kn-gamedev-workflow",
-  "version": "1.0.1",
-  "description": "Universal game development design workflow - platform agnostic planning, game design documents, and implementation plans with iterative review process",
+  "version": "1.1.0",
+  "description": "Universal game development workflow - design documents, implementation plans, and progress tracking for cross-AI context sharing",
   "author": {
     "name": "KN"
   },
