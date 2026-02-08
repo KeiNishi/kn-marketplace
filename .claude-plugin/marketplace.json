@@ -65,7 +65,7 @@
       "name": "kn-gamedev-workflow",
       "source": "./plugins/kn-gamedev-workflow",
       "description": "Universal game development workflow - design documents, implementation plans, and progress tracking for cross-AI context sharing",
-      "version": "1.1.1",
+      "version": "1.2.0",
       "author": {
         "name": "KN"
       },
