@@ -136,9 +136,24 @@ Consult these templates for document structure:
 - **`references/gamedesign-template.md`** - GameDesign.md structure and examples
 - **`references/implementation-template.md`** - ImplementationPlan.md structure and examples
 
+## Technology Stack Skills Integration
+
+When creating ImplementationPlan.md, you **MUST** use the appropriate technology stack skill to ensure platform-specific best practices, project structure, and architecture patterns are correctly reflected in the plan.
+
+| Platform / Engine | Skill to Use |
+|-------------------|-------------|
+| Unity | `unity-gamedev-standards:unity-gamedev` |
+| Godot (GDScript) | `godot-gdscript-patterns` |
+| Playdate (C) | `playdate-gamedev` |
+
+**How to apply:**
+1. Once the target platform/engine is determined (Phase 1 or Phase 2), invoke the corresponding skill listed above.
+2. Use the skill's guidance for project structure, naming conventions, architecture patterns, and coding standards when writing ImplementationPlan.md.
+3. If no matching skill exists for the chosen platform, proceed without a technology stack skill and follow general best practices.
+
 ## Integration with Other Plugins
 
 This workflow is designed to work alongside platform-specific plugins:
-- After design phase, use platform plugins (playdate-gamedev, unity-gamedev-standards, etc.) for implementation
+- The technology stack skills above provide platform-specific standards during planning
 - The `docs_for_ai/` folder serves as the single source of truth for AI agents
 - Update documents when significant design changes occur during implementation

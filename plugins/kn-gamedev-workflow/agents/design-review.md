@@ -114,6 +114,24 @@ Return your findings in this exact format:
 - Critical information is missing
 - User clarification is required
 
+## Technology Stack Skills Integration
+
+When reviewing ImplementationPlan.md, you **MUST** validate against the appropriate technology stack skill for the target platform/engine. Identify the platform from GameDesign.md, then reference the corresponding skill's standards.
+
+| Platform / Engine | Skill to Reference |
+|-------------------|-------------------|
+| Unity | `unity-gamedev-standards:unity-gamedev` |
+| Godot (GDScript) | `godot-gdscript-patterns` |
+| Playdate (C) | `playdate-gamedev` |
+
+**Review checkpoints using the skill:**
+- Does the project structure follow the platform's conventions?
+- Are class/module patterns consistent with the platform's best practices?
+- Are naming conventions aligned with the platform's standards?
+- Are platform-specific technical constraints addressed?
+
+If the platform has a matching skill but the ImplementationPlan.md does not follow its conventions, flag this as a **NEEDS_REVISION** issue.
+
 ## Important Constraints
 
 - Return findings to the caller - do NOT ask the user directly

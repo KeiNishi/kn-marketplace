@@ -133,6 +133,22 @@ This step is **mandatory** and cannot be skipped.
   3. Re-invoke design-review agent
   4. Repeat until **APPROVED**
 
+## Technology Stack Skills Integration
+
+When updating ImplementationPlan.md, you **MUST** use the appropriate technology stack skill to ensure platform-specific best practices are maintained. Check the existing documents to identify the target platform/engine, then invoke the corresponding skill.
+
+| Platform / Engine | Skill to Use |
+|-------------------|-------------|
+| Unity | `unity-gamedev-standards:unity-gamedev` |
+| Godot (GDScript) | `godot-gdscript-patterns` |
+| Playdate (C) | `playdate-gamedev` |
+
+**How to apply:**
+1. Identify the target platform/engine from the existing GameDesign.md or ImplementationPlan.md.
+2. Invoke the corresponding skill listed above before updating ImplementationPlan.md.
+3. Ensure new phases, classes, and architecture additions follow the platform-specific patterns and conventions provided by the skill.
+4. If no matching skill exists for the chosen platform, proceed without a technology stack skill and follow general best practices.
+
 ## Document Reference
 
 This workflow updates documents that follow the templates defined in the design-workflow skill:
