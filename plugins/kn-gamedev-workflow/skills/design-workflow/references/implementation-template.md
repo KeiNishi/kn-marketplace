@@ -1,4 +1,6 @@
-# ImplementationPlan.md Template
+# ImplementationPlan.md Template (Legacy Single-File Format)
+
+> **Note**: This is the legacy single-file format. For new projects, prefer the modular format using `implementation-overview-template.md` and `implementation-detail-template.md` instead. The single-file format is retained for very small games (1-2 systems, under 500 words total) and backward compatibility with existing projects.
 
 Use this template structure when creating `docs_for_ai/ImplementationPlan.md`.
 

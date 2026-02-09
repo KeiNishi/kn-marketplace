@@ -1,8 +1,6 @@
-# GameDesign.md Template (Legacy Single-File Format)
+# GameDesignOverview.md Template
 
-> **Note**: This is the legacy single-file format. For new projects, prefer the modular format using `gamedesign-overview-template.md` and `gamedesign-detail-template.md` instead. The single-file format is retained for very small games (1-2 systems, under 500 words total) and backward compatibility with existing projects.
-
-Use this template structure when creating `docs_for_ai/GameDesign.md`.
+Use this template structure when creating `docs_for_ai/GameDesignOverview.md`.
 
 ---
 
@@ -46,33 +44,20 @@ Use this template structure when creating `docs_for_ai/GameDesign.md`.
 ### 3.3 Audio Direction
 [Music style, sound design approach, ambient sounds]
 
-## 4. Game Mechanics
+## 4. Design File Manifest
 
-### 4.1 Core Loop
-[Describe the primary gameplay loop the player repeats]
+| # | File | Domain | Description |
+|---|------|--------|-------------|
+| 01 | [01_Player_Design.md](./game_design/01_Player_Design.md) | Player | [Brief description] |
+| 02 | [02_SystemName_Design.md](./game_design/02_SystemName_Design.md) | [Domain] | [Brief description] |
 
-### 4.2 Player Actions
+## 5. Cross-Cutting Concerns
 
-| Action | Description | Input |
-|--------|-------------|-------|
-| [Move] | [Movement description] | [D-pad/WASD] |
-| [Jump] | [Jump description] | [A button/Space] |
-| [Attack] | [Attack description] | [B button/Click] |
+### 5.1 [Concern Name]
+[Items that span multiple systems - e.g., save system, audio, UI, accessibility]
 
-### 4.3 Progression System
-[How the player advances: levels, upgrades, story progression, etc.]
-
-### 4.4 Win/Loss Conditions
-- **Victory**: [What constitutes winning]
-- **Failure**: [What causes game over]
-
-## 5. Game Systems
-
-### 5.1 [System Name]
-[Description of major game systems: combat, crafting, dialogue, etc.]
-
-### 5.2 [System Name]
-[Additional systems as needed]
+### 5.2 [Concern Name]
+[Additional cross-cutting items as needed]
 
 ## 6. Technical Requirements
 
@@ -87,21 +72,19 @@ Use this template structure when creating `docs_for_ai/GameDesign.md`.
 ### 6.3 External Dependencies
 [Required libraries, assets, services]
 
-## 7. Content Scope
+## 7. Content Scope Summary
 
-### 7.1 Levels/Stages
-[Number of levels, their themes or descriptions]
-
-### 7.2 Characters/Entities
-[List of player characters, enemies, NPCs]
-
-### 7.3 Items/Collectibles
-[Power-ups, inventory items, collectibles]
+| Category | Count | Details |
+|----------|-------|---------|
+| Levels/Stages | [N] | [Brief description] |
+| Characters/Entities | [N] | [Brief description] |
+| Items/Collectibles | [N] | [Brief description] |
 
 ## 8. Notes
 
 - Values marked with [EXAMPLE: X] are subject to change during playtesting
-- This document describes WHAT the game is; see ImplementationPlan.md for HOW to build it
+- This document provides an overview; see detail files in `game_design/` for specifics
+- See ImplementationPlanOverview.md for HOW to build it
 ```
 
 ---
@@ -148,34 +131,21 @@ Deep underground cavern system filled with luminescent crystals. Ancient civiliz
 ### 3.3 Audio Direction
 Ambient cave sounds (dripping water, echoes). Soft, ethereal music. Crystal interaction sounds (chimes, resonance).
 
-## 4. Game Mechanics
+## 4. Design File Manifest
 
-### 4.1 Core Loop
-Explore room → Discover light puzzle → Manipulate crystals to direct light beam → Activate mechanism → Unlock path → Progress deeper
+| # | File | Domain | Description |
+|---|------|--------|-------------|
+| 01 | [01_Player_Design.md](./game_design/01_Player_Design.md) | Player | Player mechanics, controls, progression |
+| 02 | [02_LightSystem_Design.md](./game_design/02_LightSystem_Design.md) | Light/Puzzles | Light beams, crystals, mechanisms |
+| 03 | [03_LevelContent_Design.md](./game_design/03_LevelContent_Design.md) | Content | Level descriptions, room layouts, collectibles |
 
-### 4.2 Player Actions
+## 5. Cross-Cutting Concerns
 
-| Action | Description | Input |
-|--------|-------------|-------|
-| Move | Walk left/right | Arrow keys / A,D |
-| Jump | Standard jump | Space |
-| Interact | Rotate crystals, activate switches | E |
-| Grab | Pick up movable crystals | Shift + E |
+### 5.1 Checkpoint System
+Automatic checkpoints at room entrances. Manual save at crystal pedestals. Applies across all levels and player interactions.
 
-### 4.3 Progression System
-Linear level progression with optional collectibles. No upgrades or abilities - pure puzzle solving.
-
-### 4.4 Win/Loss Conditions
-- **Victory**: Reach the surface exit in each level
-- **Failure**: No death - player respawns at last checkpoint
-
-## 5. Game Systems
-
-### 5.1 Light Beam System
-Light sources emit beams that travel in straight lines. Crystals can reflect or refract beams. Colored crystals filter light color. Mechanisms activate when receiving correct light color.
-
-### 5.2 Checkpoint System
-Automatic checkpoints at room entrances. Manual save at crystal pedestals.
+### 5.2 Accessibility
+No death mechanic - player respawns at last checkpoint. Colorblind-friendly crystal designs with distinct shapes.
 
 ## 6. Technical Requirements
 
@@ -190,34 +160,30 @@ Light ray calculations limited to [EXAMPLE: 10] bounces maximum for performance.
 ### 6.3 External Dependencies
 None - using Godot built-in features only.
 
-## 7. Content Scope
+## 7. Content Scope Summary
 
-### 7.1 Levels/Stages
-- Tutorial Cavern (3 rooms)
-- Crystal Depths (5 rooms)
-- Prismatic Chamber (5 rooms)
-- Ancient Core (4 rooms)
-- Ascent (3 rooms)
-
-### 7.2 Characters/Entities
-- Player character (small explorer)
-- No enemies
-
-### 7.3 Items/Collectibles
-- Memory Shards (optional lore collectibles, [EXAMPLE: 20] total)
+| Category | Count | Details |
+|----------|-------|---------|
+| Levels/Stages | 5 zones, 20 rooms | Tutorial through Ascent |
+| Characters/Entities | 1 | Player explorer (no enemies) |
+| Items/Collectibles | [EXAMPLE: 20] | Memory Shards (optional lore) |
 
 ## 8. Notes
 
 - Values marked with [EXAMPLE: X] are subject to change during playtesting
-- This document describes WHAT the game is; see ImplementationPlan.md for HOW to build it
+- This document provides an overview; see detail files in `game_design/` for specifics
+- See ImplementationPlanOverview.md for HOW to build it
 ```
 
 ---
 
 ## Guidelines
 
-### Keep It Focused
-GameDesign.md answers "What is this game?" - avoid implementation details like class names or code structure.
+### Keep It High-Level
+GameDesignOverview.md answers "What is this game at a high level?" - avoid detailed mechanics descriptions, which belong in detail files.
+
+### File Manifest Is Mandatory
+The manifest table must list ALL detail design files. This is the authoritative index for the modular structure.
 
 ### Mark Variable Values
 Any numeric value that might change during playtesting:
@@ -228,9 +194,9 @@ Any numeric value that might change during playtesting:
 
 ### Avoid Duplication
 Do not include:
-- Folder structures (belongs in ImplementationPlan.md)
-- Class definitions (belongs in ImplementationPlan.md)
-- Build instructions (belongs in ImplementationPlan.md)
+- Detailed mechanics (belongs in detail files under `game_design/`)
+- Folder structures (belongs in ImplementationPlanOverview.md)
+- Class definitions (belongs in implementation detail files)
 
 ### Target Length
-Aim for 500-1000 words. If exceeding this, consider whether all content is necessary.
+Aim for 300-500 words. The overview is an entry point, not a comprehensive document.
