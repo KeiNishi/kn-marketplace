@@ -141,7 +141,7 @@ See `references/taskprogress-template.md` for full template and examples.
 
 This skill complements:
 - **design-workflow**: Creates GameDesignOverview.md, ImplementationPlanOverview.md, and detail files
-- **additional-items-workflow**: Updates documents when adding features mid-development
+- **design-change-workflow**: Updates documents when modifying specs or adding features mid-development
 - **Platform plugins**: Use progress tracking during implementation
 
 Typical flow:
