@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: This skill activates when implementing tasks from ImplementationPlan.md in a project with docs_for_ai/ folder. Triggers when completing implementation tasks, finishing a coding task from the plan, or when the user mentions "update progress", "log progress", "record task", "implementation task done", or "mark task complete". Also activates when working on tasks referenced in ImplementationPlan.md.
+description: This skill activates when implementing tasks from ImplementationPlanOverview.md (or legacy ImplementationPlan.md) in a project with docs_for_ai/ folder. Triggers when completing implementation tasks, finishing a coding task from the plan, or when the user mentions "update progress", "log progress", "record task", "implementation task done", or "mark task complete". Also activates when working on tasks referenced in implementation plan documents.
 allowed-tools: Read, Write, Edit, Glob
 ---
 
@@ -19,19 +19,27 @@ Maintain a concise progress log that enables any AI agent (Claude, Codex, Gemini
 ## When to Record
 
 Record progress in TaskProgress.md when:
-- Completing a task from ImplementationPlan.md
+- Completing a task from an implementation detail file
 - Finishing a phase milestone
 - Making significant technical decisions
 - Encountering and resolving issues
 
-## Workflow
+## Format Detection
+
+Before recording, determine which document format the project uses:
+
+1. **Modular format**: Check for `docs_for_ai/ImplementationPlanOverview.md`
+2. **Legacy format**: Check for `docs_for_ai/ImplementationPlan.md`
+
+## Workflow (Modular Format)
 
 ### Step 1: Verify Context
 
 Before recording, confirm:
 1. `docs_for_ai/` folder exists
-2. `GameDesign.md` and `ImplementationPlan.md` are present
-3. Identify which Phase/Task from ImplementationPlan.md was completed
+2. `GameDesignOverview.md` and `ImplementationPlanOverview.md` are present
+3. Read `ImplementationPlanOverview.md` to identify the Phase Summary and which detail file contains the completed task
+4. Read the relevant `implementation/NN_*_Implementation.md` to confirm the Phase/Task reference
 
 ### Step 2: Create or Update TaskProgress.md
 
@@ -57,7 +65,7 @@ Follow this format strictly:
 ```
 
 **Rules:**
-- Task name must match or reference ImplementationPlan.md
+- Task name must match or reference the task in the relevant implementation detail file
 - Files: comma-separated, relative paths
 - Done: maximum 2 sentences
 - Decision/Issue: omit if not applicable
@@ -67,6 +75,18 @@ Follow this format strictly:
 ```markdown
 **Status**: Phase [N]/[Total] - [Phase Name] | Next: [Next Task] | Updated: [YYYY-MM-DD]
 ```
+
+## Workflow (Legacy Format)
+
+### Step 1: Verify Context
+
+1. `docs_for_ai/` folder exists
+2. `GameDesign.md` and `ImplementationPlan.md` are present
+3. Identify which Phase/Task from ImplementationPlan.md was completed
+
+### Steps 2-4: Same as modular format
+
+Follow the same recording process. Task names reference ImplementationPlan.md directly.
 
 ## Recording Guidelines
 
@@ -86,7 +106,7 @@ Follow this format strictly:
 - Problems and their solutions
 
 ### Maintain Traceability
-- Use exact task names from ImplementationPlan.md when possible
+- Use exact task names from implementation detail files (or ImplementationPlan.md for legacy) when possible
 - Reference Phase and Task numbers: `[Phase 2, Task 3]`
 - Keep Status line synchronized with actual progress
 
@@ -95,7 +115,9 @@ Follow this format strictly:
 Target metrics:
 - Per entry: 30-50 words
 - 10 completed tasks: ~400-500 words
-- Combined docs_for_ai/ (3 files): <2500 words
+- Overview files (GameDesignOverview.md + ImplementationPlanOverview.md + TaskProgress.md): <1500 words combined
+
+Detail files are read on-demand, not all at once.
 
 Avoid:
 - Repeating information from other docs
@@ -104,8 +126,9 @@ Avoid:
 
 ## Cross-AI Compatibility
 
-TaskProgress.md is designed for multi-AI workflows:
-- Any AI can read the 3 docs_for_ai/ files to understand project context
+The modular docs_for_ai/ structure is designed for multi-AI workflows:
+- Any AI reads the overview files for orientation (GameDesignOverview.md, ImplementationPlanOverview.md, TaskProgress.md)
+- AI then reads specific detail files as needed for the current task
 - English language ensures broad compatibility
 - Structured format enables quick parsing
 - Status line provides instant orientation
@@ -117,11 +140,12 @@ See `references/taskprogress-template.md` for full template and examples.
 ## Integration
 
 This skill complements:
-- **design-workflow**: Creates GameDesign.md and ImplementationPlan.md
+- **design-workflow**: Creates GameDesignOverview.md, ImplementationPlanOverview.md, and detail files
+- **additional-items-workflow**: Updates documents when adding features mid-development
 - **Platform plugins**: Use progress tracking during implementation
 
 Typical flow:
-1. design-workflow creates initial docs
-2. Developer/AI implements tasks from ImplementationPlan.md
+1. design-workflow creates initial modular docs
+2. Developer/AI implements tasks from implementation detail files
 3. implementation-workflow records progress after each task
-4. Any AI can resume work by reading all 3 docs
+4. Any AI can resume work by reading overview files + relevant detail files
