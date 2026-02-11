@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   "plugins": [
     {
@@ -65,7 +65,7 @@
       "name": "kn-gamedev-workflow",
       "source": "./plugins/kn-gamedev-workflow",
       "description": "Universal game development workflow - modular design documents, implementation plans, and progress tracking for cross-AI context sharing",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "author": {
         "name": "KN"
       },
