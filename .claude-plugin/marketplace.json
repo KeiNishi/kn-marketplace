@@ -6,45 +6,52 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.0.5"
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "godot-gdscript-patterns",
       "source": "./plugins/godot-gdscript-patterns",
-      "description": "Godot GDScript patterns and best practices",
-      "version": "1.0.0",
+      "description": "Godot 4 GDScript patterns and best practices - state machines, singletons, resources, object pooling, components, scene management, and save systems",
+      "version": "1.1.0",
       "author": {
         "name": "wshobson"
       },
       "tags": [
         "gamedev",
-        "godot"
+        "godot",
+        "gdscript",
+        "game-development"
       ]
     },
     {
       "name": "create-pr",
       "source": "./plugins/create-pr",
-      "description": "Create a pull request on GitHub",
-      "version": "1.0.0",
+      "description": "Create a pull request on GitHub with conventional commit-style titles",
+      "version": "1.1.0",
       "author": {
-        "name": "n8n-io"
+        "name": "KN"
       },
       "tags": [
-        "github"
+        "github",
+        "pull-request",
+        "conventional-commits"
       ]
     },
     {
       "name": "unity-gamedev-standards",
       "source": "./plugins/unity-gamedev-standards",
-      "description": "Unity Gamedev Standards",
+      "description": "Unity 6 game development standards and coding rules - project structure, C# conventions, MonoBehaviour patterns, UniTask async, performance optimization, and MVC character design",
       "version": "2.1.0",
       "author": {
         "name": "KN"
       },
       "tags": [
         "gamedev",
-        "unity"
+        "unity",
+        "csharp",
+        "monobehaviour",
+        "game-development"
       ]
     },
     {
@@ -58,7 +65,9 @@
       "tags": [
         "gamedev",
         "playdate",
-        "c"
+        "c",
+        "embedded",
+        "handheld"
       ]
     },
     {

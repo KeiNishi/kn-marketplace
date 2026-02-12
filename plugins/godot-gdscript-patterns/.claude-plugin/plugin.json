@@ -1,8 +1,9 @@
 {
   "name": "godot-gdscript-patterns",
-  "version": "1.0.0",
-  "description": "Godot GDScript patterns and best practices",
+  "version": "1.1.0",
+  "description": "Godot 4 GDScript patterns and best practices - state machines, singletons, resources, object pooling, components, scene management, and save systems",
   "author": {
     "name": "wshobson"
-  }
+  },
+  "keywords": ["gamedev", "godot", "gdscript", "game-development"]
 }
