@@ -1,8 +1,9 @@
 {
   "name": "example-skill",
-  "version": "1.0.0",
-  "description": "サンプルスキル - このフォーマットを参考に新しいスキルを追加してください",
+  "version": "1.1.0",
+  "description": "Example skill plugin - use this as a template for creating new plugins",
   "author": {
     "name": "KN"
-  }
+  },
+  "keywords": ["example", "template"]
 }
