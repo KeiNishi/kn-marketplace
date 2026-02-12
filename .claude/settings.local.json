@@ -7,7 +7,9 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(dir:*)",
       "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" log --oneline --all)",
-      "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" show ab79fec --stat)"
+      "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" show ab79fec --stat)",
+      "Bash(find:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

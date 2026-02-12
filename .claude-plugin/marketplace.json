@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.0.4"
+    "version": "1.0.5"
   },
   "plugins": [
     {
@@ -38,7 +38,7 @@
       "name": "unity-gamedev-standards",
       "source": "./plugins/unity-gamedev-standards",
       "description": "Unity Gamedev Standards",
-      "version": "1.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "KN"
       },
@@ -65,7 +65,7 @@
       "name": "kn-gamedev-workflow",
       "source": "./plugins/kn-gamedev-workflow",
       "description": "Universal game development workflow - modular design documents, implementation plans, and progress tracking for cross-AI context sharing",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "author": {
         "name": "KN"
       },

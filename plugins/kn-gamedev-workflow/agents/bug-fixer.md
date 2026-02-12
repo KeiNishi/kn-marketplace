@@ -119,6 +119,8 @@ The following patterns are **STRICTLY FORBIDDEN**. If you find yourself reaching
 - NEVER hardcode return values to make a test pass
 - NEVER modify test assertions to match broken behavior
 - NEVER skip or disable failing tests
+- NEVER set component property values in Awake()/Start() to fix a bug that should be fixed via Inspector/Editor configuration (Unity/Godot)
+- NEVER create runtime assets (PhysicsMaterial, Material, etc.) in code when they should be project assets configured in the Editor (Unity/Godot)
 
 ### 7. Suppressing Warnings / Errors
 - NEVER add compiler/linter suppression annotations as a fix
@@ -145,6 +147,12 @@ The following patterns are **STRICTLY FORBIDDEN**. If you find yourself reaching
 ### 12. Silent Degradation
 - NEVER fall back to a default value without handling the underlying failure
 - NEVER suppress error states by replacing them with neutral defaults
+
+### 13. Inspector/Editor Override (Unity, Godot, and similar engines)
+- NEVER set Inspector-configurable values (Rigidbody mass, drag, PhysicsMaterial properties, Collider settings, etc.) in code to fix a configuration bug
+- When a bug is caused by wrong Inspector values: instruct the user to change the value in the Inspector, or use MCP tools to modify scene/prefab files
+- NEVER create engine assets in code (PhysicsMaterial, Material, AnimatorController) as a "fix" - these belong as project assets
+- Awake()/Start()/_Ready() are for caching references and initializing internal state, NOT for overriding engine component properties
 
 ## Design Change Boundary
 

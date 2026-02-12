@@ -177,6 +177,54 @@ public class PlayerController : MonoBehaviour
 
 For detailed animation timing and Root Motion handling, see `references/animation-timing.md`.
 
+## Camera Systems
+
+Camera scripts MUST use `LateUpdate()` for position/rotation updates. Using `Update()` causes visual jitter because the camera reads the target position before physics and other scripts have finished moving it.
+
+```csharp
+// BAD: Jitters - reads position before movement is finalized
+private void Update()
+{
+    transform.position = _target.position + _offset;
+}
+
+// GOOD: Reads final position after all movement is complete
+private void LateUpdate()
+{
+    transform.position = _target.position + _offset;
+}
+```
+
+Key requirements:
+- **LateUpdate() only** for camera position/rotation
+- **Rigidbody Interpolation** must be enabled on followed targets (set in Inspector)
+- **Never use Update()** for camera follow - causes 1-frame jitter
+
+For complete camera patterns (follow, orbit, side-scroll) and physics interaction details, see `references/camera-systems.md`.
+
+## Inspector Workflow
+
+Unity's Inspector is the source of truth for component configuration. Code MUST NOT override Inspector-configurable values in `Awake()`, `Start()`, or any initialization method.
+
+```csharp
+// BAD: Hardcoding Rigidbody values in Awake - overrides Inspector silently
+private void Awake()
+{
+    _rigidbody = GetComponent<Rigidbody>();
+    _rigidbody.mass = 2f;              // VIOLATION - set in Inspector
+    _rigidbody.linearDamping = 0.5f;   // VIOLATION - set in Inspector
+}
+
+// GOOD: Awake is only for caching references and initializing internal state
+private void Awake()
+{
+    _rigidbody = GetComponent<Rigidbody>();
+    _currentHealth = _maxHealth;
+}
+```
+
+When a bug requires changing a component property value, instruct the user to change it in the Inspector or use MCP tools. For the complete rules, see `references/inspector-workflow.md`.
+
 ## ScriptableObject
 
 Data containers for game configuration:
@@ -298,6 +346,9 @@ For UniTask installation and patterns, see `references/async-unitask.md`.
 - Don't use string concatenation in hot paths
 - Don't skip null checks on external references
 - Don't mix physics in Update (use FixedUpdate)
+- Don't use Update() for camera follow (use LateUpdate)
+- Don't hardcode component property values in Awake()/Start() that should be set via Inspector
+- Don't create PhysicsMaterial or similar assets in code - use project assets
 - Don't forget to unsubscribe from events
 
 ## Additional Resources
@@ -312,6 +363,8 @@ Detailed documentation in `references/`:
 - **`performance.md`** - Optimization techniques
 - **`character-mvc.md`** - MVC character design
 - **`async-unitask.md`** - UniTask async patterns
+- **`camera-systems.md`** - Camera execution order, follow patterns
+- **`inspector-workflow.md`** - Inspector-driven value configuration rules
 - **`git-management.md`** - .gitignore, Git LFS
 - **`ecs-patterns.md`** - ECS/DOTS patterns
 - **`testing-standards.md`** - Unit/Play Mode testing
