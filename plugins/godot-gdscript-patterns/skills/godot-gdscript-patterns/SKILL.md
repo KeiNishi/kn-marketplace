@@ -15,6 +15,9 @@ Production patterns for Godot 4.x game development with GDScript, covering archi
 - Managing game state
 - Optimizing GDScript performance
 - Learning Godot best practices
+- Choosing between Node, RefCounted, Resource, and Object
+- Understanding node lifecycle and notifications
+- Implementing duck typing and interface patterns
 
 ## Core Concepts
 
@@ -74,7 +77,7 @@ func take_damage(amount: int) -> void:
 
 ## Available Patterns
 
-This skill provides 7 production-ready patterns. Each pattern is documented in detail in the `references/` directory.
+This skill provides 10 production-ready patterns. Each pattern is documented in detail in the `references/` directory.
 
 | Pattern | File | Description |
 |---------|------|-------------|
@@ -85,6 +88,9 @@ This skill provides 7 production-ready patterns. Each pattern is documented in d
 | Component System | `references/component-system.md` | Health, hitbox, hurtbox components |
 | Scene Management | `references/scene-management.md` | Async scene loading with transitions |
 | Save System | `references/save-system.md` | Encrypted save/load with saveable nodes |
+| Node Alternatives | `references/node-alternatives.md` | Object, RefCounted, Resource vs Node |
+| Godot Interfaces | `references/godot-interfaces.md` | Duck typing, references, type-safe access |
+| Notifications & Lifecycle | `references/notifications-lifecycle.md` | Node lifecycle, process methods, input flow |
 
 ## Performance Tips
 
@@ -112,6 +118,84 @@ func _on_off_screen() -> void:
     set_physics_process(false)
 ```
 
+## Scenes vs Scripts
+
+Choose based on what you're creating:
+
+| Use Scenes When | Use Scripts When |
+|-----------------|------------------|
+| Reusable visual objects (enemies, items, UI) | Pure logic or behavior on existing nodes |
+| Multiple nodes with hierarchy | Simple data types without visual representation |
+| Need instancing across project | Lightweight, anonymous types |
+| Named types with visual composition | Extending built-in node behavior |
+
+```gdscript
+# Named type (Scene + Script) - for reusable game objects
+# Player.tscn with player.gd attached to root
+
+# Anonymous type (Script only) - for logic/utilities
+class_name DamageCalculator
+extends RefCounted
+
+static func calculate(base: int, multiplier: float) -> int:
+    return int(base * multiplier)
+```
+
+## Logic Preferences
+
+### Preload vs Load
+
+```gdscript
+# preload() - compile-time, blocking, instant access
+# Use for: small/essential resources always needed
+const BulletScene := preload("res://scenes/bullet.tscn")
+const HitEffect := preload("res://effects/hit.tscn")
+
+# load() / ResourceLoader - runtime, can be deferred
+# Use for: large resources, optional content
+func _load_level(path: String) -> void:
+    var scene := load(path) as PackedScene  # Blocks until loaded
+
+# ResourceLoader - async loading for large assets
+func _load_level_async(path: String) -> void:
+    ResourceLoader.load_threaded_request(path)
+    # Check progress in _process or await
+```
+
+### Node Setup Order
+
+```gdscript
+# GOOD: Configure before adding to tree (fewer notifications)
+var enemy := EnemyScene.instantiate()
+enemy.position = spawn_point.position
+enemy.speed = 150.0
+add_child(enemy)
+
+# LESS IDEAL: Adding then configuring (triggers extra updates)
+var enemy2 := EnemyScene.instantiate()
+add_child(enemy2)
+enemy2.position = spawn_point.position  # Triggers transform update
+enemy2.speed = 150.0
+```
+
+### Static vs Dynamic Levels
+
+```gdscript
+# Static: Entire level pre-built in editor
+# + Easy to design, visual editing, no runtime cost
+# - High memory usage, long load times for large levels
+
+# Dynamic: Stream/generate content at runtime
+# + Low memory, infinite worlds possible
+# - More complex code, potential hitches
+
+# Hybrid approach: chunk-based loading
+func _load_chunk(chunk_pos: Vector2i) -> void:
+    var path := "res://levels/chunk_%d_%d.tscn" % [chunk_pos.x, chunk_pos.y]
+    if ResourceLoader.exists(path):
+        ResourceLoader.load_threaded_request(path)
+```
+
 ## Best Practices
 
 ### Do's
@@ -120,6 +204,9 @@ func _on_off_screen() -> void:
 - **Use resources for data** - Separate data from logic
 - **Pool frequently spawned objects** - Avoid GC hitches
 - **Use Autoloads sparingly** - Only for truly global systems
+- **Use `_unhandled_input` for gameplay** - Don't steal input from UI
+- **Choose the right base class** - Not everything needs to be a Node (see `references/node-alternatives.md`)
+- **Use groups as interfaces** - `is_in_group()` for duck typing (see `references/godot-interfaces.md`)
 
 ### Don'ts
 - **Don't use `get_node()` in loops** - Cache references
@@ -127,6 +214,8 @@ func _on_off_screen() -> void:
 - **Don't put logic in resources** - Keep them data-only
 - **Don't ignore the Profiler** - Monitor performance
 - **Don't fight the scene tree** - Work with Godot's design
+- **Don't do heavy work in `_init()`** - No scene tree access yet
+- **Don't use Node for pure data** - Use RefCounted or Resource instead
 
 ## Additional Resources
 
@@ -140,6 +229,9 @@ Detailed pattern implementations in `references/`:
 - **`component-system.md`** - HealthComponent, HitboxComponent, HurtboxComponent
 - **`scene-management.md`** - Async loading, transitions, SceneManager
 - **`save-system.md`** - Encrypted save/load, Saveable component
+- **`node-alternatives.md`** - Object, RefCounted, Resource usage and when to avoid nodes
+- **`godot-interfaces.md`** - Duck typing, node references, type-safe access patterns
+- **`notifications-lifecycle.md`** - Node lifecycle, process/input methods, notifications
 
 ### External Links
 

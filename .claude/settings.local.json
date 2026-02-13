@@ -9,7 +9,8 @@
       "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" log --oneline --all)",
       "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" show ab79fec --stat)",
       "Bash(find:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "WebFetch(domain:docs.godotengine.org)"
     ]
   }
 }
