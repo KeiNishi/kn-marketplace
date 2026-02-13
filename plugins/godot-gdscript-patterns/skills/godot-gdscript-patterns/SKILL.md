@@ -1,6 +1,6 @@
 ---
 name: godot-gdscript-patterns
-description: Master Godot 4 GDScript patterns including signals, scenes, state machines, and optimization. Use when building Godot games, implementing game systems, or learning GDScript best practices.
+description: This skill should be used when working with Godot 4 GDScript patterns and best practices. Covers state machines, autoload singletons, event bus, resource-based data, object pooling, component systems (health, hitbox, hurtbox), scene management with async loading, save systems, node alternatives (Object, RefCounted, Resource vs Node), duck typing and interface patterns, and node lifecycle notifications. Use for questions like "how to implement a state machine in GDScript", "Godot signal patterns", "when to use RefCounted vs Node", "GDScript object pooling", "Godot save system", or "node lifecycle order in Godot 4".
 ---
 
 # Godot GDScript Patterns
@@ -218,20 +218,6 @@ func _load_chunk(chunk_pos: Vector2i) -> void:
 - **Don't use Node for pure data** - Use RefCounted or Resource instead
 
 ## Additional Resources
-
-### Reference Files
-
-Detailed pattern implementations in `references/`:
-- **`state-machine.md`** - StateMachine, State base class, usage example
-- **`autoload-singletons.md`** - GameManager, EventBus patterns
-- **`resource-data.md`** - WeaponData, CharacterStats, runtime copies
-- **`object-pooling.md`** - ObjectPool, PooledBullet examples
-- **`component-system.md`** - HealthComponent, HitboxComponent, HurtboxComponent
-- **`scene-management.md`** - Async loading, transitions, SceneManager
-- **`save-system.md`** - Encrypted save/load, Saveable component
-- **`node-alternatives.md`** - Object, RefCounted, Resource usage and when to avoid nodes
-- **`godot-interfaces.md`** - Duck typing, node references, type-safe access patterns
-- **`notifications-lifecycle.md`** - Node lifecycle, process/input methods, notifications
 
 ### External Links
 

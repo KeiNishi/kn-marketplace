@@ -19,7 +19,6 @@ signal transition_finished
 
 var _current_scene: Node
 var _transition: CanvasLayer
-var _loader: ResourceLoader
 
 func _ready() -> void:
     _current_scene = get_tree().current_scene

@@ -9,6 +9,7 @@ Encrypted save/load system with saveable node component for Godot 4.x.
 extends Node
 
 const SAVE_PATH := "user://savegame.save"
+# IMPORTANT: Replace with your own secret key before shipping
 const ENCRYPTION_KEY := "your_secret_key_here"
 
 signal save_completed

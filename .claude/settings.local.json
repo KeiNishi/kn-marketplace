@@ -10,7 +10,8 @@
       "Bash(git -C \"d:\\\\Projects\\\\kn-marketplace\" show ab79fec --stat)",
       "Bash(find:*)",
       "Bash(git pull:*)",
-      "WebFetch(domain:docs.godotengine.org)"
+      "WebFetch(domain:docs.godotengine.org)",
+      "Bash(python -c \"import json; json.load\\(open\\(''plugins/godot-gdscript-patterns/.claude-plugin/plugin.json''\\)\\); print\\(''Valid JSON''\\)\")"
     ]
   }
 }
