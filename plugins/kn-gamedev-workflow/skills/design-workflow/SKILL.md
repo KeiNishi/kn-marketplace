@@ -1,6 +1,6 @@
 ---
 name: design-workflow
-description: This skill should be used when the user asks to "create a game", "design a game", "start a new game project", "plan a game", "create a GDD", "write game design document", "create implementation plan", "plan game development", mentions "game design document", "game planning", "docs_for_ai", or wants to plan the design phase of game development. Also triggers on "/kn-gamedev-workflow:design" command.
+description: This skill should be used when the user asks to "create a game", "design a game", "start a new game project", "plan a game", "create a GDD", "write game design document", "create implementation plan", "plan game development", mentions "game design document", "game planning", "docs_for_ai", or wants to plan the design phase of game development. Also triggers on "/kn-gamedev-workflow:design-workflow" command.
 allowed-tools: Read, Write, Edit, Glob, Grep, Task
 ---
 

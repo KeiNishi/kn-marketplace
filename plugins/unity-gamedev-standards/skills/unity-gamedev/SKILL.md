@@ -1,5 +1,5 @@
 ---
-name: unity-gamedev-standards
+name: unity-gamedev
 description: This skill should be used when the user asks to "create a Unity project", "write C# scripts for Unity", "implement MonoBehaviour", mentions "Unity", ".cs", ".unity", "C#", "MonoBehaviour", "ScriptableObject", "GameObject", or works with Unity APIs, scenes, prefabs, or assets. Also triggers on "/unity" command or questions about Unity game development patterns. For ECS/DOTS, see references/ecs-patterns.md. For testing, see references/testing-standards.md. For editor extensions, see references/editor-extensions.md.
 allowed-tools: Bash(dotnet*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---

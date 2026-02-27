@@ -2,6 +2,7 @@
 name: create-pr
 description: Creates GitHub pull requests with conventional commit titles. Use when creating PRs, submitting changes for review, or when the user says /pr or asks to create a pull request.
 allowed-tools: Bash(git status*), Bash(git diff*), Bash(git log*), Bash(git push -u origin*), Bash(gh pr create*), Bash(gh pr view*), Read, Grep, Glob
+disable-model-invocation: true
 ---
 
 # Create Pull Request
