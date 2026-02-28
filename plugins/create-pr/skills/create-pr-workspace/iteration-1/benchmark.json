@@ -1,0 +1,373 @@
+{
+  "metadata": {
+    "skill_name": "create-pr",
+    "skill_path": "plugins/create-pr/skills/create-pr",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:19Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title uses 'docs' type since the changes are documentation only",
+          "passed": true,
+          "evidence": "PR title in response.md is 'docs: Update README installation instructions and add API reference'. Transcript Step 3 states: 'Type determination: Both changed files are documentation (README.md, docs/api-reference.md) -> type is docs'. response.md Step 2 confirms: 'Type: docs \u2014 Both changes are documentation-only updates'."
+        },
+        {
+          "text": "The PR title follows the conventional commit format",
+          "passed": true,
+          "evidence": "The title 'docs: Update README installation instructions and add API reference' is explicitly validated in both transcript (Step 4) and response.md against the pattern '^(feat|fix|perf|test|docs|refactor|build|ci|chore|revert)(\\([a-zA-Z0-9 -]+\\))?!?: [A-Z].+[^.]$'. All four criteria are confirmed: valid type 'docs', scope correctly omitted, summary starts with capital 'U', summary does not end with a period."
+        },
+        {
+          "text": "The response checks git status or git diff as part of the workflow",
+          "passed": false,
+          "evidence": "The transcript (Step 2) says 'Would run: git status, git diff --stat, git log origin/main..HEAD --oneline' and labels the described output as 'These commands reveal:' \u2014 but this is purely hypothetical. response.md Step 1 similarly says 'Commands I would run' and 'Expected output (hypothetical)'. No actual git commands were executed; the entire state-checking step was simulated without real tool calls."
+        },
+        {
+          "text": "The PR body includes a Summary section",
+          "passed": true,
+          "evidence": "response.md contains '## Summary' as the first PR body section with substantive content: a two-item numbered list describing the README.md and docs/api-reference.md changes, plus a verification note. Transcript Step 6 also confirms the body includes a 'Summary section describing both documentation changes'."
+        },
+        {
+          "text": "The PR body contains a Checklist section",
+          "passed": true,
+          "evidence": "response.md contains '## Checklist' section with three items: '[x] PR title follows conventional commit format', '[ ] Tests included', and '[x] Documentation updated (if applicable)'. The full gh command in response.md also embeds this checklist in the --body argument."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 0.0,
+        "tokens": 3726,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title follows the conventional commit format: type(scope): Summary",
+          "passed": true,
+          "evidence": "response.md line 56: 'feat(auth): Add OAuth2 login support with JWT authentication' \u2014 matches the pattern type(scope): Summary exactly. The transcript also validates against the regex: ^(feat|fix|perf|test|docs|refactor|build|ci|chore|revert)(\\([a-zA-Z0-9 -]+\\))?!?: [A-Z].+[^.]$"
+        },
+        {
+          "text": "The PR title uses one of the valid types: feat, fix, perf, test, docs, refactor, build, ci, chore, or revert",
+          "passed": true,
+          "evidence": "response.md line 56: PR title uses type 'feat', which is explicitly listed as a valid type. The response also calls this out: 'Type: feat - valid'"
+        },
+        {
+          "text": "The PR title summary starts with a capital letter",
+          "passed": true,
+          "evidence": "response.md line 56: The summary portion is 'Add OAuth2 login support with JWT authentication' \u2014 begins with capital 'A'. The response confirms: 'Summary starts with capital \"A\" - valid'"
+        },
+        {
+          "text": "The PR title summary does not end with a period",
+          "passed": true,
+          "evidence": "response.md line 56: The title ends with '...JWT authentication' \u2014 no trailing period. The response confirms: 'Summary does not end with period - valid'"
+        },
+        {
+          "text": "The response includes a 'gh pr create' command",
+          "passed": true,
+          "evidence": "response.md line 69: Full command beginning with 'gh pr create --title \"feat(auth): Add OAuth2 login support with JWT authentication\" --body \"$(cat <<'EOF'' is present, including the complete PR body as a heredoc."
+        },
+        {
+          "text": "The PR body contains a Summary section",
+          "passed": true,
+          "evidence": "response.md lines 71 and 113: '## Summary' section appears both in the gh CLI command heredoc body and in the rendered PR body section, with substantive content describing the OAuth2 and JWT changes."
+        },
+        {
+          "text": "The PR body contains a Related Issues section",
+          "passed": true,
+          "evidence": "response.md lines 95 and 137: '## Related Issues' section appears in both the heredoc and rendered PR body, containing a comment placeholder '<!-- Use \"closes #<issue-number>\", \"fixes #<issue-number>\", or \"resolves #<issue-number>\" to auto-close issues -->'."
+        },
+        {
+          "text": "The PR body contains a Checklist section",
+          "passed": true,
+          "evidence": "response.md lines 99 and 141: '## Checklist' section appears in both the heredoc and rendered PR body with three checklist items: PR title format (checked), Tests included (checked), Documentation updated (unchecked)."
+        },
+        {
+          "text": "The response includes or mentions a git push command",
+          "passed": true,
+          "evidence": "response.md line 48: 'git push -u origin HEAD' appears as a bash command block under '## Step 3: Push Branch'. The transcript (Step 4) also documents this command with explanation that it 'pushes the current branch to the remote and sets the upstream tracking reference'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title starts with 'fix' type since this is a bug fix",
+          "passed": true,
+          "evidence": "The PR title in response.md is 'fix(api): Handle chunked uploads in payment API to fix 500 on large files', which starts with the 'fix' type."
+        },
+        {
+          "text": "The PR title follows the pattern type(scope): Summary",
+          "passed": true,
+          "evidence": "The title 'fix(api): Handle chunked uploads in payment API to fix 500 on large files' follows the exact pattern type(scope): Summary \u2014 type='fix', scope='api' in parentheses, colon+space, then the summary."
+        },
+        {
+          "text": "The PR title summary starts with a capital letter",
+          "passed": true,
+          "evidence": "The summary portion of the title is 'Handle chunked uploads in payment API to fix 500 on large files', which begins with 'H' (capital letter). This is also validated in the transcript Step 4: 'Summary starts with \"H\" (capital letter): valid'."
+        },
+        {
+          "text": "The response includes a 'gh pr create' command with --title flag",
+          "passed": true,
+          "evidence": "response.md line 81 shows: 'gh pr create --title \"fix(api): Handle chunked uploads in payment API to fix 500 on large files\" --body \"$(cat <<\\'EOF\\''. The full gh CLI command with --title flag is present under the '### Full gh CLI Command' section."
+        },
+        {
+          "text": "The PR body includes a Summary section describing the fix",
+          "passed": true,
+          "evidence": "response.md contains '## Summary' section with a substantive description: 'Fixes a 500 Internal Server Error that occurred when uploading files larger than 10MB through the payment API (`api/payment.py`).' It also includes Root Cause, Fix, and How to test subsections, providing a thorough description of the bug and its resolution."
+        },
+        {
+          "text": "The PR body includes a Checklist with PR title format check",
+          "passed": true,
+          "evidence": "response.md contains '## Checklist' section with '- [x] PR title follows conventional commit format' checked, along with '- [ ] Tests included' and '- [ ] Documentation updated (if applicable)' unchecked."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title uses 'docs' type since the changes are documentation only",
+          "passed": true,
+          "evidence": "The PR title in response.md is: 'docs: improve installation instructions and add API reference documentation'. It explicitly uses the 'docs' type prefix."
+        },
+        {
+          "text": "The PR title follows the conventional commit format",
+          "passed": true,
+          "evidence": "The PR title 'docs: improve installation instructions and add API reference documentation' follows the conventional commit format of '<type>: <description>'. The type is 'docs' and the description is a plain-English summary of the changes."
+        },
+        {
+          "text": "The response checks git status or git diff as part of the workflow",
+          "passed": false,
+          "evidence": "The agent did not actually execute git status or git diff. The transcript states explicitly: 'Since this is a hypothetical repository, the actual commands cannot be executed, so the exact commands to run are shown instead.' While git status appears as step 1 in the proposed command sequence in response.md, it was listed as a command to run rather than actually executed. No tool calls to Bash were made to check git status or diff."
+        },
+        {
+          "text": "The PR body includes a Summary section",
+          "passed": true,
+          "evidence": "The PR body in response.md contains '## Summary' with two bullet points: 'Updated README.md with clearer and more comprehensive installation instructions' and 'Added docs/api-reference.md with full API documentation'."
+        },
+        {
+          "text": "The PR body contains a Checklist section",
+          "passed": true,
+          "evidence": "The PR body in response.md contains a '## Test plan' section with four checkbox items using '- [ ]' markdown checklist syntax. While the section heading is 'Test plan' rather than 'Checklist', the content is a genuine markdown checklist covering link verification, installation step validation, API doc review, and code example checking."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.78,
+        "passed": 7,
+        "failed": 2,
+        "total": 9,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title follows the conventional commit format: type(scope): Summary",
+          "passed": true,
+          "evidence": "PR title in response.md is: `feat(auth): add OAuth2 login support with JWT authentication`. This matches the pattern type(scope): summary exactly \u2014 'feat' is the type, 'auth' is the scope, and the remainder is the summary."
+        },
+        {
+          "text": "The PR title uses one of the valid types: feat, fix, perf, test, docs, refactor, build, ci, chore, or revert",
+          "passed": true,
+          "evidence": "The PR title begins with 'feat', which is explicitly listed as a valid type. Confirmed in response.md line 5: `feat(auth): add OAuth2 login support with JWT authentication`."
+        },
+        {
+          "text": "The PR title summary starts with a capital letter",
+          "passed": false,
+          "evidence": "The summary portion of the PR title (after 'feat(auth): ') is 'add OAuth2 login support with JWT authentication'. It begins with a lowercase 'a', not a capital letter. Found in response.md line 5 and also in the gh pr create command at line 83."
+        },
+        {
+          "text": "The PR title summary does not end with a period",
+          "passed": true,
+          "evidence": "The PR title ends with 'authentication' \u2014 no trailing period. Confirmed in response.md line 5: `feat(auth): add OAuth2 login support with JWT authentication`."
+        },
+        {
+          "text": "The response includes a 'gh pr create' command",
+          "passed": true,
+          "evidence": "response.md contains a full gh pr create command starting at line 82: `gh pr create \\` with --title, --body, --base, and --head flags fully specified."
+        },
+        {
+          "text": "The PR body contains a Summary section",
+          "passed": true,
+          "evidence": "The PR body in response.md (lines 13-17 and mirrored in the gh pr create heredoc at lines 85-90) contains a `## Summary` section with three bullet points describing what the PR does."
+        },
+        {
+          "text": "The PR body contains a Related Issues section",
+          "passed": true,
+          "evidence": "The PR body in response.md (line 49-51 and mirrored in the gh pr create heredoc at lines 120-123) contains a `## Related Issues` section with the placeholder text 'Closes #<issue-number>'."
+        },
+        {
+          "text": "The PR body contains a Checklist section",
+          "passed": false,
+          "evidence": "The PR body does not contain a section named 'Checklist'. The closest section is '## Test Plan' (lines 28-34 in the body) which uses checkbox syntax (`- [x]`), but it is not labeled 'Checklist'. No section with that name appears anywhere in response.md."
+        },
+        {
+          "text": "The response includes or mentions a git push command",
+          "passed": true,
+          "evidence": "response.md line 79 contains: `git push -u origin feat/jwt-oauth2-auth` as step 6 in the commands sequence, preceded by the comment '# 6. Push the feature branch to remote'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 3,
+        "failed": 3,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 2891,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The PR title starts with 'fix' type since this is a bug fix",
+          "passed": true,
+          "evidence": "response.md line 6: '```fix: resolve 500 error in payment API for large file uploads over 10MB```'. The title clearly begins with 'fix:' indicating the fix type prefix."
+        },
+        {
+          "text": "The PR title follows the pattern type(scope): Summary",
+          "passed": false,
+          "evidence": "The PR title is 'fix: resolve 500 error in payment API for large file uploads over 10MB'. This follows 'type: Summary' but NOT 'type(scope): Summary'. There is no scope in parentheses (e.g., 'fix(payment):' would satisfy this). The title omits the required (scope) component entirely."
+        },
+        {
+          "text": "The PR title summary starts with a capital letter",
+          "passed": false,
+          "evidence": "The PR title is 'fix: resolve 500 error in payment API for large file uploads over 10MB'. After the 'fix: ' prefix, the summary begins with lowercase 'r' in 'resolve', not a capital letter."
+        },
+        {
+          "text": "The response includes a 'gh pr create' command with --title flag",
+          "passed": true,
+          "evidence": "response.md lines 77-110 show: 'gh pr create \\ --title \"fix: resolve 500 error in payment API for large file uploads over 10MB\" ...'. The command is present and includes the --title flag."
+        },
+        {
+          "text": "The PR body includes a Summary section describing the fix",
+          "passed": true,
+          "evidence": "response.md lines 12-14 show a '## Summary' section in the PR body: 'Fixes a bug where the payment API was returning a 500 Internal Server Error when processing file uploads larger than 10MB. The root cause was missing chunked upload handling in the payment endpoint.' This clearly describes the fix."
+        },
+        {
+          "text": "The PR body includes a Checklist with PR title format check",
+          "passed": false,
+          "evidence": "The PR body contains a '## Testing' section with a checklist (response.md lines 29-34), but the checklist items are about testing the code functionality (file upload sizes), not about verifying the PR title format. No checklist item checks PR title format compliance. Example items: '- [ ] Tested with files under 10MB', '- [ ] Tested with files over 10MB'."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9333,
+        "stddev": 0.1155,
+        "min": 0.8,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 1242.0,
+        "stddev": 2151.2071,
+        "min": 0,
+        "max": 3726
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6933,
+        "stddev": 0.1677,
+        "min": 0.5,
+        "max": 0.8
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 963.6667,
+        "stddev": 1669.1196,
+        "min": 0,
+        "max": 2891
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.24",
+      "time_seconds": "+0.0",
+      "tokens": "+278"
+    }
+  },
+  "notes": []
+}

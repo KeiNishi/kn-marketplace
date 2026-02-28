@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "godot-gdscript-patterns", "runs": [{"id": "eval-save-system-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Godot 4 RPG Save/Load System\n\nA complete save/load system for a Godot 4 RPG supporting player stats (health, level, position), quest progress, encrypted saves, and multi-platform compatibility.\n\n---\n\n## Overview\n\nThe system is built from three parts:\n\n1. **`SaveManager`** - Autoload singleton that handles file I/O with encryption\n2. **`Saveable`** - Component node attached to any scene that needs saving\n3. **`Player` / `QuestManager`** - Game objects that implement `get_custom_save_data()` / `load_custom_save_data()`\n\n`user://` paths are used throughout. Godot automatically maps `user://` to the correct platform-specific directory (Windows AppData, macOS Application Support, Linux ~/.local/share, Android/iOS sandboxed storage), giving full cross-platform compatibility for free.\n\n---\n\n## Project Setup\n\nIn **Project Settings > Autoload**, add:\n\n| Name | Path |\n|------|------|\n| `SaveManager` | `res://autoload/save_manager.gd` |\n| `QuestManager` | `res://autoload/quest_manager.gd` |\n\n---\n\n## 1. SaveManager (Autoload)\n\n```gdscript\n# res://autoload/save_manager.gd\nextends Node\n\n# user:// resolves to the correct platform path automatically:\n#   Windows : %APPDATA%\\Godot\\app_userdata\\<project>\\\n#   macOS   : ~/Library/Application Support/Godot/<project>/\n#   Linux   : ~/.local/share/godot/app_userdata/<project>/\n#   Android : /data/data/<package>/files/\n#   iOS     : <app>/Documents/\nconst SAVE_PATH := \"user://savegame.save\"\n\n# IMPORTANT: Replace with your own secret before shipping.\n# Consider reading this from an environment variable or a compiled constant.\nconst ENCRYPTION_KEY := \"your_secret_key_here\"\n\nsignal save_completed\nsignal load_completed\nsignal save_error(message: String)\n\n# ---------------------------------------------------------------------------\n# Public API\n# ---------------------------------------------------------------------------\n\nfunc save_game() -> void:\n    var data := _collect_save_data()\n\n    var file := FileAccess.open_encrypted_with_pass(\n        SAVE_PATH,\n        FileAccess.WRITE,\n        ENCRYPTION_KEY\n    )\n\n    if file == null:\n        save_error.emit(\"Could not open save file for writing: %s\" % SAVE_PATH)\n        return\n\n    file.store_string(JSON.stringify(data))\n    file.close()\n\n    save_completed.emit()\n    print(\"[SaveManager] Game saved.\")\n\nfunc load_game() -> void:\n    if not FileAccess.file_exists(SAVE_PATH):\n        print(\"[SaveManager] No save file found.\")\n        return\n\n    var file := FileAccess.open_encrypted_with_pass(\n        SAVE_PATH,\n        FileAccess.READ,\n        ENCRYPTION_KEY\n    )\n\n    if file == null:\n        save_error.emit(\"Could not open save file for reading: %s\" % SAVE_PATH)\n        return\n\n    var raw := file.get_as_text()\n    file.close()\n\n    var parsed: Variant = JSON.parse_string(raw)\n    if parsed == null or not parsed is Dictionary:\n        save_error.emit(\"Save data is corrupted or unreadable.\")\n        return\n\n    _distribute_save_data(parsed as Dictionary)\n    load_completed.emit()\n    print(\"[SaveManager] Game loaded.\")\n\nfunc delete_save() -> void:\n    if FileAccess.file_exists(SAVE_PATH):\n        DirAccess.remove_absolute(SAVE_PATH)\n        print(\"[SaveManager] Save file deleted.\")\n\nfunc has_save() -> bool:\n    return FileAccess.file_exists(SAVE_PATH)\n\n# ---------------------------------------------------------------------------\n# Internal helpers\n# ---------------------------------------------------------------------------\n\n## Collect save data from every node in the \"saveable\" group.\nfunc _collect_save_data() -> Dictionary:\n    var data: Dictionary = {}\n    for node in get_tree().get_nodes_in_group(\"saveable\"):\n        var saveable := node.get_node_or_null(\"Saveable\") as Saveable\n        if saveable:\n            var entry := saveable.get_save_data()\n            data[entry[\"id\"]] = entry\n    return data\n\n## Push loaded data back to every saveable node.\nfunc _distribute_save_data(data: Dictionary) -> void:\n    for node in get_tree().get_nodes_in_group(\"saveable\"):\n        var saveable := node.get_node_or_null(\"Saveable\") as Saveable\n        if saveable and data.has(saveable.save_id):\n            saveable.load_save_data(data[saveable.save_id])\n```\n\n---\n\n## 2. Saveable Component\n\n```gdscript\n# res://components/saveable.gd\nclass_name Saveable\nextends Node\n\n## Unique identifier for this object in the save file.\n## If left blank, the node's full scene-tree path is used.\n@export var save_id: String\n\nfunc _ready() -> void:\n    if save_id.is_empty():\n        save_id = str(get_path())\n\n## Gather all save data from the parent node.\nfunc get_save_data() -> Dictionary:\n    var parent := get_parent()\n    var data: Dictionary = {\"id\": save_id}\n\n    # Automatically capture 2D position if the parent is a Node2D.\n    if parent is Node2D:\n        data[\"position\"] = {\"x\": parent.position.x, \"y\": parent.position.y}\n\n    # Let the parent supply game-specific data.\n    if parent.has_method(\"get_custom_save_data\"):\n        data.merge(parent.get_custom_save_data())\n\n    return data\n\n## Restore save data into the parent node.\nfunc load_save_data(data: Dictionary) -> void:\n    var parent := get_parent()\n\n    if data.has(\"position\") and parent is Node2D:\n        parent.position = Vector2(data[\"position\"][\"x\"], data[\"position\"][\"y\"])\n\n    if parent.has_method(\"load_custom_save_data\"):\n        parent.load_custom_save_data(data)\n```\n\n---\n\n## 3. Player (implements the saveable interface)\n\n```gdscript\n# res://characters/player.gd\nclass_name Player\nextends CharacterBody2D\n\n# --- Stats ---\n@export var max_health: int = 100\nvar current_health: int\nvar level: int = 1\nvar experience: int = 0\n\nsignal health_changed(new_health: int)\nsignal level_up(new_level: int)\n\nfunc _ready() -> void:\n    current_health = max_health\n    # Register with the saveable group so SaveManager can find this node.\n    add_to_group(\"saveable\")\n\n# ---------------------------------------------------------------------------\n# Saveable interface\n# ---------------------------------------------------------------------------\n\n## Called by Saveable.get_save_data() to add player-specific fields.\nfunc get_custom_save_data() -> Dictionary:\n    return {\n        \"health\":     current_health,\n        \"max_health\": max_health,\n        \"level\":      level,\n        \"experience\": experience,\n    }\n\n## Called by Saveable.load_save_data() to restore player-specific fields.\nfunc load_custom_save_data(data: Dictionary) -> void:\n    if data.has(\"health\"):\n        current_health = data[\"health\"]\n        health_changed.emit(current_health)\n    if data.has(\"max_health\"):\n        max_health = data[\"max_health\"]\n    if data.has(\"level\"):\n        level = data[\"level\"]\n    if data.has(\"experience\"):\n        experience = data[\"experience\"]\n\n# ---------------------------------------------------------------------------\n# Gameplay methods\n# ---------------------------------------------------------------------------\n\nfunc take_damage(amount: int) -> void:\n    current_health = maxi(current_health - amount, 0)\n    health_changed.emit(current_health)\n    if current_health == 0:\n        _die()\n\nfunc heal(amount: int) -> void:\n    current_health = mini(current_health + amount, max_health)\n    health_changed.emit(current_health)\n\nfunc gain_experience(amount: int) -> void:\n    experience += amount\n    var xp_needed := level * 100\n    if experience >= xp_needed:\n        experience -= xp_needed\n        level += 1\n        level_up.emit(level)\n\nfunc _die() -> void:\n    print(\"Player died!\")\n```\n\n**Player scene structure (Player.tscn):**\n\n```\nPlayer (CharacterBody2D) <- player.gd\n\u2514\u2500\u2500 Saveable (Node)      <- saveable.gd  [save_id: \"player\"]\n```\n\n---\n\n## 4. QuestManager (Autoload \u2014 handles quest progress)\n\n```gdscript\n# res://autoload/quest_manager.gd\nextends Node\n\nsignal quest_started(quest_id: String)\nsignal quest_completed(quest_id: String)\nsignal objective_updated(quest_id: String, objective_id: String, progress: int)\n\n# quest_id -> { \"status\": \"active\"|\"completed\"|\"failed\", \"objectives\": { obj_id: progress } }\nvar _quests: Dictionary = {}\n\nfunc _ready() -> void:\n    # QuestManager acts as its own saveable via SaveManager signals.\n    SaveManager.save_completed.connect(_on_save_completed)  # optional hook\n    add_to_group(\"saveable\")\n\n# ---------------------------------------------------------------------------\n# Quest logic\n# ---------------------------------------------------------------------------\n\nfunc start_quest(quest_id: String) -> void:\n    if _quests.has(quest_id):\n        return\n    _quests[quest_id] = {\"status\": \"active\", \"objectives\": {}}\n    quest_started.emit(quest_id)\n\nfunc complete_quest(quest_id: String) -> void:\n    if not _quests.has(quest_id):\n        return\n    _quests[quest_id][\"status\"] = \"completed\"\n    quest_completed.emit(quest_id)\n\nfunc update_objective(quest_id: String, objective_id: String, progress: int) -> void:\n    if not _quests.has(quest_id):\n        return\n    _quests[quest_id][\"objectives\"][objective_id] = progress\n    objective_updated.emit(quest_id, objective_id, progress)\n\nfunc is_quest_active(quest_id: String) -> bool:\n    return _quests.get(quest_id, {}).get(\"status\", \"\") == \"active\"\n\nfunc is_quest_completed(quest_id: String) -> bool:\n    return _quests.get(quest_id, {}).get(\"status\", \"\") == \"completed\"\n\nfunc get_objective_progress(quest_id: String, objective_id: String) -> int:\n    return _quests.get(quest_id, {}).get(\"objectives\", {}).get(objective_id, 0)\n\n# ---------------------------------------------------------------------------\n# Saveable interface\n# (QuestManager is an autoload, so it uses a manual approach rather than\n#  a child Saveable node \u2014 it registers directly with SaveManager.)\n# ---------------------------------------------------------------------------\n\nfunc get_custom_save_data() -> Dictionary:\n    return {\"quests\": _quests}\n\nfunc load_custom_save_data(data: Dictionary) -> void:\n    if data.has(\"quests\"):\n        _quests = data[\"quests\"]\n\n# Provide an ID so SaveManager._collect_save_data() can key this entry.\n# We expose a fake \"Saveable\" sub-node via a helper below, OR we integrate\n# QuestManager directly in SaveManager._collect_save_data().\n# The simplest approach: give QuestManager a Saveable child node in the scene.\nfunc _on_save_completed() -> void:\n    pass  # hook for additional logic after save\n```\n\n**Integrating QuestManager with SaveManager:**\n\nBecause `QuestManager` is an Autoload (not a scene node with children), the cleanest approach is to extend `_collect_save_data` and `_distribute_save_data` in `SaveManager` to handle it explicitly:\n\n```gdscript\n# In save_manager.gd \u2014 replace _collect_save_data and _distribute_save_data:\n\nfunc _collect_save_data() -> Dictionary:\n    var data: Dictionary = {}\n\n    # Saveable nodes (Player, NPCs, chests, etc.)\n    for node in get_tree().get_nodes_in_group(\"saveable\"):\n        var saveable := node.get_node_or_null(\"Saveable\") as Saveable\n        if saveable:\n            var entry := saveable.get_save_data()\n            data[entry[\"id\"]] = entry\n\n    # QuestManager (autoload \u2014 no Saveable child node needed)\n    data[\"quest_manager\"] = QuestManager.get_custom_save_data()\n\n    return data\n\nfunc _distribute_save_data(data: Dictionary) -> void:\n    for node in get_tree().get_nodes_in_group(\"saveable\"):\n        var saveable := node.get_node_or_null(\"Saveable\") as Saveable\n        if saveable and data.has(saveable.save_id):\n            saveable.load_save_data(data[saveable.save_id])\n\n    if data.has(\"quest_manager\"):\n        QuestManager.load_custom_save_data(data[\"quest_manager\"])\n```\n\n---\n\n## 5. Save UI / Triggering Saves\n\n```gdscript\n# res://ui/save_menu.gd\nextends Control\n\n@onready var save_button: Button = $SaveButton\n@onready var load_button: Button = $LoadButton\n@onready var status_label: Label = $StatusLabel\n\nfunc _ready() -> void:\n    save_button.pressed.connect(_on_save_pressed)\n    load_button.pressed.connect(_on_load_pressed)\n    load_button.disabled = not SaveManager.has_save()\n\n    SaveManager.save_completed.connect(_on_save_completed)\n    SaveManager.load_completed.connect(_on_load_completed)\n    SaveManager.save_error.connect(_on_save_error)\n\nfunc _on_save_pressed() -> void:\n    SaveManager.save_game()\n\nfunc _on_load_pressed() -> void:\n    SaveManager.load_game()\n\nfunc _on_save_completed() -> void:\n    status_label.text = \"Game saved!\"\n\nfunc _on_load_completed() -> void:\n    status_label.text = \"Game loaded!\"\n    load_button.disabled = false\n\nfunc _on_save_error(message: String) -> void:\n    status_label.text = \"Error: \" + message\n    push_error(\"[SaveManager] \" + message)\n```\n\n---\n\n## 6. Example: Chest (Saveable Non-Player Object)\n\nAny scene can become saveable by adding a `Saveable` child node and implementing the two methods.\n\n```gdscript\n# res://objects/chest.gd\nclass_name Chest\nextends StaticBody2D\n\nvar is_open: bool = false\n\nsignal opened\n\nfunc _ready() -> void:\n    add_to_group(\"saveable\")\n\nfunc open() -> void:\n    if is_open:\n        return\n    is_open = true\n    opened.emit()\n    $AnimationPlayer.play(\"open\")\n\nfunc get_custom_save_data() -> Dictionary:\n    return {\"is_open\": is_open}\n\nfunc load_custom_save_data(data: Dictionary) -> void:\n    if data.get(\"is_open\", false):\n        # Restore opened state without animation\n        is_open = true\n        $AnimationPlayer.play(\"open_idle\")\n```\n\n**Chest scene structure (Chest.tscn):**\n\n```\nChest (StaticBody2D) <- chest.gd\n\u2514\u2500\u2500 Saveable (Node)  <- saveable.gd  [save_id: \"chest_forest_01\"]\n```\n\n---\n\n## 7. Example Save File Structure (JSON, before encryption)\n\n```json\n{\n  \"player\": {\n    \"id\": \"player\",\n    \"position\": { \"x\": 320.0, \"y\": 240.0 },\n    \"health\": 75,\n    \"max_health\": 100,\n    \"level\": 5,\n    \"experience\": 230\n  },\n  \"chest_forest_01\": {\n    \"id\": \"chest_forest_01\",\n    \"position\": { \"x\": 640.0, \"y\": 128.0 },\n    \"is_open\": true\n  },\n  \"quest_manager\": {\n    \"quests\": {\n      \"main_quest_01\": {\n        \"status\": \"active\",\n        \"objectives\": {\n          \"kill_wolves\": 3,\n          \"find_herb\": 1\n        }\n      },\n      \"side_quest_02\": {\n        \"status\": \"completed\",\n        \"objectives\": {}\n      }\n    }\n  }\n}\n```\n\n---\n\n## Platform Compatibility Notes\n\n| Platform | `user://` resolves to |\n|----------|-----------------------|\n| Windows | `%APPDATA%\\Godot\\app_userdata\\<project name>\\` |\n| macOS | `~/Library/Application Support/Godot/<project name>/` |\n| Linux | `~/.local/share/godot/app_userdata/<project name>/` |\n| Android | `/data/data/<package name>/files/` |\n| iOS | `<app bundle>/Documents/` |\n| HTML5/Web | Persistent storage via IndexedDB (Godot handles automatically) |\n\nUsing `user://` instead of `res://` or absolute paths is the key to platform compatibility \u2014 Godot handles path translation automatically.\n\n---\n\n## Security Notes\n\n- `FileAccess.open_encrypted_with_pass()` uses AES-256-CBC encryption internally.\n- Replace `ENCRYPTION_KEY` with a unique string before shipping \u2014 do not use the placeholder.\n- For additional security, consider storing the key as a compiled constant (using a build script) rather than a plain string literal.\n- Encrypted saves will be unreadable (and unmodifiable) by players without the key.\n- The JSON structure inside is still human-readable if decrypted \u2014 do not store sensitive real-world data in save files.\n\n---\n\n## Quick Reference Checklist\n\n- [ ] `save_manager.gd` added to Autoload as `SaveManager`\n- [ ] `quest_manager.gd` added to Autoload as `QuestManager`\n- [ ] `Saveable` child node added to every scene that needs saving\n- [ ] Each saveable scene calls `add_to_group(\"saveable\")` in `_ready()`\n- [ ] Each saveable scene implements `get_custom_save_data()` and `load_custom_save_data()`\n- [ ] `ENCRYPTION_KEY` replaced with a unique secret before release\n- [ ] `SaveManager.save_error` signal connected to display errors to the player\n"}], "grading": {"expectations": [{"text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)", "passed": true, "evidence": "The SaveManager uses FileAccess.open_encrypted_with_pass(), FileAccess.file_exists(), FileAccess.WRITE, and FileAccess.READ throughout. The deprecated Godot 3 File class does not appear anywhere in the output. Transcript Step 3 notes 'FileAccess.open_encrypted_with_pass()' as the primary pattern extracted from the reference file."}, {"text": "The implementation mentions or includes encryption support", "passed": true, "evidence": "Encryption is a first-class feature: save_game() calls FileAccess.open_encrypted_with_pass(SAVE_PATH, FileAccess.WRITE, ENCRYPTION_KEY) and load_game() calls the same API with FileAccess.READ. A dedicated Security Notes section states 'FileAccess.open_encrypted_with_pass() uses AES-256-CBC encryption internally.' An ENCRYPTION_KEY constant is defined and a checklist item reminds users to replace it before release."}, {"text": "The code uses static typing", "passed": true, "evidence": "Static typing is used consistently throughout all scripts. Examples: 'var data: Dictionary = {}', '@export var max_health: int = 100', 'var level: int = 1', 'var experience: int = 0', signal parameters typed as '(message: String)' and '(new_health: int)', return types declared on all functions ('-> void', '-> Dictionary', '-> bool'). The walrus-style inference operator ':=' is used with typed right-hand sides (e.g., 'var file := FileAccess.open_encrypted_with_pass(...)')."}, {"text": "The solution organizes saveable nodes with a consistent interface or pattern", "passed": true, "evidence": "A clear, reusable Saveable component pattern is established: (1) any scene adds a Saveable child node, (2) calls add_to_group(\"saveable\") in _ready(), and (3) implements get_custom_save_data() and load_custom_save_data(). SaveManager iterates the group uniformly. Three distinct objects follow this pattern\u2014Player, Chest, and QuestManager\u2014demonstrating consistency. Scene tree diagrams show the canonical structure explicitly."}, {"text": "The save data includes player stats like health, level, and position", "passed": true, "evidence": "Player.get_custom_save_data() returns {\"health\": current_health, \"max_health\": max_health, \"level\": level, \"experience\": experience}. Position is captured automatically by the Saveable component: 'data[\"position\"] = {\"x\": parent.position.x, \"y\": parent.position.y}'. The example JSON structure in Section 7 confirms all three fields: '\"health\": 75', '\"level\": 5', '\"position\": { \"x\": 320.0, \"y\": 240.0 }'."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 8, "errors_encountered": 0, "output_chars": 14847, "transcript_chars": 3102}, "timing": {}, "claims": [{"claim": "SaveManager uses FileAccess.open_encrypted_with_pass() with AES-256-CBC encryption", "type": "factual", "verified": true, "evidence": "Both save_game() and load_game() in response.md call FileAccess.open_encrypted_with_pass(). The Security Notes section confirms 'AES-256-CBC encryption internally.'"}, {"claim": "user:// paths are used for cross-platform compatibility", "type": "factual", "verified": true, "evidence": "SAVE_PATH is defined as 'user://savegame.save'. A Platform Compatibility Notes table documents the resolution path for Windows, macOS, Linux, Android, iOS, and HTML5/Web."}, {"claim": "The system uses a group-based discovery mechanism ('saveable' group) to find nodes at save/load time", "type": "process", "verified": true, "evidence": "_collect_save_data() calls get_tree().get_nodes_in_group(\"saveable\") and _distribute_save_data() does the same. Player, Chest, and QuestManager each call add_to_group(\"saveable\") in _ready()."}, {"claim": "QuestManager is integrated directly in SaveManager rather than via a child Saveable node", "type": "process", "verified": true, "evidence": "Transcript Step 7 states 'QuestManager \u2014 Autoload tracking quest status... integrated directly in SaveManager rather than via a child Saveable node.' The updated _collect_save_data() explicitly calls QuestManager.get_custom_save_data() and _distribute_save_data() calls QuestManager.load_custom_save_data()."}, {"claim": "No errors were encountered during execution", "type": "factual", "verified": true, "evidence": "metrics.json records: {\"total_steps\": 8, \"errors_encountered\": 0}"}, {"claim": "All five reference files needed were read before composing the response", "type": "process", "verified": false, "evidence": "Only three reference files were read (save-system.md, resource-data.md, autoload-singletons.md) out of the ten available. The transcript does not claim all five were read\u2014the claim concerns only the ones identified as relevant\u2014so this is not a failure, but the transcript only identifies and reads three."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "The code uses static typing", "reason": "This assertion is satisfied by almost any GDScript that declares even one typed variable. A stronger assertion would require return types on all public methods AND typed parameters, not just incidental use of ':=' inference. The current check provides false confidence that the code is fully statically typed when partial use would also pass."}, {"assertion": null, "reason": "No assertion checks whether load_custom_save_data() actually restores all the fields saved by get_custom_save_data(). The Player script saves 'experience' but an implementation that silently dropped it on load would still pass all five assertions. A round-trip correctness check would close this gap."}, {"assertion": null, "reason": "No assertion verifies that the Saveable component pattern\u2014and not just an ad-hoc implementation\u2014is used for non-player objects. The Chest example demonstrates the pattern, but an output that only saved the player without any reusable Saveable component would pass assertions 1, 2, 3, and 5."}], "overall": "All five assertions are genuinely satisfied with substantial evidence. The evals cover the most critical surface areas. The main gap is that the assertions test for presence and structure but not for load correctness or for the system's extensibility to non-player objects being enforced by assertions."}}}, {"id": "eval-save-system-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Godot 4 RPG Save/Load System with Encryption\n\n## Overview\n\nThis implementation provides a complete save/load system for a Godot 4 RPG that:\n- Saves player stats (health, level, position)\n- Saves quest progress\n- Works cross-platform using Godot's `user://` path\n- Supports AES-256 encryption via Godot's `FileAccess` encryption API\n\n---\n\n## File Structure\n\n```\nres://\n\u251c\u2500\u2500 autoload/\n\u2502   \u2514\u2500\u2500 SaveManager.gd       # Singleton managing all save/load logic\n\u251c\u2500\u2500 scripts/\n\u2502   \u251c\u2500\u2500 PlayerData.gd         # Data container for player stats\n\u2502   \u2514\u2500\u2500 QuestData.gd          # Data container for quest progress\n\u2514\u2500\u2500 player/\n    \u2514\u2500\u2500 Player.gd             # Player node using SaveManager\n```\n\n---\n\n## 1. PlayerData Resource (`res://scripts/PlayerData.gd`)\n\n```gdscript\n# PlayerData.gd\n# A simple data container for player stats.\n# Using a plain Dictionary approach for serialization compatibility.\nclass_name PlayerData\n\nvar health: int = 100\nvar max_health: int = 100\nvar level: int = 1\nvar experience: int = 0\nvar position_x: float = 0.0\nvar position_y: float = 0.0\nvar position_z: float = 0.0  # Use for 3D; ignore for 2D\n\nfunc to_dict() -> Dictionary:\n    return {\n        \"health\": health,\n        \"max_health\": max_health,\n        \"level\": level,\n        \"experience\": experience,\n        \"position_x\": position_x,\n        \"position_y\": position_y,\n        \"position_z\": position_z,\n    }\n\nfunc from_dict(data: Dictionary) -> void:\n    health = data.get(\"health\", 100)\n    max_health = data.get(\"max_health\", 100)\n    level = data.get(\"level\", 1)\n    experience = data.get(\"experience\", 0)\n    position_x = data.get(\"position_x\", 0.0)\n    position_y = data.get(\"position_y\", 0.0)\n    position_z = data.get(\"position_z\", 0.0)\n```\n\n---\n\n## 2. QuestData Container (`res://scripts/QuestData.gd`)\n\n```gdscript\n# QuestData.gd\n# Tracks the state of all quests.\nclass_name QuestData\n\n# Quest states\nenum QuestState {\n    NOT_STARTED,\n    IN_PROGRESS,\n    COMPLETED,\n    FAILED\n}\n\n# Dictionary mapping quest_id (String) -> Dictionary with state and objectives\nvar quests: Dictionary = {}\n\nfunc set_quest_state(quest_id: String, state: QuestState) -> void:\n    if not quests.has(quest_id):\n        quests[quest_id] = {\"state\": state, \"objectives\": {}}\n    else:\n        quests[quest_id][\"state\"] = state\n\nfunc get_quest_state(quest_id: String) -> QuestState:\n    if quests.has(quest_id):\n        return quests[quest_id].get(\"state\", QuestState.NOT_STARTED)\n    return QuestState.NOT_STARTED\n\nfunc set_objective_progress(quest_id: String, objective_id: String, progress: int) -> void:\n    if not quests.has(quest_id):\n        quests[quest_id] = {\"state\": QuestState.IN_PROGRESS, \"objectives\": {}}\n    quests[quest_id][\"objectives\"][objective_id] = progress\n\nfunc get_objective_progress(quest_id: String, objective_id: String) -> int:\n    if quests.has(quest_id):\n        return quests[quest_id][\"objectives\"].get(objective_id, 0)\n    return 0\n\nfunc to_dict() -> Dictionary:\n    # Convert enum values to int for JSON serialization\n    var serialized: Dictionary = {}\n    for quest_id in quests:\n        var quest = quests[quest_id]\n        serialized[quest_id] = {\n            \"state\": int(quest[\"state\"]),\n            \"objectives\": quest[\"objectives\"].duplicate()\n        }\n    return serialized\n\nfunc from_dict(data: Dictionary) -> void:\n    quests.clear()\n    for quest_id in data:\n        var quest = data[quest_id]\n        quests[quest_id] = {\n            \"state\": quest.get(\"state\", QuestState.NOT_STARTED) as QuestState,\n            \"objectives\": quest.get(\"objectives\", {}).duplicate()\n        }\n```\n\n---\n\n## 3. SaveManager Autoload (`res://autoload/SaveManager.gd`)\n\nThis is the core singleton. Add it to **Project > Project Settings > Autoload** as `SaveManager`.\n\n```gdscript\n# SaveManager.gd\n# Autoload singleton for saving and loading game data.\n# Supports encrypted saves using Godot 4's FileAccess API.\nextends Node\n\n# --- Configuration ---\nconst SAVE_DIR: String = \"user://saves/\"\nconst SAVE_FILE: String = \"save_slot_{slot}.sav\"\nconst MAX_SLOTS: int = 3\n\n# IMPORTANT: In production, derive this key from a secure source.\n# Do NOT hardcode sensitive keys in shipped games.\n# Consider using OS.get_unique_id() combined with a build secret,\n# or prompting the user for a password and deriving a key with PBKDF2.\nconst ENCRYPTION_KEY: String = \"MySecretKey12345\"  # Must be <= 32 chars for AES-256\n\n# Signals\nsignal save_completed(slot: int)\nsignal load_completed(slot: int)\nsignal save_failed(slot: int, error: String)\nsignal load_failed(slot: int, error: String)\n\n# --- Public API ---\n\n## Save game data to a specific slot (0-indexed).\n## player_data: PlayerData instance\n## quest_data: QuestData instance\nfunc save_game(slot: int, player_data: PlayerData, quest_data: QuestData) -> bool:\n    if slot < 0 or slot >= MAX_SLOTS:\n        push_error(\"SaveManager: Invalid save slot %d\" % slot)\n        emit_signal(\"save_failed\", slot, \"Invalid slot\")\n        return false\n\n    _ensure_save_dir()\n\n    var save_payload: Dictionary = {\n        \"version\": 1,  # Schema version for future migration\n        \"timestamp\": Time.get_unix_time_from_system(),\n        \"player\": player_data.to_dict(),\n        \"quests\": quest_data.to_dict(),\n    }\n\n    var json_string: String = JSON.stringify(save_payload)\n    var file_path: String = _get_save_path(slot)\n\n    var result: bool = _write_encrypted(file_path, json_string)\n    if result:\n        print(\"SaveManager: Game saved to slot %d at %s\" % [slot, file_path])\n        emit_signal(\"save_completed\", slot)\n    else:\n        emit_signal(\"save_failed\", slot, \"Write error\")\n    return result\n\n\n## Load game data from a specific slot.\n## Returns a Dictionary with keys \"player\" (PlayerData) and \"quests\" (QuestData),\n## or an empty Dictionary on failure.\nfunc load_game(slot: int) -> Dictionary:\n    if slot < 0 or slot >= MAX_SLOTS:\n        push_error(\"SaveManager: Invalid save slot %d\" % slot)\n        emit_signal(\"load_failed\", slot, \"Invalid slot\")\n        return {}\n\n    var file_path: String = _get_save_path(slot)\n\n    if not FileAccess.file_exists(file_path):\n        push_warning(\"SaveManager: No save file found at %s\" % file_path)\n        emit_signal(\"load_failed\", slot, \"File not found\")\n        return {}\n\n    var json_string: String = _read_encrypted(file_path)\n    if json_string.is_empty():\n        emit_signal(\"load_failed\", slot, \"Read error or empty file\")\n        return {}\n\n    var json = JSON.new()\n    var parse_result: Error = json.parse(json_string)\n    if parse_result != OK:\n        push_error(\"SaveManager: JSON parse error: %s\" % json.get_error_message())\n        emit_signal(\"load_failed\", slot, \"JSON parse error\")\n        return {}\n\n    var data: Dictionary = json.get_data()\n\n    # Version migration hook\n    data = _migrate_save_data(data)\n\n    var player_data := PlayerData.new()\n    player_data.from_dict(data.get(\"player\", {}))\n\n    var quest_data := QuestData.new()\n    quest_data.from_dict(data.get(\"quests\", {}))\n\n    print(\"SaveManager: Game loaded from slot %d\" % slot)\n    emit_signal(\"load_completed\", slot)\n\n    return {\n        \"player\": player_data,\n        \"quests\": quest_data,\n    }\n\n\n## Delete a save slot.\nfunc delete_save(slot: int) -> bool:\n    var file_path: String = _get_save_path(slot)\n    if FileAccess.file_exists(file_path):\n        var err: Error = DirAccess.remove_absolute(file_path)\n        if err == OK:\n            print(\"SaveManager: Deleted save slot %d\" % slot)\n            return true\n        else:\n            push_error(\"SaveManager: Failed to delete slot %d (error %d)\" % [slot, err])\n            return false\n    return true  # Nothing to delete\n\n\n## Check if a save slot has data.\nfunc slot_has_save(slot: int) -> bool:\n    return FileAccess.file_exists(_get_save_path(slot))\n\n\n## Get metadata for a save slot without fully loading it.\n## Returns a Dictionary with \"timestamp\" and \"level\", or empty on failure.\nfunc get_save_metadata(slot: int) -> Dictionary:\n    if not slot_has_save(slot):\n        return {}\n\n    var file_path: String = _get_save_path(slot)\n    var json_string: String = _read_encrypted(file_path)\n    if json_string.is_empty():\n        return {}\n\n    var json = JSON.new()\n    if json.parse(json_string) != OK:\n        return {}\n\n    var data: Dictionary = json.get_data()\n    return {\n        \"timestamp\": data.get(\"timestamp\", 0),\n        \"level\": data.get(\"player\", {}).get(\"level\", 1),\n    }\n\n\n# --- Private Helpers ---\n\nfunc _get_save_path(slot: int) -> String:\n    return SAVE_DIR + SAVE_FILE.format({\"slot\": slot})\n\n\nfunc _ensure_save_dir() -> void:\n    if not DirAccess.dir_exists_absolute(SAVE_DIR):\n        var err: Error = DirAccess.make_dir_recursive_absolute(SAVE_DIR)\n        if err != OK:\n            push_error(\"SaveManager: Could not create save directory: %s\" % SAVE_DIR)\n\n\nfunc _write_encrypted(path: String, content: String) -> bool:\n    # FileAccess.open_encrypted_with_pass uses AES-256-CBC\n    var file: FileAccess = FileAccess.open_encrypted_with_pass(\n        path,\n        FileAccess.WRITE,\n        ENCRYPTION_KEY\n    )\n    if file == null:\n        push_error(\"SaveManager: Failed to open file for writing: %s (error: %d)\" % [\n            path, FileAccess.get_open_error()\n        ])\n        return false\n\n    file.store_string(content)\n    file.close()\n    return true\n\n\nfunc _read_encrypted(path: String) -> String:\n    var file: FileAccess = FileAccess.open_encrypted_with_pass(\n        path,\n        FileAccess.READ,\n        ENCRYPTION_KEY\n    )\n    if file == null:\n        push_error(\"SaveManager: Failed to open file for reading: %s (error: %d)\" % [\n            path, FileAccess.get_open_error()\n        ])\n        return \"\"\n\n    var content: String = file.get_as_text()\n    file.close()\n    return content\n\n\n## Handle save data migration between schema versions.\nfunc _migrate_save_data(data: Dictionary) -> Dictionary:\n    var version: int = data.get(\"version\", 0)\n\n    # Example: migrate from version 0 (no version field) to version 1\n    if version < 1:\n        # Provide defaults for any missing fields introduced in v1\n        if not data.has(\"quests\"):\n            data[\"quests\"] = {}\n        data[\"version\"] = 1\n\n    # Future migrations: if version < 2: ...\n\n    return data\n```\n\n---\n\n## 4. Player Integration (`res://player/Player.gd`)\n\n```gdscript\n# Player.gd\nextends CharacterBody3D  # Use CharacterBody2D for 2D games\n\nvar player_data := PlayerData.new()\nvar quest_data := QuestData.new()\n\nconst DEFAULT_SAVE_SLOT: int = 0\n\nfunc _ready() -> void:\n    # Attempt to load existing save on startup\n    _load_or_initialize()\n\nfunc _load_or_initialize() -> void:\n    if SaveManager.slot_has_save(DEFAULT_SAVE_SLOT):\n        var loaded: Dictionary = SaveManager.load_game(DEFAULT_SAVE_SLOT)\n        if not loaded.is_empty():\n            player_data = loaded[\"player\"]\n            quest_data = loaded[\"quests\"]\n            _apply_player_data()\n        else:\n            push_warning(\"Player: Load failed, using defaults.\")\n            _initialize_defaults()\n    else:\n        _initialize_defaults()\n\nfunc _initialize_defaults() -> void:\n    player_data = PlayerData.new()\n    quest_data = QuestData.new()\n    global_position = Vector3(0, 1, 0)  # Spawn point\n\nfunc _apply_player_data() -> void:\n    global_position = Vector3(\n        player_data.position_x,\n        player_data.position_y,\n        player_data.position_z\n    )\n    # Apply health, level, etc. to your game systems here\n    print(\"Player loaded: Level %d, HP %d/%d\" % [\n        player_data.level, player_data.health, player_data.max_health\n    ])\n\n## Call this to save the game (e.g., at checkpoints or on pause menu).\nfunc save_game(slot: int = DEFAULT_SAVE_SLOT) -> void:\n    # Capture current position before saving\n    player_data.position_x = global_position.x\n    player_data.position_y = global_position.y\n    player_data.position_z = global_position.z\n\n    var success: bool = SaveManager.save_game(slot, player_data, quest_data)\n    if success:\n        print(\"Game saved successfully.\")\n    else:\n        print(\"Failed to save game.\")\n\n## Example: update a quest from game logic\nfunc complete_quest(quest_id: String) -> void:\n    quest_data.set_quest_state(quest_id, QuestData.QuestState.COMPLETED)\n    print(\"Quest completed: %s\" % quest_id)\n\n## Example: track objective progress\nfunc update_objective(quest_id: String, objective_id: String, amount: int) -> void:\n    quest_data.set_objective_progress(quest_id, objective_id, amount)\n```\n\n---\n\n## 5. Save Slot UI Example\n\n```gdscript\n# SaveSlotButton.gd - Attach to a Button node in your save/load menu\nextends Button\n\n@export var slot: int = 0\n\nfunc _ready() -> void:\n    _refresh_label()\n    SaveManager.save_completed.connect(_on_save_completed)\n    SaveManager.load_completed.connect(_on_load_completed)\n\nfunc _refresh_label() -> void:\n    if SaveManager.slot_has_save(slot):\n        var meta: Dictionary = SaveManager.get_save_metadata(slot)\n        var dt: Dictionary = Time.get_datetime_dict_from_unix_time(meta.get(\"timestamp\", 0))\n        text = \"Slot %d - Level %d\\n%04d/%02d/%02d %02d:%02d\" % [\n            slot + 1,\n            meta.get(\"level\", 1),\n            dt.year, dt.month, dt.day, dt.hour, dt.minute\n        ]\n    else:\n        text = \"Slot %d - Empty\" % (slot + 1)\n\nfunc _on_save_completed(saved_slot: int) -> void:\n    if saved_slot == slot:\n        _refresh_label()\n\nfunc _on_load_completed(loaded_slot: int) -> void:\n    pass  # Handle UI feedback if needed\n```\n\n---\n\n## Platform Compatibility Notes\n\n| Platform     | `user://` Path                                         |\n|--------------|--------------------------------------------------------|\n| Windows      | `%APPDATA%\\Godot\\app_userdata\\<ProjectName>\\`          |\n| macOS        | `~/Library/Application Support/Godot/<ProjectName>/`  |\n| Linux        | `~/.local/share/godot/app_userdata/<ProjectName>/`    |\n| Android      | Internal storage (app-private, managed by OS)          |\n| iOS          | App sandbox Documents directory                        |\n| HTML5/Web    | IndexedDB (persistent if user grants permission)       |\n\nGodot automatically resolves `user://` to the correct platform path. No extra platform handling is needed.\n\n---\n\n## Encryption Details\n\n- `FileAccess.open_encrypted_with_pass()` uses **AES-256-CBC** with the provided passphrase.\n- The key is hashed internally by Godot so any string length is acceptable, but keeping it <= 32 chars is conventional.\n- **Security warning**: Hardcoded keys in exported games can be extracted via binary inspection. For better security:\n  - Derive the key from `OS.get_unique_id()` + a build secret.\n  - Or use a user-provided password (e.g., for cloud sync scenarios).\n\n---\n\n## Autoload Setup\n\n1. Open **Project > Project Settings > Autoload**.\n2. Click the folder icon and select `res://autoload/SaveManager.gd`.\n3. Set the Node Name to `SaveManager`.\n4. Enable the **Singleton** toggle (it is enabled by default).\n\n---\n\n## Quick Usage Summary\n\n```gdscript\n# Save\nSaveManager.save_game(0, player_data, quest_data)\n\n# Load\nvar result = SaveManager.load_game(0)\nif not result.is_empty():\n    player_data = result[\"player\"]\n    quest_data  = result[\"quests\"]\n\n# Check slot\nif SaveManager.slot_has_save(0):\n    print(\"Slot 0 has data\")\n\n# Delete\nSaveManager.delete_save(0)\n\n# Metadata only (for UI)\nvar meta = SaveManager.get_save_metadata(0)\nprint(\"Level: \", meta.get(\"level\"))\n```\n"}], "grading": {"expectations": [{"text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)", "passed": true, "evidence": "response.md uses FileAccess exclusively throughout: 'FileAccess.open_encrypted_with_pass(path, FileAccess.WRITE, ENCRYPTION_KEY)', 'FileAccess.file_exists(file_path)', 'FileAccess.get_open_error()'. The deprecated Godot 3 File class does not appear anywhere in the code."}, {"text": "The implementation mentions or includes encryption support", "passed": true, "evidence": "response.md implements _write_encrypted() and _read_encrypted() helpers that use 'FileAccess.open_encrypted_with_pass()' with AES-256-CBC. The transcript (Step 3) states 'Selected FileAccess.open_encrypted_with_pass() for AES-256-CBC encryption' and an entire 'Encryption Details' section in response.md documents the mechanism and security considerations."}, {"text": "The code uses static typing", "passed": true, "evidence": "response.md consistently uses explicit type annotations throughout all scripts. Examples: 'var health: int = 100', 'var file: FileAccess = FileAccess.open_encrypted_with_pass(...)', 'func save_game(slot: int, player_data: PlayerData, quest_data: QuestData) -> bool', 'var json_string: String = JSON.stringify(save_payload)', 'var result: bool = _write_encrypted(file_path, json_string)'. Static typing is applied to function parameters, return types, and local variables."}, {"text": "The solution organizes saveable nodes with a consistent interface or pattern", "passed": true, "evidence": "Both PlayerData.gd and QuestData.gd implement the same serialization interface: to_dict() -> Dictionary and from_dict(data: Dictionary) -> void. SaveManager calls player_data.to_dict() and quest_data.to_dict() when saving, and player_data.from_dict() / quest_data.from_dict() when loading, applying this pattern uniformly. The transcript (Step 4-5) confirms this was a deliberate design choice."}, {"text": "The save data includes player stats like health, level, and position", "passed": true, "evidence": "PlayerData.gd defines 'var health: int = 100', 'var level: int = 1', 'var position_x: float = 0.0', 'var position_y: float = 0.0', 'var position_z: float = 0.0'. PlayerData.to_dict() serializes all these fields: 'health', 'max_health', 'level', 'experience', 'position_x', 'position_y', 'position_z'. These are included in the save payload under the 'player' key in SaveManager.save_game()."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 11, "errors_encountered": 0, "output_chars": 13748, "transcript_chars": 2630}, "timing": {}, "claims": [{"claim": "FileAccess.open_encrypted_with_pass uses AES-256-CBC", "type": "factual", "verified": true, "evidence": "This is consistent with Godot 4 documentation. The code comment '# FileAccess.open_encrypted_with_pass uses AES-256-CBC' and the Encryption Details section both state this. This is accurate for Godot 4's FileAccess API."}, {"claim": "The save system uses JSON format for human-readable, versionable data", "type": "process", "verified": true, "evidence": "SaveManager.save_game() calls JSON.stringify(save_payload) before writing, and load_game() calls JSON.new() + json.parse() after reading. The JSON is then encrypted at the file level."}, {"claim": "Schema versioning is included for forward-compatible migration", "type": "quality", "verified": true, "evidence": "_migrate_save_data() checks 'data.get(\"version\", 0)' and applies migrations incrementally. The save payload includes '\"version\": 1'. The migration function is called in load_game() before reconstructing data objects."}, {"claim": "The system supports multiple save slots (3 slots)", "type": "factual", "verified": true, "evidence": "SaveManager defines 'const MAX_SLOTS: int = 3' and the file path pattern 'save_slot_{slot}.sav' with slot validation (0 <= slot < MAX_SLOTS)."}, {"claim": "Godot 4 signals are used for save/load event notifications", "type": "process", "verified": true, "evidence": "SaveManager declares 'signal save_completed(slot: int)', 'signal load_completed(slot: int)', 'signal save_failed(slot: int, error: String)', 'signal load_failed(slot: int, error: String)' and emits them at appropriate points. SaveSlotButton.gd demonstrates connecting to these signals."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "The solution organizes saveable nodes with a consistent interface or pattern", "reason": "This assertion passes because both data classes implement to_dict()/from_dict(), but it would also pass for much weaker implementations \u2014 e.g., a single monolithic save function with no reusable pattern. Consider tightening to specify the interface explicitly (e.g., 'each saveable data class implements a to_dict/from_dict pair') or checking that a third data type, if added, would slot in without changes to SaveManager."}, {"reason": "No assertion checks that the encryption is actually wired end-to-end (i.e., that the write path and read path both use the same encrypted API call). The implementation does this correctly, but an assertion verifying that plain FileAccess.open() is NOT used for save files would catch a common mistake that the current assertions would miss."}, {"reason": "No assertion covers error handling \u2014 the implementation has robust fallbacks (push_error, signals on failure, empty-dict returns), but none of the expectations check for graceful degradation when a file is missing or corrupted. This is a meaningful quality dimension for save systems."}], "overall": "All five assertions are satisfied by genuinely good implementation. The main gap is that the evals check presence and API choice but not integration correctness (e.g., that save and load use the same key/path) or error resilience. Adding one or two assertions targeting these would make the eval suite more discriminating."}}}, {"id": "eval-state-machine-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# State Machine Implementation for Godot 4 CharacterBody2D\n\nThis implementation provides a complete state machine for a character with Idle, Running, and Jumping states using the node-based state machine pattern from the godot-gdscript-patterns skill.\n\n## Scene Structure\n\n```\nPlayer (CharacterBody2D)\n\u2514\u2500\u2500 StateMachine (Node)\n    \u251c\u2500\u2500 Idle (State)\n    \u251c\u2500\u2500 Running (State)\n    \u2514\u2500\u2500 Jumping (State)\n```\n\n## Files\n\n### state.gd \u2014 Base State Class\n\n```gdscript\n# state.gd\nclass_name State\nextends Node\n\nvar state_machine: StateMachine\n\nfunc enter(_msg: Dictionary = {}) -> void:\n    pass\n\nfunc exit() -> void:\n    pass\n\nfunc update(_delta: float) -> void:\n    pass\n\nfunc physics_update(_delta: float) -> void:\n    pass\n\nfunc handle_input(_event: InputEvent) -> void:\n    pass\n```\n\n### state_machine.gd \u2014 State Machine Controller\n\n```gdscript\n# state_machine.gd\nclass_name StateMachine\nextends Node\n\nsignal state_changed(from_state: StringName, to_state: StringName)\n\n@export var initial_state: State\n\nvar current_state: State\nvar states: Dictionary = {}\n\nfunc _ready() -> void:\n    # Register all State children\n    for child in get_children():\n        if child is State:\n            states[child.name] = child\n            child.state_machine = self\n            child.process_mode = Node.PROCESS_MODE_DISABLED\n\n    # Start initial state\n    if initial_state:\n        current_state = initial_state\n        current_state.process_mode = Node.PROCESS_MODE_INHERIT\n        current_state.enter()\n\nfunc _process(delta: float) -> void:\n    if current_state:\n        current_state.update(delta)\n\nfunc _physics_process(delta: float) -> void:\n    if current_state:\n        current_state.physics_update(delta)\n\nfunc _unhandled_input(event: InputEvent) -> void:\n    if current_state:\n        current_state.handle_input(event)\n\nfunc transition_to(state_name: StringName, msg: Dictionary = {}) -> void:\n    if not states.has(state_name):\n        push_error(\"State '%s' not found\" % state_name)\n        return\n\n    var previous_state := current_state\n    previous_state.exit()\n    previous_state.process_mode = Node.PROCESS_MODE_DISABLED\n\n    current_state = states[state_name]\n    current_state.process_mode = Node.PROCESS_MODE_INHERIT\n    current_state.enter(msg)\n\n    state_changed.emit(previous_state.name, current_state.name)\n```\n\n### player.gd \u2014 Player CharacterBody2D\n\n```gdscript\n# player.gd\nclass_name Player\nextends CharacterBody2D\n\nsignal state_changed(from_state: StringName, to_state: StringName)\n\nconst GRAVITY: float = 980.0\nconst JUMP_VELOCITY: float = -400.0\n\n@export var speed: float = 200.0\n\n@onready var animation: AnimationPlayer = $AnimationPlayer\n@onready var state_machine: StateMachine = $StateMachine\n\nfunc _ready() -> void:\n    state_machine.state_changed.connect(_on_state_changed)\n\nfunc _on_state_changed(from_state: StringName, to_state: StringName) -> void:\n    state_changed.emit(from_state, to_state)\n\nfunc apply_gravity(delta: float) -> void:\n    if not is_on_floor():\n        velocity.y += GRAVITY * delta\n\nfunc move() -> void:\n    move_and_slide()\n\nfunc get_move_direction() -> float:\n    return Input.get_axis(\"ui_left\", \"ui_right\")\n\nfunc is_jump_requested() -> bool:\n    return Input.is_action_just_pressed(\"ui_accept\")\n\nfunc is_moving() -> bool:\n    return abs(velocity.x) > 1.0\n\nfunc flip_sprite(direction: float) -> void:\n    if direction != 0.0:\n        $Sprite2D.scale.x = sign(direction)\n```\n\n### states/player_idle.gd \u2014 Idle State\n\n```gdscript\n# states/player_idle.gd\nclass_name PlayerIdle\nextends State\n\n@export var player: Player\n\nfunc enter(_msg: Dictionary = {}) -> void:\n    player.velocity.x = 0.0\n    player.animation.play(\"idle\")\n\nfunc exit() -> void:\n    pass\n\nfunc physics_update(delta: float) -> void:\n    # Apply gravity so the character sticks to the floor\n    player.apply_gravity(delta)\n    player.move()\n\n    # Transition: fall off ledge -> Jumping (airborne without jump input)\n    if not player.is_on_floor():\n        state_machine.transition_to(&\"Jumping\", {\"jumped\": false})\n        return\n\n    # Transition: movement input -> Running\n    var direction := player.get_move_direction()\n    if direction != 0.0:\n        state_machine.transition_to(&\"Running\")\n        return\n\nfunc handle_input(event: InputEvent) -> void:\n    # Transition: jump input -> Jumping\n    if event.is_action_pressed(\"ui_accept\"):\n        state_machine.transition_to(&\"Jumping\", {\"jumped\": true})\n```\n\n### states/player_running.gd \u2014 Running State\n\n```gdscript\n# states/player_running.gd\nclass_name PlayerRunning\nextends State\n\n@export var player: Player\n\nfunc enter(_msg: Dictionary = {}) -> void:\n    player.animation.play(\"run\")\n\nfunc exit() -> void:\n    pass\n\nfunc physics_update(delta: float) -> void:\n    # Apply gravity so the character sticks to the floor\n    player.apply_gravity(delta)\n\n    var direction := player.get_move_direction()\n    player.velocity.x = direction * player.speed\n    player.flip_sprite(direction)\n    player.move()\n\n    # Transition: left the floor without jumping -> Jumping (walked off ledge)\n    if not player.is_on_floor():\n        state_machine.transition_to(&\"Jumping\", {\"jumped\": false})\n        return\n\n    # Transition: no movement input -> Idle\n    if direction == 0.0:\n        state_machine.transition_to(&\"Idle\")\n        return\n\nfunc handle_input(event: InputEvent) -> void:\n    # Transition: jump input -> Jumping\n    if event.is_action_pressed(\"ui_accept\"):\n        state_machine.transition_to(&\"Jumping\", {\"jumped\": true})\n```\n\n### states/player_jumping.gd \u2014 Jumping State\n\n```gdscript\n# states/player_jumping.gd\nclass_name PlayerJumping\nextends State\n\n@export var player: Player\n\nfunc enter(msg: Dictionary = {}) -> void:\n    # Apply upward velocity only when triggered by a jump input\n    if msg.get(\"jumped\", false):\n        player.velocity.y = Player.JUMP_VELOCITY\n    player.animation.play(\"jump\")\n\nfunc exit() -> void:\n    pass\n\nfunc physics_update(delta: float) -> void:\n    # Apply gravity every frame\n    player.apply_gravity(delta)\n\n    # Allow horizontal control in the air\n    var direction := player.get_move_direction()\n    player.velocity.x = direction * player.speed\n    player.flip_sprite(direction)\n    player.move()\n\n    # Transition: landed on the floor\n    if player.is_on_floor():\n        var move_direction := player.get_move_direction()\n        if move_direction != 0.0:\n            state_machine.transition_to(&\"Running\")\n        else:\n            state_machine.transition_to(&\"Idle\")\n        return\n```\n\n## How State Transitions Work\n\n```\nIdle  \u2500\u2500\u2500\u2500 move input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Running\nIdle  \u2500\u2500\u2500\u2500 jump pressed / fell off ledge \u25ba Jumping\n\nRunning \u2500\u2500 no input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Idle\nRunning \u2500\u2500 jump pressed / fell off ledge \u25ba Jumping\n\nJumping \u2500\u2500 landed + no input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Idle\nJumping \u2500\u2500 landed + move input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba Running\n```\n\n### Key Design Decisions\n\n1. **`process_mode` toggle** \u2014 Only the active state's `_process` / `_physics_process` / `_unhandled_input` are active; all others are set to `PROCESS_MODE_DISABLED`. This is more efficient than a large `match` block and avoids accidental double-processing.\n\n2. **`StringName` literals (`&\"...\"`)** \u2014 Used for state names in `transition_to()` calls to avoid repeated String-to-StringName conversions at runtime.\n\n3. **Static typing throughout** \u2014 All variables, parameters, and return types are explicitly typed so the GDScript type checker can catch errors at parse time.\n\n4. **Gravity handled per-state** \u2014 Idle and Running apply gravity so the character stays grounded when on a slope; Jumping applies gravity to produce an arc. This keeps each state self-contained.\n\n5. **Fell-off-ledge detection** \u2014 Both Idle and Running check `is_on_floor()` every physics frame and transition to Jumping (with `{\"jumped\": false}`) so the character enters the correct animation without getting an extra upward impulse.\n\n6. **Signal forwarding** \u2014 `Player` re-emits the `StateMachine.state_changed` signal under its own `state_changed` signal, so external nodes (e.g. a UI or audio manager) only need to connect to `player.state_changed`.\n\n## Setup Instructions\n\n1. Create a `Player.tscn` scene with a `CharacterBody2D` root node.\n2. Attach `player.gd` to the root.\n3. Add child nodes: `CollisionShape2D`, `Sprite2D`, `AnimationPlayer`.\n4. Add a `StateMachine` node (attach `state_machine.gd`).\n5. Under `StateMachine`, add three nodes named exactly `Idle`, `Running`, `Jumping` with `player_idle.gd`, `player_running.gd`, and `player_jumping.gd` respectively.\n6. In the Inspector for each state node, set the `Player` export to the root `Player` node.\n7. Set the `StateMachine`'s `Initial State` export to the `Idle` node.\n8. Make sure your project's Input Map contains `ui_left`, `ui_right`, and `ui_accept` actions (these are built-in defaults in Godot 4).\n"}], "grading": {"expectations": [{"text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)", "passed": true, "evidence": "The example from the expectation itself appears verbatim in player.gd: `@export var speed: float = 200.0`. Beyond that, every variable, constant, parameter, and return type in all six scripts is explicitly typed: `const GRAVITY: float = 980.0`, `const JUMP_VELOCITY: float = -400.0`, `var states: Dictionary = {}`, `var current_state: State`, `func transition_to(state_name: StringName, msg: Dictionary = {}) -> void`, `func apply_gravity(delta: float) -> void`, `func get_move_direction() -> float`, `func is_jump_requested() -> bool`, `func is_moving() -> bool`, `func flip_sprite(direction: float) -> void`, etc. Static typing is consistently applied throughout."}, {"text": "The implementation uses GDScript (not C# or other languages)", "passed": true, "evidence": "All six files produced (state.gd, state_machine.gd, player.gd, player_idle.gd, player_running.gd, player_jumping.gd) use GDScript syntax: `class_name`, `extends`, `@onready`, `@export`, `func`, `signal` keywords, and `.gd` file extension conventions. No C# or other language constructs appear anywhere in response.md."}, {"text": "The state machine references or uses CharacterBody2D", "passed": true, "evidence": "player.gd explicitly declares `extends CharacterBody2D` and is named `class_name Player`. State scripts hold `@export var player: Player` and call CharacterBody2D-specific methods through that reference: `player.is_on_floor()`, `player.velocity`, `player.move_and_slide()` (via `player.move()`). The scene hierarchy diagram also shows `Player (CharacterBody2D)` as the root containing the `StateMachine` node."}, {"text": "The code uses signals with proper Godot 4 syntax", "passed": true, "evidence": "Two signals are declared with typed parameters using Godot 4 syntax: `signal state_changed(from_state: StringName, to_state: StringName)` appears in both state_machine.gd and player.gd. Emission uses the Godot 4 `.emit()` method: `state_changed.emit(previous_state.name, current_state.name)` in state_machine.gd and `state_changed.emit(from_state, to_state)` in player.gd. The transcript (Step 1) also confirms the skill's typed signal syntax was deliberately adopted: 'Use `signal health_changed(new_health: int)` syntax (typed signal parameters)'."}, {"text": "State transitions are handled without tight coupling", "passed": true, "evidence": "No state script directly imports, instantiates, or calls methods on another state script. Transitions are requested through `state_machine.transition_to(&\"StateName\", ...)`, delegating all state-switching logic to the StateMachine node. State scripts interact with the player only through named helper methods (`player.apply_gravity`, `player.move`, `player.get_move_direction`, `player.is_jump_requested`, `player.flip_sprite`, `player.is_on_floor`) rather than directly manipulating raw CharacterBody2D internals. The transcript (Step 3) also documents this design decision: 'Decided to encapsulate gravity and move_and_slide() behind helper methods on Player so state scripts stay lean'."}, {"text": "The code follows Godot 4 patterns (not Godot 3 syntax)", "passed": true, "evidence": "Multiple Godot 4-specific patterns are used throughout: (1) `@onready` and `@export` annotations (Godot 3 used `onready` and `export` as keywords without `@`); (2) `move_and_slide()` called with no arguments \u2014 in Godot 3 it required a velocity argument; (3) `Node.PROCESS_MODE_DISABLED` / `Node.PROCESS_MODE_INHERIT` \u2014 the process mode API changed significantly in Godot 4; (4) `signal state_changed(from_state: StringName, to_state: StringName)` with typed parameters \u2014 Godot 3 did not support typed signal parameters; (5) `StringName` literals with `&\"...\"` syntax, a Godot 4 feature; (6) `push_error(...)` call pattern consistent with Godot 4. No Godot 3 patterns (e.g., `kinematic_body`, `.move_and_slide(velocity, ...)`, `yield`) appear."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 11, "errors_encountered": 0}, "timing": {}, "claims": [{"claim": "The skill's SKILL.md confirmed it covers state machines, signals, GDScript best practices, and CharacterBody2D patterns for Godot 4", "type": "process", "verified": true, "evidence": "Transcript Step 1 documents reading SKILL.md and extracting specific conventions that appear verbatim in the output code (typed signal parameters, static typing, @onready caching, .emit() syntax)."}, {"claim": "The implementation is based on the node-based state machine pattern from references/state-machine.md", "type": "process", "verified": true, "evidence": "Transcript Steps 2 and 4\u20139 describe reading references/state-machine.md and transcribing the StateMachine/State base class. The produced state_machine.gd and state.gd closely match the documented pattern (PROCESS_MODE toggling, transition_to with msg dict, enter/exit/update/physics_update/handle_input hooks)."}, {"claim": "The 'fell off ledge vs intentional jump' distinction is handled without a separate state or boolean flag on the player", "type": "quality", "verified": true, "evidence": "The Jumping state's enter() uses `msg.get(\"jumped\", false)` to decide whether to apply upward velocity. Both Idle and Running call `state_machine.transition_to(&\"Jumping\", {\"jumped\": false})` when `is_on_floor()` returns false without jump input. No boolean property is added to Player."}, {"claim": "StringName literals (&\"...\") are used in state transition calls to avoid runtime String-to-StringName conversions", "type": "quality", "verified": true, "evidence": "All six `transition_to` call sites in the state scripts use `&\"Idle\"`, `&\"Running\"`, and `&\"Jumping\"` \u2014 confirmed in player_idle.gd, player_running.gd, and player_jumping.gd in response.md."}, {"claim": "Static typing is used throughout", "type": "quality", "verified": true, "evidence": "Every function parameter and return type is annotated, every local variable uses `:=` type inference or explicit `: Type`, and all class-level variables carry type annotations. No untyped `var` declarations without a type annotation are present in the six scripts."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"reason": "All six assertions can be fully verified from the output file (response.md). However, none of the assertions checks runtime correctness \u2014 for example, whether the state machine actually prevents double-processing of inactive states (PROCESS_MODE_DISABLED), or whether enter() is called on the initial state during _ready(). These are implementation details that are present in the code but are not tested by any assertion. Adding an assertion such as 'Inactive states are set to PROCESS_MODE_DISABLED so they do not process while inactive' would discriminate between implementations that merely define states and ones that correctly gate them."}, {"assertion": "State transitions are handled without tight coupling", "reason": "This assertion passes easily for any implementation that uses a centralized state manager. It would be strengthened by specifying what tight coupling means concretely \u2014 e.g., 'No state script calls methods directly on another state script, and states only communicate with the player through a defined interface'. The current wording is vague enough that an implementation where states directly set player.velocity without helper methods would also pass."}, {"reason": "No assertion verifies that the three required states (Idle, Running, Jumping) each correctly trigger transitions to the other two states as appropriate. An implementation with only one working transition path (e.g., Idle -> Running but no Jumping) could still pass all six assertions."}], "overall": "The assertions cover the key syntactic and structural requirements well \u2014 typing, language choice, CharacterBody2D usage, signal syntax, Godot 4 patterns, and decoupling are all meaningful checks. The main gap is that none of the assertions verifies the correctness of state transition logic itself (e.g., all six directed transitions in the transition diagram are present and correctly conditioned). Consider adding one or two assertions targeting transition completeness and the PROCESS_MODE gating mechanism."}}}, {"id": "eval-state-machine-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Godot 4 State Machine for CharacterBody2D\n\n## Overview\n\nThis implementation provides a clean, extensible state machine for a Godot 4 `CharacterBody2D` character with three states: **Idle**, **Running**, and **Jumping**.\n\nThe design uses an enum to represent states and a dedicated handler method per state, which is idiomatic GDScript and easy to read without requiring separate class files.\n\n---\n\n## File Structure\n\n```\nres://\n\u251c\u2500\u2500 characters/\n\u2502   \u251c\u2500\u2500 player.gd          # Main character script (attached to CharacterBody2D)\n\u2502   \u2514\u2500\u2500 player.tscn        # Scene (CharacterBody2D + CollisionShape2D + AnimatedSprite2D)\n```\n\n---\n\n## Implementation\n\n### `player.gd`\n\n```gdscript\nextends CharacterBody2D\n\n# \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nconst SPEED        : float = 200.0\nconst JUMP_VELOCITY: float = -400.0\nconst GRAVITY      : float = 980.0   # pixels per second squared\n\n# \u2500\u2500\u2500 State Enum \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nenum State {\n    IDLE,\n    RUNNING,\n    JUMPING,\n}\n\n# \u2500\u2500\u2500 State Variables \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nvar current_state: State = State.IDLE\nvar previous_state: State = State.IDLE\n\n# \u2500\u2500\u2500 Node References \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D\n\n# \u2500\u2500\u2500 Built-in Callbacks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\nfunc _ready() -> void:\n    _enter_state(State.IDLE)\n\n\nfunc _physics_process(delta: float) -> void:\n    _apply_gravity(delta)\n    _process_state(delta)\n    move_and_slide()\n    _evaluate_transitions()\n\n\n# \u2500\u2500\u2500 Gravity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\nfunc _apply_gravity(delta: float) -> void:\n    if not is_on_floor():\n        velocity.y += GRAVITY * delta\n\n\n# \u2500\u2500\u2500 State Machine Core \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n## Called once whenever a new state is entered.\nfunc _enter_state(new_state: State) -> void:\n    previous_state = current_state\n    current_state  = new_state\n\n    match current_state:\n        State.IDLE:\n            animated_sprite.play(\"idle\")\n\n        State.RUNNING:\n            animated_sprite.play(\"run\")\n\n        State.JUMPING:\n            velocity.y = JUMP_VELOCITY\n            animated_sprite.play(\"jump\")\n\n\n## Called every physics frame to handle input/logic for the active state.\nfunc _process_state(delta: float) -> void:\n    match current_state:\n        State.IDLE:\n            _state_idle(delta)\n\n        State.RUNNING:\n            _state_running(delta)\n\n        State.JUMPING:\n            _state_jumping(delta)\n\n\n## Called every physics frame (after move_and_slide) to check for transitions.\nfunc _evaluate_transitions() -> void:\n    match current_state:\n        State.IDLE:\n            if not is_on_floor():\n                _enter_state(State.JUMPING)\n            elif _get_horizontal_input() != 0.0:\n                _enter_state(State.RUNNING)\n            elif Input.is_action_just_pressed(\"jump\"):\n                _enter_state(State.JUMPING)\n\n        State.RUNNING:\n            if not is_on_floor():\n                _enter_state(State.JUMPING)\n            elif Input.is_action_just_pressed(\"jump\"):\n                _enter_state(State.JUMPING)\n            elif _get_horizontal_input() == 0.0:\n                _enter_state(State.IDLE)\n\n        State.JUMPING:\n            if is_on_floor():\n                if _get_horizontal_input() != 0.0:\n                    _enter_state(State.RUNNING)\n                else:\n                    _enter_state(State.IDLE)\n\n\n# \u2500\u2500\u2500 Per-state Logic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\nfunc _state_idle(_delta: float) -> void:\n    # Decelerate horizontal velocity to zero while idle.\n    velocity.x = move_toward(velocity.x, 0.0, SPEED)\n\n\nfunc _state_running(_delta: float) -> void:\n    var direction: float = _get_horizontal_input()\n    velocity.x = direction * SPEED\n\n    # Flip sprite to match movement direction.\n    if direction != 0.0:\n        animated_sprite.flip_h = direction < 0.0\n\n\nfunc _state_jumping(_delta: float) -> void:\n    # Allow air-strafing: player retains horizontal control in the air.\n    var direction: float = _get_horizontal_input()\n    if direction != 0.0:\n        velocity.x = move_toward(velocity.x, direction * SPEED, SPEED * 2.0 * _delta)\n        animated_sprite.flip_h = direction < 0.0\n    else:\n        velocity.x = move_toward(velocity.x, 0.0, SPEED * _delta)\n\n\n# \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n## Returns -1.0, 0.0, or 1.0 based on left/right input.\nfunc _get_horizontal_input() -> float:\n    return Input.get_axis(\"move_left\", \"move_right\")\n```\n\n---\n\n## Input Map Setup (Project > Project Settings > Input Map)\n\n| Action       | Key           |\n|--------------|---------------|\n| `move_left`  | Arrow Left / A |\n| `move_right` | Arrow Right / D |\n| `jump`       | Space / Arrow Up |\n\n---\n\n## Scene Setup\n\n1. Create a new scene with root node `CharacterBody2D`.\n2. Add child nodes:\n   - `CollisionShape2D` (assign a `CapsuleShape2D` or `RectangleShape2D`).\n   - `AnimatedSprite2D` (add animation frames for `idle`, `run`, `jump`).\n3. Attach `player.gd` to the root `CharacterBody2D` node.\n4. Add a `StaticBody2D` with `CollisionShape2D` as the floor.\n\n---\n\n## State Transition Diagram\n\n```\n          \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n          \u2502                                                          \u2502\n          \u25bc                     input != 0                           \u2502\n       \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25ba  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n       \u2502      \u2502                                                \u2502         \u2502\n       \u2502 IDLE \u2502\u25c4\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u2502 RUNNING \u2502\n       \u2502      \u2502                  input == 0                    \u2502         \u2502\n       \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2518                                                \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n          \u2502  \u25b2                                                    \u2502  \u25b2\n          \u2502  \u2502   land (input == 0)                 land (input != 0) \u2502\n   jump   \u2502  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n   press  \u2502                         \u2502  \u2502\n          \u25bc                         \u2502  \u2502\n       \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510                   \u2502  \u2502\n       \u2502        \u2502 \u25c4\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518  \u2502\n       \u2502JUMPING \u2502                      \u2502\n       \u2502        \u2502 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n       \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n         (also entered when not is_on_floor from IDLE or RUNNING)\n```\n\n---\n\n## Key Design Decisions\n\n| Decision | Rationale |\n|----------|-----------|\n| Enum-based states | Type-safe, autocompleted in the Godot editor, no magic strings |\n| `_enter_state()` for side effects | Animation changes and velocity impulses happen exactly once on transition |\n| `_evaluate_transitions()` after `move_and_slide()` | `is_on_floor()` is accurate only after the physics step |\n| Gravity applied unconditionally | Keeps gravity logic in one place; `is_on_floor()` naturally zeroes out floor-bound velocity |\n| Air strafing in JUMPING | Common in platformers; gives the player responsive feel mid-air |\n\n---\n\n## Extension Points\n\n- **Attack / Dash states**: Add new `State` enum values and corresponding `_state_*` / `_enter_state` branches.\n- **Coyote time**: Track `time_since_left_floor` and allow jumps for a brief window after walking off an edge.\n- **Double jump**: Add a `jump_count` variable and check it in the JUMPING transition guard.\n- **Separate state classes**: For very large games, each state can be extracted into its own `Resource` or `Node` subclass, following the State design pattern.\n"}], "grading": {"expectations": [{"text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)", "passed": true, "evidence": "response.md contains multiple type-annotated declarations: 'const SPEED : float = 200.0', 'const JUMP_VELOCITY: float = -400.0', 'const GRAVITY : float = 980.0', 'var current_state: State = State.IDLE', 'var previous_state: State = State.IDLE', 'func _physics_process(delta: float) -> void:', 'func _get_horizontal_input() -> float:', 'var direction: float = _get_horizontal_input()'. Static typing is used pervasively throughout."}, {"text": "The implementation uses GDScript (not C# or other languages)", "passed": true, "evidence": "The code block in response.md is explicitly tagged ```gdscript and uses unambiguous GDScript syntax: 'extends CharacterBody2D', 'func', 'var', 'const', '@onready', 'match', 'enum'. No C# or other language syntax is present."}, {"text": "The state machine references or uses CharacterBody2D", "passed": true, "evidence": "The script begins with 'extends CharacterBody2D'. The file structure and scene setup in response.md specify the root node is CharacterBody2D. The transcript Step 1 explicitly identifies 'Target node: CharacterBody2D (Godot 4)'."}, {"text": "The code uses signals with proper Godot 4 syntax", "passed": false, "evidence": "No signals are defined or emitted anywhere in the implementation. The response.md code contains no 'signal' declarations and no 'emit_signal()' or '.emit()' calls. Signals are entirely absent from the output."}, {"text": "State transitions are handled without tight coupling", "passed": true, "evidence": "State transitions are centralized in the '_evaluate_transitions()' function which evaluates conditions (is_on_floor(), _get_horizontal_input(), Input.is_action_just_pressed) and calls '_enter_state(new_state)'. Individual per-state handler functions (_state_idle, _state_running, _state_jumping) do not directly reference or call each other. The design explicitly separates enter logic, per-frame logic, and transition evaluation into distinct methods as noted in the transcript Step 2."}, {"text": "The code follows Godot 4 patterns (not Godot 3 syntax)", "passed": true, "evidence": "Multiple Godot 4-specific patterns are used: (1) 'move_and_slide()' called with no arguments (Godot 4 style \u2014 velocity is a property, not a parameter); (2) 'Input.get_axis(\"move_left\", \"move_right\")' which is Godot 4 API; (3) '@onready' annotation syntax; (4) typed enums with 'enum State { ... }'. The transcript Notes section explicitly states: 'The _get_horizontal_input() helper uses Input.get_axis(), which is the idiomatic Godot 4 API (replaces the Godot 3 get_action_strength pattern)' and 'move_and_slide() in Godot 4 takes no arguments (velocity is a property), unlike Godot 3.'"}], "summary": {"passed": 5, "failed": 1, "total": 6, "pass_rate": 0.83}, "execution_metrics": {"total_steps": 9, "errors_encountered": 0}, "timing": {}, "claims": [{"claim": "Implementation relies entirely on general Godot 4 / GDScript knowledge without consulting any plugin skill documentation", "type": "process", "verified": true, "evidence": "Transcript notes state: 'Implementation relies entirely on general Godot 4 / GDScript knowledge without consulting any plugin skill documentation.' The transcript shows no steps involving reading documentation files or skill assets."}, {"claim": "No errors or ambiguities encountered during implementation", "type": "quality", "verified": true, "evidence": "Transcript Notes section states 'No errors or ambiguities encountered during implementation.' metrics.json confirms errors_encountered: 0."}, {"claim": "The implementation uses an enum + match approach for the state machine", "type": "factual", "verified": true, "evidence": "response.md shows 'enum State { IDLE, RUNNING, JUMPING }' and all state dispatch functions use 'match current_state:' blocks, confirming the enum+match design."}, {"claim": "The _evaluate_transitions() function is called after move_and_slide() so is_on_floor() is accurate", "type": "factual", "verified": true, "evidence": "In _physics_process, the call order is: _apply_gravity(delta) -> _process_state(delta) -> move_and_slide() -> _evaluate_transitions(). This matches the claim in the transcript Step 4 and the design decisions table in response.md."}, {"claim": "The jump impulse is applied only once on entering the JUMPING state", "type": "quality", "verified": true, "evidence": "'velocity.y = JUMP_VELOCITY' appears only inside '_enter_state()' under the State.JUMPING branch, not in '_state_jumping()', confirming the impulse is applied exactly once per transition."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "The code uses signals with proper Godot 4 syntax", "reason": "The task prompt (as described in the transcript) does not appear to require signals \u2014 the state machine design using centralized transitions is a perfectly valid and common GDScript pattern that does not need signals. This assertion tests for something not necessitated by the task requirements, making it likely to fail even for correct, high-quality implementations. Consider replacing it with an assertion that checks whether the transition logic correctly handles all six defined transitions (IDLE<->RUNNING, IDLE<->JUMPING, RUNNING<->JUMPING), or whether the animation is driven by state entry rather than per-frame logic."}, {"reason": "No assertion checks whether the jump impulse is applied exactly once (on state entry) rather than every frame. This is a common beginner mistake in state machine implementations and would be a meaningful discriminating check."}, {"reason": "No assertion checks that move_and_slide() is called before _evaluate_transitions(), which is critical for is_on_floor() accuracy. An incorrect ordering would produce subtle landing bugs. This would be a high-value assertion."}], "overall": "Five of six assertions are well-matched to the task and clearly verifiable from the output. The signals assertion is misaligned with the task requirements \u2014 the output correctly omits signals because the task does not call for them, yet the assertion fails. This creates misleading signal about output quality. The remaining assertions cover the most important structural properties of the implementation."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "godot-gdscript-patterns", "skill_path": "plugins/godot-gdscript-patterns/skills/godot-gdscript-patterns", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-02-28T08:26:19Z", "evals_run": [1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 0.0, "tokens": 14847, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)", "passed": true, "evidence": "The SaveManager uses FileAccess.open_encrypted_with_pass(), FileAccess.file_exists(), FileAccess.WRITE, and FileAccess.READ throughout. The deprecated Godot 3 File class does not appear anywhere in the output. Transcript Step 3 notes 'FileAccess.open_encrypted_with_pass()' as the primary pattern extracted from the reference file."}, {"text": "The implementation mentions or includes encryption support", "passed": true, "evidence": "Encryption is a first-class feature: save_game() calls FileAccess.open_encrypted_with_pass(SAVE_PATH, FileAccess.WRITE, ENCRYPTION_KEY) and load_game() calls the same API with FileAccess.READ. A dedicated Security Notes section states 'FileAccess.open_encrypted_with_pass() uses AES-256-CBC encryption internally.' An ENCRYPTION_KEY constant is defined and a checklist item reminds users to replace it before release."}, {"text": "The code uses static typing", "passed": true, "evidence": "Static typing is used consistently throughout all scripts. Examples: 'var data: Dictionary = {}', '@export var max_health: int = 100', 'var level: int = 1', 'var experience: int = 0', signal parameters typed as '(message: String)' and '(new_health: int)', return types declared on all functions ('-> void', '-> Dictionary', '-> bool'). The walrus-style inference operator ':=' is used with typed right-hand sides (e.g., 'var file := FileAccess.open_encrypted_with_pass(...)')."}, {"text": "The solution organizes saveable nodes with a consistent interface or pattern", "passed": true, "evidence": "A clear, reusable Saveable component pattern is established: (1) any scene adds a Saveable child node, (2) calls add_to_group(\"saveable\") in _ready(), and (3) implements get_custom_save_data() and load_custom_save_data(). SaveManager iterates the group uniformly. Three distinct objects follow this pattern\u2014Player, Chest, and QuestManager\u2014demonstrating consistency. Scene tree diagrams show the canonical structure explicitly."}, {"text": "The save data includes player stats like health, level, and position", "passed": true, "evidence": "Player.get_custom_save_data() returns {\"health\": current_health, \"max_health\": max_health, \"level\": level, \"experience\": experience}. Position is captured automatically by the Saveable component: 'data[\"position\"] = {\"x\": parent.position.x, \"y\": parent.position.y}'. The example JSON structure in Section 7 confirms all three fields: '\"health\": 75', '\"level\": 5', '\"position\": { \"x\": 320.0, \"y\": 240.0 }'."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)", "passed": true, "evidence": "The example from the expectation itself appears verbatim in player.gd: `@export var speed: float = 200.0`. Beyond that, every variable, constant, parameter, and return type in all six scripts is explicitly typed: `const GRAVITY: float = 980.0`, `const JUMP_VELOCITY: float = -400.0`, `var states: Dictionary = {}`, `var current_state: State`, `func transition_to(state_name: StringName, msg: Dictionary = {}) -> void`, `func apply_gravity(delta: float) -> void`, `func get_move_direction() -> float`, `func is_jump_requested() -> bool`, `func is_moving() -> bool`, `func flip_sprite(direction: float) -> void`, etc. Static typing is consistently applied throughout."}, {"text": "The implementation uses GDScript (not C# or other languages)", "passed": true, "evidence": "All six files produced (state.gd, state_machine.gd, player.gd, player_idle.gd, player_running.gd, player_jumping.gd) use GDScript syntax: `class_name`, `extends`, `@onready`, `@export`, `func`, `signal` keywords, and `.gd` file extension conventions. No C# or other language constructs appear anywhere in response.md."}, {"text": "The state machine references or uses CharacterBody2D", "passed": true, "evidence": "player.gd explicitly declares `extends CharacterBody2D` and is named `class_name Player`. State scripts hold `@export var player: Player` and call CharacterBody2D-specific methods through that reference: `player.is_on_floor()`, `player.velocity`, `player.move_and_slide()` (via `player.move()`). The scene hierarchy diagram also shows `Player (CharacterBody2D)` as the root containing the `StateMachine` node."}, {"text": "The code uses signals with proper Godot 4 syntax", "passed": true, "evidence": "Two signals are declared with typed parameters using Godot 4 syntax: `signal state_changed(from_state: StringName, to_state: StringName)` appears in both state_machine.gd and player.gd. Emission uses the Godot 4 `.emit()` method: `state_changed.emit(previous_state.name, current_state.name)` in state_machine.gd and `state_changed.emit(from_state, to_state)` in player.gd. The transcript (Step 1) also confirms the skill's typed signal syntax was deliberately adopted: 'Use `signal health_changed(new_health: int)` syntax (typed signal parameters)'."}, {"text": "State transitions are handled without tight coupling", "passed": true, "evidence": "No state script directly imports, instantiates, or calls methods on another state script. Transitions are requested through `state_machine.transition_to(&\"StateName\", ...)`, delegating all state-switching logic to the StateMachine node. State scripts interact with the player only through named helper methods (`player.apply_gravity`, `player.move`, `player.get_move_direction`, `player.is_jump_requested`, `player.flip_sprite`, `player.is_on_floor`) rather than directly manipulating raw CharacterBody2D internals. The transcript (Step 3) also documents this design decision: 'Decided to encapsulate gravity and move_and_slide() behind helper methods on Player so state scripts stay lean'."}, {"text": "The code follows Godot 4 patterns (not Godot 3 syntax)", "passed": true, "evidence": "Multiple Godot 4-specific patterns are used throughout: (1) `@onready` and `@export` annotations (Godot 3 used `onready` and `export` as keywords without `@`); (2) `move_and_slide()` called with no arguments \u2014 in Godot 3 it required a velocity argument; (3) `Node.PROCESS_MODE_DISABLED` / `Node.PROCESS_MODE_INHERIT` \u2014 the process mode API changed significantly in Godot 4; (4) `signal state_changed(from_state: StringName, to_state: StringName)` with typed parameters \u2014 Godot 3 did not support typed signal parameters; (5) `StringName` literals with `&\"...\"` syntax, a Godot 4 feature; (6) `push_error(...)` call pattern consistent with Godot 4. No Godot 3 patterns (e.g., `kinematic_body`, `.move_and_slide(velocity, ...)`, `yield`) appear."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 0.0, "tokens": 13748, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)", "passed": true, "evidence": "response.md uses FileAccess exclusively throughout: 'FileAccess.open_encrypted_with_pass(path, FileAccess.WRITE, ENCRYPTION_KEY)', 'FileAccess.file_exists(file_path)', 'FileAccess.get_open_error()'. The deprecated Godot 3 File class does not appear anywhere in the code."}, {"text": "The implementation mentions or includes encryption support", "passed": true, "evidence": "response.md implements _write_encrypted() and _read_encrypted() helpers that use 'FileAccess.open_encrypted_with_pass()' with AES-256-CBC. The transcript (Step 3) states 'Selected FileAccess.open_encrypted_with_pass() for AES-256-CBC encryption' and an entire 'Encryption Details' section in response.md documents the mechanism and security considerations."}, {"text": "The code uses static typing", "passed": true, "evidence": "response.md consistently uses explicit type annotations throughout all scripts. Examples: 'var health: int = 100', 'var file: FileAccess = FileAccess.open_encrypted_with_pass(...)', 'func save_game(slot: int, player_data: PlayerData, quest_data: QuestData) -> bool', 'var json_string: String = JSON.stringify(save_payload)', 'var result: bool = _write_encrypted(file_path, json_string)'. Static typing is applied to function parameters, return types, and local variables."}, {"text": "The solution organizes saveable nodes with a consistent interface or pattern", "passed": true, "evidence": "Both PlayerData.gd and QuestData.gd implement the same serialization interface: to_dict() -> Dictionary and from_dict(data: Dictionary) -> void. SaveManager calls player_data.to_dict() and quest_data.to_dict() when saving, and player_data.from_dict() / quest_data.from_dict() when loading, applying this pattern uniformly. The transcript (Step 4-5) confirms this was a deliberate design choice."}, {"text": "The save data includes player stats like health, level, and position", "passed": true, "evidence": "PlayerData.gd defines 'var health: int = 100', 'var level: int = 1', 'var position_x: float = 0.0', 'var position_y: float = 0.0', 'var position_z: float = 0.0'. PlayerData.to_dict() serializes all these fields: 'health', 'max_health', 'level', 'experience', 'position_x', 'position_y', 'position_z'. These are included in the save payload under the 'player' key in SaveManager.save_game()."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.83, "passed": 5, "failed": 1, "total": 6, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)", "passed": true, "evidence": "response.md contains multiple type-annotated declarations: 'const SPEED : float = 200.0', 'const JUMP_VELOCITY: float = -400.0', 'const GRAVITY : float = 980.0', 'var current_state: State = State.IDLE', 'var previous_state: State = State.IDLE', 'func _physics_process(delta: float) -> void:', 'func _get_horizontal_input() -> float:', 'var direction: float = _get_horizontal_input()'. Static typing is used pervasively throughout."}, {"text": "The implementation uses GDScript (not C# or other languages)", "passed": true, "evidence": "The code block in response.md is explicitly tagged ```gdscript and uses unambiguous GDScript syntax: 'extends CharacterBody2D', 'func', 'var', 'const', '@onready', 'match', 'enum'. No C# or other language syntax is present."}, {"text": "The state machine references or uses CharacterBody2D", "passed": true, "evidence": "The script begins with 'extends CharacterBody2D'. The file structure and scene setup in response.md specify the root node is CharacterBody2D. The transcript Step 1 explicitly identifies 'Target node: CharacterBody2D (Godot 4)'."}, {"text": "The code uses signals with proper Godot 4 syntax", "passed": false, "evidence": "No signals are defined or emitted anywhere in the implementation. The response.md code contains no 'signal' declarations and no 'emit_signal()' or '.emit()' calls. Signals are entirely absent from the output."}, {"text": "State transitions are handled without tight coupling", "passed": true, "evidence": "State transitions are centralized in the '_evaluate_transitions()' function which evaluates conditions (is_on_floor(), _get_horizontal_input(), Input.is_action_just_pressed) and calls '_enter_state(new_state)'. Individual per-state handler functions (_state_idle, _state_running, _state_jumping) do not directly reference or call each other. The design explicitly separates enter logic, per-frame logic, and transition evaluation into distinct methods as noted in the transcript Step 2."}, {"text": "The code follows Godot 4 patterns (not Godot 3 syntax)", "passed": true, "evidence": "Multiple Godot 4-specific patterns are used: (1) 'move_and_slide()' called with no arguments (Godot 4 style \u2014 velocity is a property, not a parameter); (2) 'Input.get_axis(\"move_left\", \"move_right\")' which is Godot 4 API; (3) '@onready' annotation syntax; (4) typed enums with 'enum State { ... }'. The transcript Notes section explicitly states: 'The _get_horizontal_input() helper uses Input.get_axis(), which is the idiomatic Godot 4 API (replaces the Godot 3 get_action_strength pattern)' and 'move_and_slide() in Godot 4 takes no arguments (velocity is a property), unlike Godot 3.'"}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 7423.5, "stddev": 10498.4144, "min": 0, "max": 14847}}, "without_skill": {"pass_rate": {"mean": 0.915, "stddev": 0.1202, "min": 0.83, "max": 1.0}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 6874.0, "stddev": 9721.304, "min": 0, "max": 13748}}, "delta": {"pass_rate": "+0.08", "time_seconds": "+0.0", "tokens": "+550"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

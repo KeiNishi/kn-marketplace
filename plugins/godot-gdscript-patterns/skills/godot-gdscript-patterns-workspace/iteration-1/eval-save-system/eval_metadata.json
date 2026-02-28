@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "save-system",
+  "prompt": "I'm building a Godot 4 RPG. How do I implement a save/load system that can save player stats (health, level, position) and quest progress? The save should work on multiple platforms and support encryption.",
+  "assertions": [
+    "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)",
+    "The implementation mentions or includes encryption support",
+    "The code uses static typing",
+    "The solution organizes saveable nodes with a consistent interface or pattern",
+    "The save data includes player stats like health, level, and position"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "skill_name": "unity-gamedev",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a Unity C# PlayerController MonoBehaviour script with WASD/arrow key movement, space bar jumping, and camera follow. The player uses a Rigidbody for physics.",
+      "expected_output": "A Unity C# MonoBehaviour script following the project's coding standards: _camelCase private fields, [SerializeField] for Inspector fields, [Tooltip] annotations, camera code in LateUpdate, physics in FixedUpdate, #region organization.",
+      "files": [],
+      "expectations": [
+        "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+        "Inspector-configurable fields use [SerializeField] attribute",
+        "All [SerializeField] fields have [Tooltip] annotations",
+        "Physics/Rigidbody code is in FixedUpdate, not Update",
+        "Camera follow code uses LateUpdate, not Update",
+        "The class uses #region sections for organization (Inspector Fields, Private Fields, Unity Lifecycle, etc.)",
+        "Component references are cached in Awake() using GetComponent",
+        "Events unsubscribe in OnDisable to prevent memory leaks"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create a ScriptableObject for storing weapon configuration data in Unity. The weapon should have a name, damage value, attack speed, range, and a sprite icon. Also show how to create and use it in a weapon system.",
+      "expected_output": "A Unity C# ScriptableObject class with [CreateAssetMenu] attribute, proper naming conventions, [Tooltip] annotations, and example MonoBehaviour usage.",
+      "files": [],
+      "expectations": [
+        "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName",
+        "Public fields or properties use PascalCase",
+        "Fields have [Tooltip] annotations describing their purpose",
+        "Numeric fields use [Range] attribute where bounds make sense",
+        "The class name follows PascalCase convention",
+        "An example is provided showing how to use the ScriptableObject in a MonoBehaviour"
+      ]
+    }
+  ]
+}

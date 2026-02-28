@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "bullet-pool",
+  "prompt": "I'm working on a Playdate shoot-em-up. How do I implement a bullet pool system in C to avoid runtime memory allocation? Show me the pool structure and how to spawn/return bullets.",
+  "assertions": [
+    "The pool avoids runtime malloc/free in the game loop",
+    "The bullet pool uses a struct with snake_case field names",
+    "Function names follow snake_case convention",
+    "The implementation uses a fixed-size array or pre-allocated memory",
+    "The code includes functions for getting a bullet from the pool and returning it",
+    "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE"
+  ]
+}

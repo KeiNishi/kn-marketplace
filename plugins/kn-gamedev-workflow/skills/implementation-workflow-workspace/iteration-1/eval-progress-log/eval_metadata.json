@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "progress-log",
+  "prompt": "I just finished implementing the player movement system for my Unity platformer game. The docs_for_ai/ folder exists with GameDesignOverview.md, ImplementationPlanOverview.md, and implementation/01_Player_Implementation.md. Phase 1, Task 1 (Player Movement) is now complete. I modified Assets/_Project/Scripts/Player/PlayerController.cs and Assets/_Project/Scripts/Player/PlayerModel.cs. Log this progress.",
+  "assertions": [
+    "TaskProgress.md is created or updated in the docs_for_ai/ directory",
+    "The log entry includes the date in YYYY-MM-DD format",
+    "The entry includes the task name referencing Phase 1, Task 1",
+    "The entry lists the modified files: PlayerController.cs and PlayerModel.cs",
+    "The Done field contains a brief completion summary (max 2 sentences)",
+    "The Status line is updated with the current phase and next task information",
+    "The entry follows the exact format: ### [YYYY-MM-DD] | [Task Name] [Phase N, Task M]"
+  ]
+}

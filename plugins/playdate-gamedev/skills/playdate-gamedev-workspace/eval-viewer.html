@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "playdate-gamedev", "runs": [{"id": "eval-bullet-pool-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Bullet Pool System for Playdate Shoot-em-up\n\nThis implementation provides a complete bullet pool system in C for Playdate, using a fixed-size static array to avoid any runtime memory allocation.\n\n---\n\n## bullet.h \u2014 Public API\n\n```c\n#pragma once\n\n#include \"pd_api.h\"\n\n// Maximum number of simultaneous bullets in the pool.\n// Increase if bullets are exhausted during heavy fire.\n#define MAX_BULLETS 128\n\n// Bullet type flags \u2014 distinguish player and enemy bullets.\ntypedef enum {\n    BULLET_TYPE_PLAYER = 0,\n    BULLET_TYPE_ENEMY  = 1\n} BulletType;\n\n// A single bullet entry inside the pool.\n// Keep fields compact; the whole array lives in BSS (zero cost at startup).\ntypedef struct {\n    float      x;\n    float      y;\n    float      vel_x;\n    float      vel_y;\n    BulletType type;\n    int        active;      // 0 = free slot, 1 = in use\n    LCDSprite* sprite;\n} Bullet;\n\n// Pool lifecycle\nvoid   bullet_pool_init(void);\nvoid   bullet_pool_cleanup(void);\n\n// Spawn a bullet from the pool. Returns NULL when the pool is exhausted.\nBullet* bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type);\n\n// Return a bullet to the pool (deactivate and hide its sprite).\nvoid   bullet_pool_return(Bullet* bullet);\n\n// Per-frame update: move all active bullets and auto-return off-screen ones.\nvoid   bullet_pool_update(float dt);\n```\n\n---\n\n## bullet.c \u2014 Implementation\n\n```c\n#include \"bullet.h\"\n\n// Playdate screen bounds with a margin so bullets fully exit before despawning.\n#define SCREEN_W        400\n#define SCREEN_H        240\n#define OFFSCREEN_MARGIN 12\n\n// Bitmap paths \u2014 place 1-bit PNG files under source/resources/images/.\n#define BITMAP_PLAYER_BULLET \"images/bullet_player\"\n#define BITMAP_ENEMY_BULLET  \"images/bullet_enemy\"\n\n// -------------------------------------------------------------------------\n// Global API pointer \u2014 defined once in main.c, referenced via extern here.\n// -------------------------------------------------------------------------\nextern PlaydateAPI* g_pd;\n\n// -------------------------------------------------------------------------\n// The pool itself: a fixed-size static array, zero-initialised at program\n// start. No malloc, no realloc \u2014 all memory is committed at compile time.\n// -------------------------------------------------------------------------\nstatic Bullet g_bullet_pool[MAX_BULLETS];\nstatic int    g_pool_initialized = 0;\n\n// Pre-loaded bitmaps shared across all bullets of the same type.\nstatic LCDBitmap* g_bmp_player = NULL;\nstatic LCDBitmap* g_bmp_enemy  = NULL;\n\n// -------------------------------------------------------------------------\n// bullet_pool_init\n// Call once during game_init(). Creates sprites for every slot and loads\n// shared bitmaps so no allocation ever happens at spawn time.\n// -------------------------------------------------------------------------\nvoid bullet_pool_init(void) {\n    if (g_pool_initialized) return;\n\n    // Load shared bitmaps once.\n    const char* err = NULL;\n    g_bmp_player = g_pd->graphics->loadBitmap(BITMAP_PLAYER_BULLET, &err);\n    if (!g_bmp_player) {\n        g_pd->system->error(\"bullet_pool_init: failed to load %s (%s)\",\n                            BITMAP_PLAYER_BULLET, err ? err : \"unknown\");\n    }\n\n    g_bmp_enemy = g_pd->graphics->loadBitmap(BITMAP_ENEMY_BULLET, &err);\n    if (!g_bmp_enemy) {\n        g_pd->system->error(\"bullet_pool_init: failed to load %s (%s)\",\n                            BITMAP_ENEMY_BULLET, err ? err : \"unknown\");\n    }\n\n    // Pre-create one sprite per pool slot. Sprites are hidden until spawned.\n    for (int i = 0; i < MAX_BULLETS; i++) {\n        g_bullet_pool[i].active = 0;\n        g_bullet_pool[i].x      = 0.0f;\n        g_bullet_pool[i].y      = 0.0f;\n        g_bullet_pool[i].vel_x  = 0.0f;\n        g_bullet_pool[i].vel_y  = 0.0f;\n        g_bullet_pool[i].type   = BULLET_TYPE_PLAYER;\n\n        g_bullet_pool[i].sprite = g_pd->sprite->newSprite();\n        if (!g_bullet_pool[i].sprite) {\n            g_pd->system->error(\"bullet_pool_init: failed to create sprite at index %d\", i);\n            continue;\n        }\n\n        // Default image; updated to the correct type in bullet_pool_get().\n        if (g_bmp_player) {\n            g_pd->sprite->setImage(g_bullet_pool[i].sprite, g_bmp_player, kBitmapUnflipped);\n        }\n\n        // Hide and add to scene graph \u2014 the sprite system culls invisible sprites.\n        g_pd->sprite->setVisible(g_bullet_pool[i].sprite, 0);\n        g_pd->sprite->addSprite(g_bullet_pool[i].sprite);\n\n        // Enable collision on the sprite so bullet hit detection works via\n        // the sprite system without additional spatial queries.\n        g_pd->sprite->setCollisionsEnabled(g_bullet_pool[i].sprite, 1);\n    }\n\n    g_pool_initialized = 1;\n    g_pd->system->logToConsole(\"bullet_pool_init: %d slots ready\", MAX_BULLETS);\n}\n\n// -------------------------------------------------------------------------\n// bullet_pool_cleanup\n// Call when leaving the game scene. Frees sprites and bitmaps.\n// -------------------------------------------------------------------------\nvoid bullet_pool_cleanup(void) {\n    if (!g_pool_initialized) return;\n\n    for (int i = 0; i < MAX_BULLETS; i++) {\n        if (g_bullet_pool[i].sprite) {\n            g_pd->sprite->removeSprite(g_bullet_pool[i].sprite);\n            g_pd->sprite->freeSprite(g_bullet_pool[i].sprite);\n            g_bullet_pool[i].sprite = NULL;\n        }\n        g_bullet_pool[i].active = 0;\n    }\n\n    if (g_bmp_player) {\n        g_pd->graphics->freeBitmap(g_bmp_player);\n        g_bmp_player = NULL;\n    }\n    if (g_bmp_enemy) {\n        g_pd->graphics->freeBitmap(g_bmp_enemy);\n        g_bmp_enemy = NULL;\n    }\n\n    g_pool_initialized = 0;\n}\n\n// -------------------------------------------------------------------------\n// bullet_pool_get\n// Finds the first inactive slot, configures it, and returns a pointer.\n// Returns NULL if the pool is exhausted \u2014 caller should handle gracefully.\n// -------------------------------------------------------------------------\nBullet* bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type) {\n    for (int i = 0; i < MAX_BULLETS; i++) {\n        if (g_bullet_pool[i].active) continue;  // Slot is in use, skip.\n\n        Bullet* b = &g_bullet_pool[i];\n\n        // Assign bullet state.\n        b->x     = x;\n        b->y     = y;\n        b->vel_x = vel_x;\n        b->vel_y = vel_y;\n        b->type  = type;\n        b->active = 1;\n\n        // Point sprite to the correct pre-loaded bitmap.\n        LCDBitmap* bmp = (type == BULLET_TYPE_PLAYER) ? g_bmp_player : g_bmp_enemy;\n        if (bmp) {\n            g_pd->sprite->setImage(b->sprite, bmp, kBitmapUnflipped);\n        }\n\n        // Position and reveal.\n        g_pd->sprite->moveTo(b->sprite, x, y);\n        g_pd->sprite->setVisible(b->sprite, 1);\n\n        return b;\n    }\n\n    // Pool exhausted \u2014 log once so it is visible in the console.\n    g_pd->system->logToConsole(\"bullet_pool_get: pool exhausted (MAX_BULLETS=%d)\", MAX_BULLETS);\n    return NULL;\n}\n\n// -------------------------------------------------------------------------\n// bullet_pool_return\n// Deactivates a bullet and hides its sprite, returning the slot to the pool.\n// Safe to call with NULL.\n// -------------------------------------------------------------------------\nvoid bullet_pool_return(Bullet* bullet) {\n    if (!bullet) return;\n\n    bullet->active = 0;\n    bullet->x      = 0.0f;\n    bullet->y      = 0.0f;\n    bullet->vel_x  = 0.0f;\n    bullet->vel_y  = 0.0f;\n\n    if (bullet->sprite) {\n        g_pd->sprite->setVisible(bullet->sprite, 0);\n        // Move off-screen so any stale collision bounds don't trigger.\n        g_pd->sprite->moveTo(bullet->sprite, -100.0f, -100.0f);\n    }\n}\n\n// -------------------------------------------------------------------------\n// bullet_pool_update\n// Called every frame from game_update(). Moves active bullets and despawns\n// any that travel off-screen. No allocation occurs here.\n// -------------------------------------------------------------------------\nvoid bullet_pool_update(float dt) {\n    for (int i = 0; i < MAX_BULLETS; i++) {\n        if (!g_bullet_pool[i].active) continue;\n\n        Bullet* b = &g_bullet_pool[i];\n\n        // Integrate position.\n        b->x += b->vel_x * dt;\n        b->y += b->vel_y * dt;\n\n        // Sync sprite position.\n        g_pd->sprite->moveTo(b->sprite, b->x, b->y);\n\n        // Auto-return if off-screen.\n        if (b->x < -OFFSCREEN_MARGIN || b->x > SCREEN_W + OFFSCREEN_MARGIN ||\n            b->y < -OFFSCREEN_MARGIN || b->y > SCREEN_H + OFFSCREEN_MARGIN) {\n            bullet_pool_return(b);\n        }\n    }\n}\n```\n\n---\n\n## Usage Example in game.c\n\n```c\n#include \"bullet.h\"\n\n// ---- Initialization ----\nvoid game_init(void) {\n    bullet_pool_init();\n    // ... other init\n}\n\n// ---- Spawn (called when player fires) ----\nvoid player_shoot(float player_x, float player_y) {\n    // Fire straight up at 300 px/s.\n    Bullet* b = bullet_pool_get(player_x, player_y - 16.0f,\n                                0.0f, -300.0f,\n                                BULLET_TYPE_PLAYER);\n    if (!b) {\n        // Pool exhausted \u2014 ignore or apply back-pressure logic.\n        return;\n    }\n    // b is now live; bullet_pool_update() drives it each frame.\n}\n\n// ---- Spread shot example (three-way) ----\nvoid player_shoot_spread(float player_x, float player_y) {\n    bullet_pool_get(player_x,        player_y - 16.0f,  -80.0f, -280.0f, BULLET_TYPE_PLAYER);\n    bullet_pool_get(player_x,        player_y - 16.0f,    0.0f, -300.0f, BULLET_TYPE_PLAYER);\n    bullet_pool_get(player_x,        player_y - 16.0f,   80.0f, -280.0f, BULLET_TYPE_PLAYER);\n}\n\n// ---- Per-frame update ----\nint game_update(void* userdata) {\n    (void)userdata;\n    float dt = 1.0f / 30.0f;\n\n    // Update all active bullets (move + auto-despawn off-screen).\n    bullet_pool_update(dt);\n\n    // Sprite system draws and collision-checks bullets automatically.\n    g_pd->sprite->updateAndDrawSprites();\n\n    g_pd->system->drawFPS(0, 0);\n    return 1;\n}\n\n// ---- Hit detection (collision callback or manual query) ----\nvoid on_bullet_hit_enemy(Bullet* b, Enemy* e) {\n    enemy_take_damage(e, 1);\n    bullet_pool_return(b);  // Return bullet to pool immediately.\n}\n\n// ---- Cleanup ----\nvoid game_cleanup(void) {\n    bullet_pool_cleanup();\n    // ... other cleanup\n}\n```\n\n---\n\n## Key Design Decisions\n\n### Why a fixed-size static array?\n\n`static Bullet g_bullet_pool[MAX_BULLETS]` is allocated in BSS at link time. There is no `malloc`, no `realloc`, and no fragmentation. Every frame is allocation-free inside the pool update loop, which is the most critical constraint on Playdate hardware.\n\n### Why pre-create sprites at init?\n\n`g_pd->sprite->newSprite()` involves an internal allocation. Doing it once during `bullet_pool_init()` means `bullet_pool_get()` never allocates \u2014 it only flips `active = 1`, sets the bitmap reference, and calls `moveTo` + `setVisible`, all O(1) operations.\n\n### Why share bitmaps across all pool slots?\n\nA single `LCDBitmap*` per bullet type is loaded once. Each sprite's `setImage` call simply stores a pointer; no pixel data is duplicated. This keeps peak memory proportional to the number of bitmap *types*, not the pool size.\n\n### Linear scan for a free slot\n\nWith `MAX_BULLETS = 128` the worst-case scan is 128 iterations \u2014 negligible at 30 fps. If profiling shows this is a bottleneck, maintain a free-list index array alongside the pool. For most shmup designs the simple scan is sufficient.\n\n### Naming conventions\n\nAll symbols follow Playdate project conventions established in the skill guide:\n- Constants: `SCREAMING_SNAKE_CASE` (`MAX_BULLETS`, `BULLET_TYPE_PLAYER`)\n- Types: `PascalCase` (`Bullet`, `BulletType`)\n- Functions: `snake_case` (`bullet_pool_get`, `bullet_pool_return`)\n- Global state: `g_` prefix (`g_bullet_pool`, `g_bmp_player`)\n"}], "grading": {"expectations": [{"text": "The pool avoids runtime malloc/free in the game loop", "passed": true, "evidence": "The pool is declared as 'static Bullet g_bullet_pool[MAX_BULLETS]' (BSS allocation, zero cost at runtime). All 128 sprites are pre-created in bullet_pool_init() so newSprite() never runs in the game loop. bullet_pool_update() contains only position math, moveTo, setVisible, and bullet_pool_return calls \u2014 no allocation. The Key Design Decisions section explicitly states: 'There is no malloc, no realloc, and no fragmentation. Every frame is allocation-free inside the pool update loop.'"}, {"text": "The bullet pool uses a struct with snake_case field names", "passed": true, "evidence": "The Bullet struct in bullet.h defines fields: x, y, vel_x, vel_y, type, active, sprite \u2014 all snake_case. Specifically: 'float vel_x; float vel_y; int active;' confirm multi-word fields use underscores."}, {"text": "Function names follow snake_case convention", "passed": true, "evidence": "All five exported functions follow snake_case: bullet_pool_init, bullet_pool_cleanup, bullet_pool_get, bullet_pool_return, bullet_pool_update. Internal helpers also conform. The naming conventions section of response.md confirms: 'Functions: snake_case (bullet_pool_get, bullet_pool_return)'."}, {"text": "The implementation uses a fixed-size array or pre-allocated memory", "passed": true, "evidence": "bullet.c declares 'static Bullet g_bullet_pool[MAX_BULLETS]' where MAX_BULLETS is 128. This is a compile-time fixed-size static array in BSS. No dynamic resizing occurs anywhere in the implementation."}, {"text": "The code includes functions for getting a bullet from the pool and returning it", "passed": true, "evidence": "bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type) scans for the first inactive slot, configures it, sets active=1, reveals the sprite, and returns a Bullet*. bullet_pool_return(Bullet* bullet) sets active=0, zeroes position fields, and hides the sprite. Both are declared in bullet.h and fully implemented in bullet.c."}, {"text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE", "passed": true, "evidence": "MAX_BULLETS, SCREEN_W, SCREEN_H, OFFSCREEN_MARGIN, BITMAP_PLAYER_BULLET, BITMAP_ENEMY_BULLET are all defined with #define in screaming snake case. The BulletType enum values BULLET_TYPE_PLAYER and BULLET_TYPE_ENEMY also follow SCREAMING_SNAKE_CASE. The naming conventions section confirms: 'Constants: SCREAMING_SNAKE_CASE (MAX_BULLETS, BULLET_TYPE_PLAYER)'."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 5, "errors_encountered": 0, "output_chars": 12215, "transcript_chars": 4246}, "timing": {}, "claims": [{"claim": "Pre-loading bitmaps at init means bullet_pool_get() never allocates", "type": "quality", "verified": true, "evidence": "bullet_pool_get() calls only setImage (pointer assignment), moveTo, setVisible \u2014 no allocation calls. Sprites are already created in bullet_pool_init(). The claim holds."}, {"claim": "The implementation follows Playdate naming conventions from SKILL.md", "type": "process", "verified": true, "evidence": "Transcript Step 1 documents reading SKILL.md and extracting naming rules. The output applies all of them: constants in SCREAMING_SNAKE_CASE, types in PascalCase (Bullet, BulletType), functions and locals in snake_case, globals prefixed with g_ (g_bullet_pool, g_bmp_player, g_pool_initialized)."}, {"claim": "Sprites are pre-created so spawn is O(1) and allocation-free", "type": "quality", "verified": true, "evidence": "bullet_pool_init() calls g_pd->sprite->newSprite() exactly once per pool slot in a loop. bullet_pool_get() does not call newSprite(). The scan to find a free slot is O(MAX_BULLETS) worst-case (128 iterations), not O(1), but the allocation-free claim is accurate."}, {"claim": "References/performance.md contained a worked bullet pool example that was used", "type": "process", "verified": true, "evidence": "Transcript Step 3 documents reading performance.md and extracting 'static Bullet bullet_pool[BULLET_POOL_SIZE]', the init guard, spawn/despawn pattern, and the setVisible hide technique. All of these appear in the final implementation."}, {"claim": "NULL is returned when the pool is exhausted", "type": "factual", "verified": true, "evidence": "bullet_pool_get() ends with 'g_pd->system->logToConsole(...); return NULL;' after the scan loop, and the usage example shows 'if (!b) { return; }' handling."}, {"claim": "bullet_pool_return is safe to call with NULL", "type": "factual", "verified": true, "evidence": "First line of bullet_pool_return: 'if (!bullet) return;'"}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"reason": "All six assertions passed, but none verifies that the update loop itself is free of allocations at the call-site level \u2014 specifically that bullet_pool_update() does not invoke any Playdate API that internally allocates (e.g., moveWithCollisions). The implementation uses moveTo (safe), but an assertion targeting the update loop body specifically would be more discriminating than the general pool-avoids-malloc assertion."}, {"assertion": "The bullet pool uses a struct with snake_case field names", "reason": "This assertion would also pass for any struct that happens to have at least one snake_case field, even if other fields violated the convention. A stronger form would assert that ALL multi-word field names use snake_case (e.g., vel_x, vel_y, active) rather than any."}, {"reason": "No assertion checks that the BulletType enum values (BULLET_TYPE_PLAYER, BULLET_TYPE_ENEMY) or the g_ global naming convention are applied. These are key Playdate conventions from the skill guide that the implementation correctly follows, and they go unvalidated."}, {"reason": "No assertion verifies that sprites are pre-allocated at init time rather than at spawn time \u2014 which is the specific design decision that makes bullet_pool_get() allocation-free. The existing 'avoids runtime malloc' assertion covers the outcome but not this critical mechanism."}], "overall": "All expectations pass cleanly and the implementation is high quality. The main gap is that assertions test naming and structure but do not probe the timing of allocation (init vs. spawn), which is the core correctness property of a pool system. Adding one assertion about where newSprite() is called would make the eval meaningfully more discriminating."}}}, {"id": "eval-bullet-pool-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Bullet Pool System in C for Playdate Shoot-em-up\n\nA bullet pool pre-allocates all bullets at startup and reuses them, eliminating runtime `malloc`/`free` calls which are slow and can cause fragmentation on constrained hardware like the Playdate.\n\n---\n\n## Pool Structure\n\n```c\n#include <stdint.h>\n#include <stdbool.h>\n#include <string.h>\n\n#define MAX_BULLETS 64\n\ntypedef struct {\n    float x;\n    float y;\n    float vx;       // velocity x\n    float vy;       // velocity y\n    float speed;\n    bool  active;\n    uint8_t damage;\n    uint8_t owner;  // 0 = player, 1 = enemy\n} Bullet;\n\ntypedef struct {\n    Bullet  bullets[MAX_BULLETS];\n    int     count;      // total pool size (always MAX_BULLETS)\n    int     active_count;\n} BulletPool;\n\n// Global pool instance (or embed in your game state struct)\nstatic BulletPool g_bullet_pool;\n```\n\n---\n\n## Initialization\n\n```c\nvoid BulletPool_Init(BulletPool *pool) {\n    memset(pool, 0, sizeof(BulletPool));\n    pool->count = MAX_BULLETS;\n    pool->active_count = 0;\n}\n```\n\n---\n\n## Spawn a Bullet (Get from Pool)\n\nScans for the first inactive slot and initializes it. Returns `NULL` if the pool is exhausted.\n\n```c\nBullet *BulletPool_Spawn(BulletPool *pool,\n                         float x, float y,\n                         float vx, float vy,\n                         uint8_t damage, uint8_t owner) {\n    for (int i = 0; i < pool->count; i++) {\n        if (!pool->bullets[i].active) {\n            Bullet *b = &pool->bullets[i];\n            b->x      = x;\n            b->y      = y;\n            b->vx     = vx;\n            b->vy     = vy;\n            b->speed  = 0.0f; // unused if vx/vy encode speed already\n            b->damage = damage;\n            b->owner  = owner;\n            b->active = true;\n            pool->active_count++;\n            return b;\n        }\n    }\n    // Pool exhausted \u2014 caller can silently drop the bullet\n    return NULL;\n}\n```\n\n---\n\n## Return a Bullet (Deactivate)\n\n```c\nvoid BulletPool_Return(BulletPool *pool, Bullet *b) {\n    if (b == NULL) return;\n    // Verify pointer is actually inside this pool (safety check)\n    if (b < &pool->bullets[0] || b >= &pool->bullets[MAX_BULLETS]) return;\n\n    b->active = false;\n    pool->active_count--;\n    if (pool->active_count < 0) pool->active_count = 0; // guard against underflow\n}\n```\n\n---\n\n## Update Loop\n\nCalled once per frame. Moves all active bullets and culls those that have left the screen.\n\n```c\n#define SCREEN_W 400\n#define SCREEN_H 240\n\nvoid BulletPool_Update(BulletPool *pool) {\n    for (int i = 0; i < pool->count; i++) {\n        Bullet *b = &pool->bullets[i];\n        if (!b->active) continue;\n\n        b->x += b->vx;\n        b->y += b->vy;\n\n        // Return bullet if it leaves the screen bounds\n        if (b->x < 0 || b->x > SCREEN_W ||\n            b->y < 0 || b->y > SCREEN_H) {\n            BulletPool_Return(pool, b);\n        }\n    }\n}\n```\n\n---\n\n## Draw Loop\n\n```c\n// Assumes you have access to pd->graphics (Playdate SDK)\nvoid BulletPool_Draw(BulletPool *pool, PlaydateAPI *pd) {\n    for (int i = 0; i < pool->count; i++) {\n        Bullet *b = &pool->bullets[i];\n        if (!b->active) continue;\n\n        // Draw a 4x4 filled rectangle for each bullet\n        pd->graphics->fillRect((int)b->x - 2, (int)b->y - 2, 4, 4, kColorBlack);\n    }\n}\n```\n\n---\n\n## Collision Check Example\n\n```c\n// Returns the first active bullet that overlaps rect (x,y,w,h), or NULL\nBullet *BulletPool_CheckCollision(BulletPool *pool,\n                                  float rx, float ry,\n                                  float rw, float rh,\n                                  uint8_t target_owner) {\n    for (int i = 0; i < pool->count; i++) {\n        Bullet *b = &pool->bullets[i];\n        if (!b->active) continue;\n        if (b->owner == target_owner) continue; // friendly fire guard\n\n        if (b->x >= rx && b->x <= rx + rw &&\n            b->y >= ry && b->y <= ry + rh) {\n            return b;\n        }\n    }\n    return NULL;\n}\n```\n\n---\n\n## Wiring into Your Game Loop\n\n```c\n// game.c\n\nstatic BulletPool g_bullets;\n\nvoid game_init(PlaydateAPI *pd) {\n    BulletPool_Init(&g_bullets);\n}\n\nint game_update(PlaydateAPI *pd) {\n    // --- Player fires ---\n    if (player_pressed_fire()) {\n        BulletPool_Spawn(&g_bullets,\n                         player.x, player.y - 8,\n                         0.0f, -8.0f,   // straight up\n                         10, 0);         // damage=10, owner=player\n    }\n\n    // --- Move all bullets ---\n    BulletPool_Update(&g_bullets);\n\n    // --- Check enemy collisions ---\n    for (int e = 0; e < enemy_count; e++) {\n        Bullet *hit = BulletPool_CheckCollision(\n            &g_bullets,\n            enemies[e].x, enemies[e].y, 16, 16,\n            1  // target_owner=enemy (so player bullets hit)\n        );\n        if (hit) {\n            enemies[e].hp -= hit->damage;\n            BulletPool_Return(&g_bullets, hit);\n        }\n    }\n\n    // --- Draw ---\n    BulletPool_Draw(&g_bullets, pd);\n\n    return 1; // request another update\n}\n```\n\n---\n\n## Key Design Decisions\n\n| Decision | Rationale |\n|---|---|\n| Fixed-size array of structs | No heap allocation; cache-friendly linear scan |\n| `bool active` flag | O(1) return; no linked-list pointer chasing |\n| `active_count` bookkeeping | Lets you bail out of the scan early when `active_count == 0` |\n| Pointer bounds check in `Return` | Prevents stale/dangling pointer bugs in release builds |\n| `MAX_BULLETS 64` | Fits comfortably within Playdate's 16 MB RAM; tune as needed |\n\n---\n\n## Tips for Playdate Specifically\n\n- The Playdate CPU (Cortex-M7 @ 180 MHz) has no hardware FPU in the base configuration \u2014 consider using fixed-point integers (`int16_t` in units of 1/256 pixel) for `x`, `y`, `vx`, `vy` if you need maximum throughput.\n- Keep `MAX_BULLETS` a power of 2 so the compiler can optimize modulo operations if you later switch to a ring-buffer variant.\n- Profile with the Playdate Simulator's performance overlay before optimizing \u2014 64 bullets with a linear scan is almost certainly fast enough at 30 fps.\n"}], "grading": {"expectations": [{"text": "The pool avoids runtime malloc/free in the game loop", "passed": true, "evidence": "The response.md explicitly states 'A bullet pool pre-allocates all bullets at startup and reuses them, eliminating runtime malloc/free calls.' No malloc or free calls appear anywhere in the code. The pool is declared as a static global ('static BulletPool g_bullet_pool;') and initialized with memset in BulletPool_Init. The game loop (game_update) calls only BulletPool_Spawn, BulletPool_Update, BulletPool_CheckCollision, BulletPool_Return, and BulletPool_Draw \u2014 none of which allocate heap memory."}, {"text": "The bullet pool uses a struct with snake_case field names", "passed": true, "evidence": "The BulletPool struct in response.md has fields: 'bullets', 'count', and 'active_count' \u2014 all snake_case. The Bullet struct has fields: 'x', 'y', 'vx', 'vy', 'speed', 'active', 'damage', 'owner' \u2014 all snake_case."}, {"text": "Function names follow snake_case convention", "passed": false, "evidence": "All function names use PascalCase_PascalCase format, not snake_case. Examples: BulletPool_Init, BulletPool_Spawn, BulletPool_Return, BulletPool_Update, BulletPool_Draw, BulletPool_CheckCollision. True snake_case would be bullet_pool_init, bullet_pool_spawn, etc. The underscore separates a PascalCase type prefix from a PascalCase verb, which is a C namespace convention but not snake_case."}, {"text": "The implementation uses a fixed-size array or pre-allocated memory", "passed": true, "evidence": "response.md defines 'Bullet bullets[MAX_BULLETS]' inside the BulletPool struct, where MAX_BULLETS is the compile-time constant 64. This is a fixed-size array embedded directly in the struct with no dynamic allocation. The Key Design Decisions table confirms: 'Fixed-size array of structs \u2014 No heap allocation; cache-friendly linear scan'."}, {"text": "The code includes functions for getting a bullet from the pool and returning it", "passed": true, "evidence": "BulletPool_Spawn (response.md lines 56-77) acquires a bullet from the pool by scanning for the first inactive slot, initializing it, and returning a pointer to it. BulletPool_Return (response.md lines 85-93) deactivates a bullet by setting b->active = false and decrementing active_count. Both functions are clearly implemented and demonstrated in the integration example."}, {"text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE", "passed": true, "evidence": "response.md defines '#define MAX_BULLETS 64', '#define SCREEN_W 400', and '#define SCREEN_H 240' \u2014 all use SCREAMING_SNAKE_CASE. MAX_BULLETS is the primary constant referenced in the expectation and it conforms correctly."}], "summary": {"passed": 5, "failed": 1, "total": 6, "pass_rate": 0.83}, "execution_metrics": {"total_steps": 6, "errors_encountered": 0}, "timing": {}, "claims": [{"claim": "The implementation uses a flat array (struct-of-arrays is an alternative) for simplicity and cache locality", "type": "factual", "verified": true, "evidence": "The BulletPool struct contains 'Bullet bullets[MAX_BULLETS]' \u2014 an array of Bullet structs (array-of-structs). The transcript's design note about cache locality is accurate for sequential iteration over active bullets."}, {"claim": "No skill documentation, SDK source files, or external references were consulted", "type": "process", "verified": true, "evidence": "The transcript Step 2 and the 'Approach / Knowledge Sources Used' section both state only general C programming knowledge and classic object pool patterns were used. This is consistent with the without_skill condition."}, {"claim": "BulletPool_Return validates the pointer is inside the pool before deactivating", "type": "quality", "verified": true, "evidence": "response.md BulletPool_Return checks 'if (b < &pool->bullets[0] || b >= &pool->bullets[MAX_BULLETS]) return;' before modifying state."}, {"claim": "The Playdate CPU (Cortex-M7 @ 180 MHz) has no hardware FPU in the base configuration", "type": "factual", "verified": false, "evidence": "The Playdate SDK documentation indicates the device uses a Cortex-M7 at 168-180 MHz. The claim about 'no hardware FPU in the base configuration' is inaccurate \u2014 the Cortex-M7 does include an FPU. This is a minor inaccuracy in the Tips section but does not affect pool correctness."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "Function names follow snake_case convention", "reason": "This assertion is well-targeted and correctly catches the failure. The PascalCase_PascalCase style (BulletPool_Init) is a common C convention but is not snake_case. No change needed \u2014 it is already discriminating."}, {"reason": "No assertion checks whether BulletPool_Spawn returns NULL gracefully when the pool is exhausted. The implementation does handle this (returns NULL with a comment), but pool-exhaustion behavior is a correctness concern worth asserting, especially since callers must check the return value."}, {"reason": "No assertion checks that the update loop iterates the full pool rather than only active_count bullets. The implementation iterates pool->count (all slots), which is correct but slightly inefficient. An optimized approach could exit early when active_count bullets have been processed, but more importantly the correctness of scanning all slots (not just N=active_count) could be verified."}, {"assertion": "The bullet pool uses a struct with snake_case field names", "reason": "This assertion would also pass for a struct with a single field named 'data'. Consider strengthening to require specific semantically meaningful fields (position, velocity, active flag) rather than only checking naming convention."}], "overall": "The assertions cover the most important structural and naming properties. The naming convention failure (Expectation 3) is correctly caught. The main gap is behavioral correctness: no assertion checks pool-exhaustion handling, thread-safety assumptions, or that the update function correctly culls out-of-bounds bullets without corrupting active_count."}}}, {"id": "eval-moving-sprite-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Playdate Moving Player Sprite - C Implementation\n\nA simple Playdate game in C featuring a player sprite that moves left and right with the D-pad, with crank-controlled speed.\n\n## Project Structure\n\n```\nMovingSprite/\n\u251c\u2500\u2500 source/\n\u2502   \u251c\u2500\u2500 main.c       # Entry point (eventHandler)\n\u2502   \u251c\u2500\u2500 game.h       # Game loop declarations\n\u2502   \u251c\u2500\u2500 game.c       # Game loop implementation\n\u2502   \u251c\u2500\u2500 player.h     # Player public API\n\u2502   \u2514\u2500\u2500 player.c     # Player implementation\n\u251c\u2500\u2500 CMakeLists.txt\n\u2514\u2500\u2500 source/pdxinfo\n```\n\n---\n\n## main.c\n\n```c\n// main.c\n// Entry point for the MovingSprite Playdate game.\n\n#include \"pd_api.h\"\n#include \"game.h\"\n\n// ============================================\n// GLOBAL PLAYDATE API POINTER\n// ============================================\n\nPlaydateAPI* g_pd = NULL;\n\n// ============================================\n// ENTRY POINT\n// ============================================\n\n#ifdef _WINDLL\n__declspec(dllexport)\n#endif\nint eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg) {\n    (void)arg;\n\n    if (event == kEventInit) {\n        g_pd = pd;\n        pd->display->setRefreshRate(30.0f);\n        game_init();\n        pd->system->setUpdateCallback(game_update, NULL);\n    }\n\n    return 0;\n}\n```\n\n---\n\n## game.h\n\n```c\n// game.h\n#ifndef GAME_H\n#define GAME_H\n\n#include \"pd_api.h\"\n\nvoid game_init(void);\nint  game_update(void* userdata);\n\n#endif // GAME_H\n```\n\n---\n\n## game.c\n\n```c\n// game.c\n// Game loop: init and per-frame update.\n\n#include \"game.h\"\n#include \"player.h\"\n\n// ============================================\n// CONSTANTS\n// ============================================\n\n#define TARGET_FPS 30.0f\n#define DT         (1.0f / TARGET_FPS)\n\n// ============================================\n// PRIVATE VARIABLES\n// ============================================\n\nextern PlaydateAPI* g_pd;\n\nstatic Player* g_player = NULL;\n\n// ============================================\n// PUBLIC FUNCTIONS\n// ============================================\n\nvoid game_init(void) {\n    // Spawn player at center of screen (400x240)\n    g_player = player_create(200.0f, 120.0f);\n}\n\nint game_update(void* userdata) {\n    (void)userdata;\n\n    g_pd->graphics->clear(kColorWhite);\n\n    // Update player (input + movement)\n    player_update(g_player, DT);\n\n    // Draw all sprites\n    g_pd->sprite->drawSprites();\n\n    // FPS counter for debugging\n    g_pd->system->drawFPS(0, 0);\n\n    return 1;  // Continue running\n}\n```\n\n---\n\n## player.h\n\n```c\n// player.h\n#ifndef PLAYER_H\n#define PLAYER_H\n\n#include \"pd_api.h\"\n\n// Forward declaration (implementation hidden)\ntypedef struct Player Player;\n\n/**\n * Creates a new player sprite at the given position.\n *\n * @param x Initial X position (pixels)\n * @param y Initial Y position (pixels)\n * @return Pointer to new Player, or NULL on failure\n */\nPlayer* player_create(float x, float y);\n\n/**\n * Destroys the player and frees all associated resources.\n *\n * @param player Pointer to Player to destroy\n */\nvoid player_destroy(Player* player);\n\n/**\n * Updates player input and position each frame.\n * - D-pad Left/Right: move horizontally\n * - Crank: controls movement speed multiplier\n *\n * @param player Pointer to Player\n * @param dt     Delta time in seconds (fixed at 1/30)\n */\nvoid player_update(Player* player, float dt);\n\n#endif // PLAYER_H\n```\n\n---\n\n## player.c\n\n```c\n// player.c\n// Player sprite: D-pad movement with crank-controlled speed.\n\n#include \"player.h\"\n\n// ============================================\n// CONSTANTS\n// ============================================\n\n#define PLAYER_BASE_SPEED     150.0f   // pixels per second at neutral crank\n#define PLAYER_CRANK_SCALE    1.5f     // max speed multiplier from crank\n#define PLAYER_SIZE           24       // sprite width and height in pixels\n#define SCREEN_WIDTH          400\n#define SCREEN_HEIGHT         240\n#define PLAYER_HALF_SIZE      (PLAYER_SIZE / 2)\n\n// ============================================\n// TYPES\n// ============================================\n\nstruct Player {\n    float      x;\n    float      y;\n    float      speed;        // current speed (pixels/sec), modified by crank\n    LCDSprite* sprite;\n};\n\n// ============================================\n// EXTERNAL GLOBALS\n// ============================================\n\nextern PlaydateAPI* g_pd;\n\n// ============================================\n// PRIVATE FUNCTIONS\n// ============================================\n\n/**\n * Draws the player as a filled black square with a white dot in the center.\n * Used as a stand-in for a real bitmap asset.\n */\nstatic void player_draw_callback(LCDSprite* sprite) {\n    (void)sprite;\n\n    // Body: filled black square\n    g_pd->graphics->fillRect(\n        -PLAYER_HALF_SIZE,\n        -PLAYER_HALF_SIZE,\n        PLAYER_SIZE,\n        PLAYER_SIZE,\n        kColorBlack\n    );\n\n    // Center dot: white\n    g_pd->graphics->fillRect(-3, -3, 6, 6, kColorWhite);\n}\n\n/**\n * Clamps a float value to [min, max].\n */\nstatic float clamp_f(float value, float min, float max) {\n    if (value < min) return min;\n    if (value > max) return max;\n    return value;\n}\n\n// ============================================\n// PUBLIC FUNCTIONS\n// ============================================\n\nPlayer* player_create(float x, float y) {\n    // Allocate player struct via Playdate allocator\n    Player* player = g_pd->system->realloc(NULL, sizeof(Player));\n    if (!player) {\n        g_pd->system->error(\"player_create: failed to allocate Player\");\n        return NULL;\n    }\n\n    player->x     = x;\n    player->y     = y;\n    player->speed = PLAYER_BASE_SPEED;\n\n    // Create sprite\n    player->sprite = g_pd->sprite->newSprite();\n    if (!player->sprite) {\n        g_pd->system->realloc(player, 0);\n        g_pd->system->error(\"player_create: failed to create sprite\");\n        return NULL;\n    }\n\n    // Use a draw callback so we don't need a bitmap asset\n    g_pd->sprite->setDrawFunction(player->sprite, player_draw_callback);\n\n    // Set sprite bounds (centered)\n    PDRect bounds = PDRectMake(\n        -PLAYER_HALF_SIZE,\n        -PLAYER_HALF_SIZE,\n        PLAYER_SIZE,\n        PLAYER_SIZE\n    );\n    g_pd->sprite->setBounds(player->sprite, bounds);\n\n    // Position the sprite\n    g_pd->sprite->moveTo(player->sprite, player->x, player->y);\n\n    // Add to the sprite system (auto-drawn each frame via drawSprites)\n    g_pd->sprite->addSprite(player->sprite);\n\n    g_pd->system->logToConsole(\"player_create: player created at (%.1f, %.1f)\", x, y);\n\n    return player;\n}\n\nvoid player_destroy(Player* player) {\n    if (!player) return;\n\n    if (player->sprite) {\n        g_pd->sprite->removeSprite(player->sprite);\n        g_pd->sprite->freeSprite(player->sprite);\n        player->sprite = NULL;\n    }\n\n    g_pd->system->realloc(player, 0);\n}\n\nvoid player_update(Player* player, float dt) {\n    if (!player) return;\n\n    // ----------------------------------------\n    // 1. Crank: adjust speed multiplier\n    // ----------------------------------------\n    float crank_change = 0.0f;\n\n    if (!g_pd->system->isCrankDocked()) {\n        // getCrankChange() returns degrees rotated since last frame.\n        // Positive = clockwise, Negative = counter-clockwise.\n        // We map the accumulated crank angle (0-360) to a speed multiplier.\n        float crank_angle = g_pd->system->getCrankAngle();  // 0..360\n\n        // Map angle to multiplier:\n        //   0 deg   -> 0.25x (very slow)\n        //   180 deg -> 1.0x  (base speed)\n        //   360 deg -> 1.75x (fast)\n        // Formula: multiplier = 0.25 + (angle / 360.0) * PLAYER_CRANK_SCALE\n        float multiplier = 0.25f + (crank_angle / 360.0f) * PLAYER_CRANK_SCALE;\n        player->speed = PLAYER_BASE_SPEED * multiplier;\n    } else {\n        // Crank docked: use base speed\n        player->speed = PLAYER_BASE_SPEED;\n    }\n\n    (void)crank_change;  // suppress unused-variable warning\n\n    // ----------------------------------------\n    // 2. D-pad: move left / right\n    // ----------------------------------------\n    PDButtons current, pushed, released;\n    g_pd->system->getButtonState(&current, &pushed, &released);\n    (void)pushed;\n    (void)released;\n\n    if (current & kButtonLeft) {\n        player->x -= player->speed * dt;\n    }\n    if (current & kButtonRight) {\n        player->x += player->speed * dt;\n    }\n\n    // Optional: also support Up/Down movement\n    if (current & kButtonUp) {\n        player->y -= player->speed * dt;\n    }\n    if (current & kButtonDown) {\n        player->y += player->speed * dt;\n    }\n\n    // ----------------------------------------\n    // 3. Clamp to screen bounds\n    // ----------------------------------------\n    player->x = clamp_f(player->x,\n                        PLAYER_HALF_SIZE,\n                        SCREEN_WIDTH  - PLAYER_HALF_SIZE);\n    player->y = clamp_f(player->y,\n                        PLAYER_HALF_SIZE,\n                        SCREEN_HEIGHT - PLAYER_HALF_SIZE);\n\n    // ----------------------------------------\n    // 4. Sync sprite position\n    // ----------------------------------------\n    g_pd->sprite->moveTo(player->sprite, player->x, player->y);\n}\n```\n\n---\n\n## Key Design Decisions\n\n### Entry Point\n\n`eventHandler` in `main.c` is the required Playdate entry point. On `kEventInit` it stores the global `g_pd` pointer, sets the 30 fps refresh rate, calls `game_init()`, and registers `game_update` as the per-frame callback via `setUpdateCallback`.\n\n### Global `g_pd` Pointer\n\n`PlaydateAPI* g_pd` is declared in `main.c` and referenced as `extern PlaydateAPI* g_pd` in all other `.c` files. This is the canonical Playdate pattern.\n\n### Memory Allocation\n\nAll structs are allocated with `g_pd->system->realloc(NULL, size)` and freed with `g_pd->system->realloc(ptr, 0)`. `stdlib` `malloc`/`free` are avoided.\n\n### Crank Speed Control\n\n`getCrankAngle()` returns an absolute 0-360 degree value. This is mapped linearly to a speed multiplier ranging from 0.25x (crank pointing up / 0 deg) to 2.0x (crank pointing up after a full rotation). When the crank is docked, base speed is used directly.\n\n### Sprite Draw Callback\n\nSince no bitmap asset is assumed to exist, `setDrawFunction` is used to render the player as a filled rectangle with a center dot. In a real project this would be replaced by `setImage` with a loaded `LCDBitmap`.\n\n### Screen Clamping\n\nAfter applying movement, the player's position is clamped to `[PLAYER_HALF_SIZE, SCREEN_WIDTH - PLAYER_HALF_SIZE]` horizontally and the equivalent vertically, keeping the sprite fully on screen.\n\n### Game Loop\n\n`game_update` clears the screen with `kColorWhite`, calls `player_update`, then `g_pd->sprite->drawSprites()` to render all registered sprites, and returns `1` to continue execution.\n"}], "grading": {"expectations": [{"text": "The code includes the eventHandler function as the entry point", "passed": true, "evidence": "Found in main.c (response.md): `int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)` is declared and implemented as the top-level entry point, with the required `#ifdef _WINDLL __declspec(dllexport) #endif` guard. The transcript also confirms: 'eventHandler handles kEventInit: stores g_pd, sets 30fps, calls game_init(), registers game_update'."}, {"text": "A global PlaydateAPI pointer (g_pd) is declared", "passed": true, "evidence": "Found in main.c (response.md): `PlaydateAPI* g_pd = NULL;` is declared at file scope. It is also referenced as `extern PlaydateAPI* g_pd;` in both game.c and player.c, which is the canonical multi-file pattern."}, {"text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "passed": true, "evidence": "player.c uses `g_pd->system->getButtonState(&current, &pushed, &released)` directly. Crank input is read via `g_pd->system->getCrankAngle()` and `g_pd->system->isCrankDocked()` rather than `getCrankChange()`, but the expectation lists these as examples ('e.g.'). Additional g_pd API calls appear throughout: `g_pd->graphics->clear`, `g_pd->sprite->drawSprites`, `g_pd->system->setUpdateCallback`, `g_pd->system->realloc`, `g_pd->system->logToConsole`, and `g_pd->system->drawFPS`."}, {"text": "Variable names follow snake_case convention", "passed": true, "evidence": "All local variables in player.c use snake_case: `crank_change`, `crank_angle`, `multiplier`, `current`, `pushed`, `released`. Functions are likewise snake_case: `player_create`, `player_destroy`, `player_update`, `player_draw_callback`, `clamp_f`, `game_init`, `game_update`. The transcript's conventions table confirms: 'snake_case functions: Yes'."}, {"text": "The player is represented as a struct with snake_case fields", "passed": true, "evidence": "Defined in player.c: `struct Player { float x; float y; float speed; LCDSprite* sprite; };`. All four fields (`x`, `y`, `speed`, `sprite`) use snake_case. The struct definition is hidden in the .c file with only a forward declaration `typedef struct Player Player;` in player.h, following the coding standards."}, {"text": "Memory allocation uses g_pd->system->realloc instead of malloc", "passed": true, "evidence": "player.c uses `Player* player = g_pd->system->realloc(NULL, sizeof(Player));` for allocation and `g_pd->system->realloc(player, 0);` for deallocation (both in player_create and player_destroy). The response.md design notes state: 'All structs are allocated with g_pd->system->realloc(NULL, size) and freed with g_pd->system->realloc(ptr, 0). stdlib malloc/free are avoided.'"}, {"text": "The game uses g_pd->system->setUpdateCallback for the game loop", "passed": true, "evidence": "Found in main.c (response.md): `pd->system->setUpdateCallback(game_update, NULL);` is called inside the `kEventInit` branch of `eventHandler`. The transcript confirms: 'registers game_update' and 'setUpdateCallback for game loop: Yes'."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": 0, "total_tool_calls": 0, "total_steps": 8, "errors_encountered": 0, "output_chars": 0, "transcript_chars": 3845}, "timing": {}, "claims": [{"claim": "The implementation uses getCrankChange() for crank input", "type": "process", "verified": false, "evidence": "The transcript's conventions table says 'getCrankChange() / getCrankAngle(): Yes', but the actual player.c code uses only getCrankAngle() for speed mapping, not getCrankChange(). A variable `crank_change` is declared but immediately suppressed with `(void)crank_change`. getCrankChange() is never actually called. This is a minor inaccuracy in the transcript's summary."}, {"claim": "NULL checks are performed on all pointers", "type": "quality", "verified": true, "evidence": "player_create checks both the player allocation and sprite allocation, returning NULL and logging on failure. player_destroy and player_update both begin with `if (!player) return;`. This matches the transcript claim 'NULL checks on all pointers: Yes'."}, {"claim": "The game targets 30 FPS", "type": "factual", "verified": true, "evidence": "main.c calls `pd->display->setRefreshRate(30.0f)` on kEventInit. game.c defines `#define TARGET_FPS 30.0f` and `#define DT (1.0f / TARGET_FPS)` which is passed to player_update each frame."}, {"claim": "The crank maps 0-360 degrees to a 0.25x-2.0x speed multiplier", "type": "factual", "verified": false, "evidence": "The formula `multiplier = 0.25f + (crank_angle / 360.0f) * PLAYER_CRANK_SCALE` with PLAYER_CRANK_SCALE=1.5f yields a range of 0.25x to 1.75x (not 2.0x). The design notes section mentions '2.0x' but the code computes a maximum of 0.25 + 1.5 = 1.75x. The transcript text also says '2.0x' which is inconsistent with the actual constant."}, {"claim": "The implementation uses 5 source files", "type": "factual", "verified": true, "evidence": "response.md contains code blocks for all five: main.c, game.h, game.c, player.h, player.c. All are fully implemented."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"assertion": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "reason": "The assertion lists getCrankChange as an example, but the code uses getCrankAngle instead (and declares a crank_change variable that is immediately suppressed unused). Both are valid Playdate APIs so a PASS is still correct, but listing getCrankChange specifically as an example could mislead a grader into marking it FAIL. The assertion would be sharper if it said 'uses at least two of: getButtonState, getCrankChange, getCrankAngle, isCrankDocked' to make the intent clear."}, {"reason": "No assertion checks whether the output actually compiles \u2014 correctness of include order, header guards, or API call signatures. A hallucinated implementation could pass all seven assertions while containing subtle API errors (e.g., wrong argument types to setDrawFunction or setBounds). Adding a 'code is syntactically valid C' assertion enforced by running a compiler would significantly raise the bar."}, {"reason": "No assertion checks that the crank actually influences movement speed in player_update. The current assertions only verify declarations and patterns, not functional correctness. An implementation that reads the crank but ignores the result would still pass all assertions."}], "overall": "All seven assertions pass and the implementation is substantive and correct. The main gap is that assertions test structural patterns (naming conventions, declaration patterns, API call presence) but not functional behavior. Adding a compilation check and at least one behavioral assertion (e.g., 'getCrankAngle or getCrankChange result is used to modify movement speed') would make the eval more discriminating."}}}, {"id": "eval-moving-sprite-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Playdate Moving Sprite Game - C Implementation\n\n## Overview\n\nThis implementation creates a simple Playdate game where a player sprite moves left and right using the D-pad. The crank controls the player's movement speed. The game uses the Playdate C API directly.\n\n## Project Structure\n\n```\nmy-game/\n\u251c\u2500\u2500 src/\n\u2502   \u251c\u2500\u2500 main.c       - Entry point and game loop\n\u2502   \u2514\u2500\u2500 player.h     - Player struct and function declarations\n\u251c\u2500\u2500 Makefile\n\u2514\u2500\u2500 pdxinfo\n```\n\n## main.c\n\n```c\n#include <stdio.h>\n#include <stdlib.h>\n#include \"pd_api.h\"\n\n// Forward declarations\ntypedef struct Player Player;\n\n// Player structure\ntypedef struct Player {\n    float x;\n    float y;\n    float speed;\n    float base_speed;\n    float crank_speed_modifier;\n    LCDBitmap *bitmap;\n    int width;\n    int height;\n} Player;\n\n// Global state\nstatic PlaydateAPI *pd = NULL;\nstatic Player player = {0};\n\n// Screen dimensions\n#define SCREEN_WIDTH  400\n#define SCREEN_HEIGHT 240\n\n// Player constants\n#define PLAYER_BASE_SPEED     3.0f\n#define PLAYER_WIDTH          16\n#define PLAYER_HEIGHT         16\n#define CRANK_SPEED_SCALE     0.05f  // How much crank angle affects speed\n\n// -----------------------------------------------------------------------\n// Player initialization\n// -----------------------------------------------------------------------\nstatic void player_init(Player *p) {\n    p->x = (float)(SCREEN_WIDTH / 2 - PLAYER_WIDTH / 2);\n    p->y = (float)(SCREEN_HEIGHT / 2 - PLAYER_HEIGHT / 2);\n    p->base_speed = PLAYER_BASE_SPEED;\n    p->speed = PLAYER_BASE_SPEED;\n    p->crank_speed_modifier = 0.0f;\n    p->width = PLAYER_WIDTH;\n    p->height = PLAYER_HEIGHT;\n\n    // Create a simple bitmap for the player (16x16 filled rectangle)\n    // In a real game you would load a .pdi image file\n    p->bitmap = pd->graphics->newBitmap(PLAYER_WIDTH, PLAYER_HEIGHT, kColorBlack);\n}\n\n// -----------------------------------------------------------------------\n// Player update - called every frame\n// -----------------------------------------------------------------------\nstatic void player_update(Player *p) {\n    // --- Crank: adjust speed based on crank angle ---\n    // getCrankAngle() returns 0-360 degrees.\n    // We map 0-180 to positive modifier, 180-360 to negative modifier,\n    // so the player can slow down by rotating the crank backwards.\n    float crank_angle = pd->system->getCrankAngle();\n\n    // Normalise to -1..1 range: 0 deg = 0, 90 deg = +1, 270 deg = -1\n    float normalised = 0.0f;\n    if (crank_angle <= 180.0f) {\n        normalised = crank_angle / 180.0f;          // 0 -> 0, 180 -> 1\n    } else {\n        normalised = (crank_angle - 360.0f) / 180.0f; // 180 -> 1, 360 -> 0 (going negative side)\n    }\n\n    // Speed ranges from 0 (full reverse crank) to base_speed*2 (full forward crank)\n    // When crank is at 0 the speed equals base_speed.\n    p->crank_speed_modifier = normalised * p->base_speed;\n    p->speed = p->base_speed + p->crank_speed_modifier;\n\n    // Clamp speed so the player cannot go backwards just from crank\n    if (p->speed < 0.5f) p->speed = 0.5f;\n\n    // --- D-pad: move player left / right ---\n    PDButtons current_buttons;\n    PDButtons pushed_buttons;\n    PDButtons released_buttons;\n    pd->system->getButtonState(&current_buttons, &pushed_buttons, &released_buttons);\n\n    if (current_buttons & kButtonLeft) {\n        p->x -= p->speed;\n    }\n    if (current_buttons & kButtonRight) {\n        p->x += p->speed;\n    }\n\n    // --- Boundary clamping: keep player on screen ---\n    if (p->x < 0.0f) {\n        p->x = 0.0f;\n    }\n    if (p->x > (float)(SCREEN_WIDTH - p->width)) {\n        p->x = (float)(SCREEN_WIDTH - p->width);\n    }\n}\n\n// -----------------------------------------------------------------------\n// Player render - draw the player bitmap at its current position\n// -----------------------------------------------------------------------\nstatic void player_draw(const Player *p) {\n    pd->graphics->drawBitmap(p->bitmap, (int)p->x, (int)p->y, kBitmapUnflipped);\n}\n\n// -----------------------------------------------------------------------\n// Player cleanup\n// -----------------------------------------------------------------------\nstatic void player_free(Player *p) {\n    if (p->bitmap != NULL) {\n        pd->graphics->freeBitmap(p->bitmap);\n        p->bitmap = NULL;\n    }\n}\n\n// -----------------------------------------------------------------------\n// Main game update callback - called by the runtime at ~30 fps\n// -----------------------------------------------------------------------\nstatic int update(void *userdata) {\n    (void)userdata;  // unused\n\n    pd->graphics->clear(kColorWhite);\n\n    // Update and draw player\n    player_update(&player);\n    player_draw(&player);\n\n    // HUD: show current speed and crank angle\n    char hud_buf[64];\n    float crank_angle = pd->system->getCrankAngle();\n    pd->system->formatString(&hud_buf[0],\n        \"speed: %.1f  crank: %.0f deg\",\n        (double)player.speed,\n        (double)crank_angle);\n    pd->graphics->drawText(hud_buf, sizeof(hud_buf), kASCIIEncoding, 4, 4);\n\n    // Tell the runtime we drew something\n    return 1;\n}\n\n// -----------------------------------------------------------------------\n// eventHandler - Playdate entry point\n// -----------------------------------------------------------------------\n#ifdef _WINDLL\n__declspec(dllexport)\n#endif\nint eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg) {\n    (void)arg;\n\n    switch (event) {\n        case kEventInit:\n            pd = api;\n\n            // Initialise player\n            player_init(&player);\n\n            // Register the update callback\n            pd->system->setUpdateCallback(update, NULL);\n            break;\n\n        case kEventTerminate:\n            player_free(&player);\n            break;\n\n        default:\n            break;\n    }\n\n    return 0;\n}\n```\n\n## Key Design Decisions\n\n### Entry Point: `eventHandler`\n\nThe Playdate SDK requires a function named `eventHandler` as the game entry point. It receives lifecycle events:\n\n- `kEventInit` - Game is starting; set up state and register the update callback\n- `kEventTerminate` - Game is shutting down; free resources\n\n### Update Loop: `update`\n\nRegistered via `pd->system->setUpdateCallback()`. Called by the runtime at the target frame rate (default 30 fps on hardware). Must return `1` if the screen was modified, `0` otherwise.\n\n### Player Update Logic (`player_update`)\n\n1. **Crank speed control**\n   - `pd->system->getCrankAngle()` returns the current crank position in degrees (0\u2013360).\n   - We normalise the angle to a \u20131\u2026+1 range, then add a speed modifier to the base speed.\n   - At 0\u00b0 (crank resting position) the modifier is 0 and the player moves at `PLAYER_BASE_SPEED`.\n   - Rotating the crank clockwise (toward 90\u00b0) increases speed; counter-clockwise (toward 270\u00b0) decreases it.\n   - Speed is clamped to a minimum of 0.5 so the player can always move.\n\n2. **D-pad movement**\n   - `pd->system->getButtonState()` fills three bitmasks: currently held, just pressed, just released.\n   - Holding `kButtonLeft` decrements `x`; holding `kButtonRight` increments `x`.\n   - The delta applied each frame equals `player.speed` (which incorporates the crank modifier).\n\n3. **Boundary clamping**\n   - `x` is clamped to `[0, SCREEN_WIDTH - PLAYER_WIDTH]` so the sprite stays on screen.\n\n### Bitmap Creation\n\n`pd->graphics->newBitmap(width, height, kColorBlack)` creates a solid black rectangle. In a production game you would load a `.pdi` image with `pd->graphics->loadBitmap(\"images/player\", &err)`.\n\n## Makefile (minimal)\n\n```makefile\nHEAP_SIZE      = 8388208\nSTACK_SIZE     = 61800\n\nPRODUCT = MyGame.pdx\n\nSDK = $(shell awk '/^\\s*SDKRoot/{print $$2}' ~/.Playdate/config 2>/dev/null || echo $(PLAYDATE_SDK_PATH))\n\nVPATH += src\nSRC    = src/main.c\n\ninclude $(SDK)/C_API/buildsupport/common.mk\n```\n\n## pdxinfo\n\n```\nname=Moving Sprite Demo\nauthor=Developer\ndescription=D-pad moves the player, crank changes speed\nbundleID=com.example.movingsprite\nversion=1.0\nbuildNumber=1\nimagePath=images\n```\n\n## Building and Running\n\n```bash\n# Set SDK path (if not in config)\nexport PLAYDATE_SDK_PATH=/path/to/PlaydateSDK\n\n# Build\nmake\n\n# Run in simulator\nopen MyGame.pdx   # macOS\n# or\n/path/to/PlaydateSDK/bin/PlaydateSimulator MyGame.pdx\n```\n\n## Notes\n\n- The Playdate screen is 400x240 pixels, 1-bit (black and white).\n- The Playdate C API header is `pd_api.h`, included from the SDK's `C_API/` directory.\n- The crank is a unique Playdate input device; always handle the `kEventLock`/`kEventUnlock` events if you rely heavily on crank input in a shipping game to pause gracefully when the device is locked.\n"}], "grading": {"expectations": [{"text": "The code includes the eventHandler function as the entry point", "passed": true, "evidence": "response.md line 167: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)` is defined and handles kEventInit and kEventTerminate lifecycle events."}, {"text": "A global PlaydateAPI pointer (g_pd) is declared", "passed": false, "evidence": "The global PlaydateAPI pointer is declared as `static PlaydateAPI *pd = NULL;` (response.md line 41), not as `g_pd`. The variable name `g_pd` does not appear anywhere in the code."}, {"text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "passed": false, "evidence": "All API calls are made via `pd->` not `g_pd->`. For example: `pd->system->getCrankAngle()` (line 79), `pd->system->getButtonState(...)` (line 101). Additionally, `getCrankChange` is never called \u2014 the code uses `getCrankAngle()` instead."}, {"text": "Variable names follow snake_case convention", "passed": true, "evidence": "All local variables use snake_case: `crank_angle`, `normalised`, `current_buttons`, `pushed_buttons`, `released_buttons`, `hud_buf`, `crank_speed_modifier`, `base_speed`. Functions also use snake_case: `player_init`, `player_update`, `player_draw`, `player_free`."}, {"text": "The player is represented as a struct with snake_case fields", "passed": true, "evidence": "response.md lines 29-38: `typedef struct Player { float x; float y; float speed; float base_speed; float crank_speed_modifier; LCDBitmap *bitmap; int width; int height; } Player;` \u2014 all fields are snake_case."}, {"text": "Memory allocation uses g_pd->system->realloc instead of malloc", "passed": false, "evidence": "No call to `pd->system->realloc` (or `g_pd->system->realloc`) appears anywhere in the code. The code includes `<stdlib.h>` (line 22) and uses `pd->graphics->newBitmap()` for player bitmap allocation. No dynamic memory allocation via the Playdate allocator is performed."}, {"text": "The game uses g_pd->system->setUpdateCallback for the game loop", "passed": false, "evidence": "The code does call `setUpdateCallback` (response.md line 178: `pd->system->setUpdateCallback(update, NULL)`), but it is invoked through `pd`, not `g_pd`. Since the global pointer is named `pd` throughout, this expectation fails on the naming requirement."}], "summary": {"passed": 3, "failed": 4, "total": 7, "pass_rate": 0.43}, "execution_metrics": {"tool_calls": 0, "total_tool_calls": 0, "total_steps": 10, "errors_encountered": 0, "output_chars": 8990, "transcript_chars": 3760}, "timing": {}, "claims": [{"claim": "The entry point function is `eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)`", "type": "factual", "verified": true, "evidence": "response.md line 167 matches exactly: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)`"}, {"claim": "`pd->system->setUpdateCallback(update, NULL)` registers the per-frame update function", "type": "process", "verified": true, "evidence": "response.md line 178: `pd->system->setUpdateCallback(update, NULL);` is called inside the kEventInit case."}, {"claim": "Used `pd->system->formatString` for the HUD (a Playdate-specific alternative to sprintf)", "type": "process", "verified": true, "evidence": "response.md lines 151-155 show `pd->system->formatString(&hud_buf[0], ...)` used in the update callback for the HUD display."}, {"claim": "Crank normalisation logic correctly maps 0-360 degrees to a modifier range", "type": "quality", "verified": false, "evidence": "The normalisation code (lines 83-87) has a subtle logic issue: at 180 degrees `normalised = 180/180 = 1` from the first branch but the second branch would give `(180-360)/180 = -1`. The code assigns 180 to `+1`, so the modifier at 90 degrees would be `0.5 * base_speed` not `+1 * base_speed` as claimed in the transcript. The transcript claims '90 degrees (clockwise) -> modifier = +1 (faster)' but the code gives 0.5 at 90 degrees."}, {"claim": "The update callback must return 1 if the display was modified", "type": "factual", "verified": true, "evidence": "response.md line 158: `return 1;` is returned from the update function unconditionally after drawing."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "A global PlaydateAPI pointer (g_pd) is declared", "reason": "The assertion checks for the specific name `g_pd`, but the actual idiomatic Playdate C pattern is to use any globally scoped pointer. If the intent is to enforce a naming convention (e.g., `g_` prefix for globals), that should be stated explicitly and also applied to other globals like the player. As written, this assertion fails for valid code that uses `pd` or `playdate_api` as the name."}, {"assertion": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "reason": "The example `getCrankChange` does not appear to be a real Playdate SDK function \u2014 the actual function is `getCrankAngle` or `getCrankChange` depending on SDK version. If this eval was checking for the correct API, `getCrankAngle` should be verified. As-is, the assertion references an API name that the generated code did not use, making it ambiguous whether this is a failure of the LLM or a mistake in the assertion."}, {"reason": "No assertion checks that the generated code is semantically correct and would compile. The code includes `<stdlib.h>` (which is unusual for Playdate C SDK usage) and the crank normalisation has a mapping inconsistency (the transcript claims 90 degrees maps to modifier +1, but the code produces 0.5 at 90 degrees). An assertion verifying logical correctness of the crank mapping would catch this."}, {"reason": "No assertion checks that the code avoids standard C allocation (malloc/free/calloc) in favour of the Playdate allocator. The code includes `<stdlib.h>` which suggests potential malloc usage, which is discouraged in Playdate C development. An assertion like 'The code does not call malloc, free, or calloc directly' would be discriminating."}], "overall": "The failing assertions for expectations 2, 3, and 7 all relate to the same root issue: the global pointer is named `pd` instead of `g_pd`. This single naming difference causes three expectations to fail, which may over-penalise an otherwise structurally correct implementation. The eval would be stronger if naming conventions were separated from API usage checks, and if it verified the code uses the Playdate allocator (`pd->system->realloc`) rather than stdlib allocation."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "playdate-gamedev", "skill_path": "plugins/playdate-gamedev/skills/playdate-gamedev", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-02-28T08:26:30Z", "evals_run": [1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 0.0, "tokens": 12215, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The pool avoids runtime malloc/free in the game loop", "passed": true, "evidence": "The pool is declared as 'static Bullet g_bullet_pool[MAX_BULLETS]' (BSS allocation, zero cost at runtime). All 128 sprites are pre-created in bullet_pool_init() so newSprite() never runs in the game loop. bullet_pool_update() contains only position math, moveTo, setVisible, and bullet_pool_return calls \u2014 no allocation. The Key Design Decisions section explicitly states: 'There is no malloc, no realloc, and no fragmentation. Every frame is allocation-free inside the pool update loop.'"}, {"text": "The bullet pool uses a struct with snake_case field names", "passed": true, "evidence": "The Bullet struct in bullet.h defines fields: x, y, vel_x, vel_y, type, active, sprite \u2014 all snake_case. Specifically: 'float vel_x; float vel_y; int active;' confirm multi-word fields use underscores."}, {"text": "Function names follow snake_case convention", "passed": true, "evidence": "All five exported functions follow snake_case: bullet_pool_init, bullet_pool_cleanup, bullet_pool_get, bullet_pool_return, bullet_pool_update. Internal helpers also conform. The naming conventions section of response.md confirms: 'Functions: snake_case (bullet_pool_get, bullet_pool_return)'."}, {"text": "The implementation uses a fixed-size array or pre-allocated memory", "passed": true, "evidence": "bullet.c declares 'static Bullet g_bullet_pool[MAX_BULLETS]' where MAX_BULLETS is 128. This is a compile-time fixed-size static array in BSS. No dynamic resizing occurs anywhere in the implementation."}, {"text": "The code includes functions for getting a bullet from the pool and returning it", "passed": true, "evidence": "bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type) scans for the first inactive slot, configures it, sets active=1, reveals the sprite, and returns a Bullet*. bullet_pool_return(Bullet* bullet) sets active=0, zeroes position fields, and hides the sprite. Both are declared in bullet.h and fully implemented in bullet.c."}, {"text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE", "passed": true, "evidence": "MAX_BULLETS, SCREEN_W, SCREEN_H, OFFSCREEN_MARGIN, BITMAP_PLAYER_BULLET, BITMAP_ENEMY_BULLET are all defined with #define in screaming snake case. The BulletType enum values BULLET_TYPE_PLAYER and BULLET_TYPE_ENEMY also follow SCREAMING_SNAKE_CASE. The naming conventions section confirms: 'Constants: SCREAMING_SNAKE_CASE (MAX_BULLETS, BULLET_TYPE_PLAYER)'."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The code includes the eventHandler function as the entry point", "passed": true, "evidence": "Found in main.c (response.md): `int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)` is declared and implemented as the top-level entry point, with the required `#ifdef _WINDLL __declspec(dllexport) #endif` guard. The transcript also confirms: 'eventHandler handles kEventInit: stores g_pd, sets 30fps, calls game_init(), registers game_update'."}, {"text": "A global PlaydateAPI pointer (g_pd) is declared", "passed": true, "evidence": "Found in main.c (response.md): `PlaydateAPI* g_pd = NULL;` is declared at file scope. It is also referenced as `extern PlaydateAPI* g_pd;` in both game.c and player.c, which is the canonical multi-file pattern."}, {"text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "passed": true, "evidence": "player.c uses `g_pd->system->getButtonState(&current, &pushed, &released)` directly. Crank input is read via `g_pd->system->getCrankAngle()` and `g_pd->system->isCrankDocked()` rather than `getCrankChange()`, but the expectation lists these as examples ('e.g.'). Additional g_pd API calls appear throughout: `g_pd->graphics->clear`, `g_pd->sprite->drawSprites`, `g_pd->system->setUpdateCallback`, `g_pd->system->realloc`, `g_pd->system->logToConsole`, and `g_pd->system->drawFPS`."}, {"text": "Variable names follow snake_case convention", "passed": true, "evidence": "All local variables in player.c use snake_case: `crank_change`, `crank_angle`, `multiplier`, `current`, `pushed`, `released`. Functions are likewise snake_case: `player_create`, `player_destroy`, `player_update`, `player_draw_callback`, `clamp_f`, `game_init`, `game_update`. The transcript's conventions table confirms: 'snake_case functions: Yes'."}, {"text": "The player is represented as a struct with snake_case fields", "passed": true, "evidence": "Defined in player.c: `struct Player { float x; float y; float speed; LCDSprite* sprite; };`. All four fields (`x`, `y`, `speed`, `sprite`) use snake_case. The struct definition is hidden in the .c file with only a forward declaration `typedef struct Player Player;` in player.h, following the coding standards."}, {"text": "Memory allocation uses g_pd->system->realloc instead of malloc", "passed": true, "evidence": "player.c uses `Player* player = g_pd->system->realloc(NULL, sizeof(Player));` for allocation and `g_pd->system->realloc(player, 0);` for deallocation (both in player_create and player_destroy). The response.md design notes state: 'All structs are allocated with g_pd->system->realloc(NULL, size) and freed with g_pd->system->realloc(ptr, 0). stdlib malloc/free are avoided.'"}, {"text": "The game uses g_pd->system->setUpdateCallback for the game loop", "passed": true, "evidence": "Found in main.c (response.md): `pd->system->setUpdateCallback(game_update, NULL);` is called inside the `kEventInit` branch of `eventHandler`. The transcript confirms: 'registers game_update' and 'setUpdateCallback for game loop: Yes'."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.83, "passed": 5, "failed": 1, "total": 6, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The pool avoids runtime malloc/free in the game loop", "passed": true, "evidence": "The response.md explicitly states 'A bullet pool pre-allocates all bullets at startup and reuses them, eliminating runtime malloc/free calls.' No malloc or free calls appear anywhere in the code. The pool is declared as a static global ('static BulletPool g_bullet_pool;') and initialized with memset in BulletPool_Init. The game loop (game_update) calls only BulletPool_Spawn, BulletPool_Update, BulletPool_CheckCollision, BulletPool_Return, and BulletPool_Draw \u2014 none of which allocate heap memory."}, {"text": "The bullet pool uses a struct with snake_case field names", "passed": true, "evidence": "The BulletPool struct in response.md has fields: 'bullets', 'count', and 'active_count' \u2014 all snake_case. The Bullet struct has fields: 'x', 'y', 'vx', 'vy', 'speed', 'active', 'damage', 'owner' \u2014 all snake_case."}, {"text": "Function names follow snake_case convention", "passed": false, "evidence": "All function names use PascalCase_PascalCase format, not snake_case. Examples: BulletPool_Init, BulletPool_Spawn, BulletPool_Return, BulletPool_Update, BulletPool_Draw, BulletPool_CheckCollision. True snake_case would be bullet_pool_init, bullet_pool_spawn, etc. The underscore separates a PascalCase type prefix from a PascalCase verb, which is a C namespace convention but not snake_case."}, {"text": "The implementation uses a fixed-size array or pre-allocated memory", "passed": true, "evidence": "response.md defines 'Bullet bullets[MAX_BULLETS]' inside the BulletPool struct, where MAX_BULLETS is the compile-time constant 64. This is a fixed-size array embedded directly in the struct with no dynamic allocation. The Key Design Decisions table confirms: 'Fixed-size array of structs \u2014 No heap allocation; cache-friendly linear scan'."}, {"text": "The code includes functions for getting a bullet from the pool and returning it", "passed": true, "evidence": "BulletPool_Spawn (response.md lines 56-77) acquires a bullet from the pool by scanning for the first inactive slot, initializing it, and returning a pointer to it. BulletPool_Return (response.md lines 85-93) deactivates a bullet by setting b->active = false and decrementing active_count. Both functions are clearly implemented and demonstrated in the integration example."}, {"text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE", "passed": true, "evidence": "response.md defines '#define MAX_BULLETS 64', '#define SCREEN_W 400', and '#define SCREEN_H 240' \u2014 all use SCREAMING_SNAKE_CASE. MAX_BULLETS is the primary constant referenced in the expectation and it conforms correctly."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.43, "passed": 3, "failed": 4, "total": 7, "time_seconds": 0.0, "tokens": 8990, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The code includes the eventHandler function as the entry point", "passed": true, "evidence": "response.md line 167: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)` is defined and handles kEventInit and kEventTerminate lifecycle events."}, {"text": "A global PlaydateAPI pointer (g_pd) is declared", "passed": false, "evidence": "The global PlaydateAPI pointer is declared as `static PlaydateAPI *pd = NULL;` (response.md line 41), not as `g_pd`. The variable name `g_pd` does not appear anywhere in the code."}, {"text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)", "passed": false, "evidence": "All API calls are made via `pd->` not `g_pd->`. For example: `pd->system->getCrankAngle()` (line 79), `pd->system->getButtonState(...)` (line 101). Additionally, `getCrankChange` is never called \u2014 the code uses `getCrankAngle()` instead."}, {"text": "Variable names follow snake_case convention", "passed": true, "evidence": "All local variables use snake_case: `crank_angle`, `normalised`, `current_buttons`, `pushed_buttons`, `released_buttons`, `hud_buf`, `crank_speed_modifier`, `base_speed`. Functions also use snake_case: `player_init`, `player_update`, `player_draw`, `player_free`."}, {"text": "The player is represented as a struct with snake_case fields", "passed": true, "evidence": "response.md lines 29-38: `typedef struct Player { float x; float y; float speed; float base_speed; float crank_speed_modifier; LCDBitmap *bitmap; int width; int height; } Player;` \u2014 all fields are snake_case."}, {"text": "Memory allocation uses g_pd->system->realloc instead of malloc", "passed": false, "evidence": "No call to `pd->system->realloc` (or `g_pd->system->realloc`) appears anywhere in the code. The code includes `<stdlib.h>` (line 22) and uses `pd->graphics->newBitmap()` for player bitmap allocation. No dynamic memory allocation via the Playdate allocator is performed."}, {"text": "The game uses g_pd->system->setUpdateCallback for the game loop", "passed": false, "evidence": "The code does call `setUpdateCallback` (response.md line 178: `pd->system->setUpdateCallback(update, NULL)`), but it is invoked through `pd`, not `g_pd`. Since the global pointer is named `pd` throughout, this expectation fails on the naming requirement."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 6107.5, "stddev": 8637.3093, "min": 0, "max": 12215}}, "without_skill": {"pass_rate": {"mean": 0.63, "stddev": 0.2828, "min": 0.43, "max": 0.83}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 4495.0, "stddev": 6356.89, "min": 0, "max": 8990}}, "delta": {"pass_rate": "+0.37", "time_seconds": "+0.0", "tokens": "+1612"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>
