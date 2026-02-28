@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "skill_name": "godot-gdscript-patterns",
+    "skill_path": "plugins/godot-gdscript-patterns/skills/godot-gdscript-patterns",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:19Z",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 0.0,
+        "tokens": 14847,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)",
+          "passed": true,
+          "evidence": "The SaveManager uses FileAccess.open_encrypted_with_pass(), FileAccess.file_exists(), FileAccess.WRITE, and FileAccess.READ throughout. The deprecated Godot 3 File class does not appear anywhere in the output. Transcript Step 3 notes 'FileAccess.open_encrypted_with_pass()' as the primary pattern extracted from the reference file."
+        },
+        {
+          "text": "The implementation mentions or includes encryption support",
+          "passed": true,
+          "evidence": "Encryption is a first-class feature: save_game() calls FileAccess.open_encrypted_with_pass(SAVE_PATH, FileAccess.WRITE, ENCRYPTION_KEY) and load_game() calls the same API with FileAccess.READ. A dedicated Security Notes section states 'FileAccess.open_encrypted_with_pass() uses AES-256-CBC encryption internally.' An ENCRYPTION_KEY constant is defined and a checklist item reminds users to replace it before release."
+        },
+        {
+          "text": "The code uses static typing",
+          "passed": true,
+          "evidence": "Static typing is used consistently throughout all scripts. Examples: 'var data: Dictionary = {}', '@export var max_health: int = 100', 'var level: int = 1', 'var experience: int = 0', signal parameters typed as '(message: String)' and '(new_health: int)', return types declared on all functions ('-> void', '-> Dictionary', '-> bool'). The walrus-style inference operator ':=' is used with typed right-hand sides (e.g., 'var file := FileAccess.open_encrypted_with_pass(...)')."
+        },
+        {
+          "text": "The solution organizes saveable nodes with a consistent interface or pattern",
+          "passed": true,
+          "evidence": "A clear, reusable Saveable component pattern is established: (1) any scene adds a Saveable child node, (2) calls add_to_group(\"saveable\") in _ready(), and (3) implements get_custom_save_data() and load_custom_save_data(). SaveManager iterates the group uniformly. Three distinct objects follow this pattern\u2014Player, Chest, and QuestManager\u2014demonstrating consistency. Scene tree diagrams show the canonical structure explicitly."
+        },
+        {
+          "text": "The save data includes player stats like health, level, and position",
+          "passed": true,
+          "evidence": "Player.get_custom_save_data() returns {\"health\": current_health, \"max_health\": max_health, \"level\": level, \"experience\": experience}. Position is captured automatically by the Saveable component: 'data[\"position\"] = {\"x\": parent.position.x, \"y\": parent.position.y}'. The example JSON structure in Section 7 confirms all three fields: '\"health\": 75', '\"level\": 5', '\"position\": { \"x\": 320.0, \"y\": 240.0 }'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)",
+          "passed": true,
+          "evidence": "The example from the expectation itself appears verbatim in player.gd: `@export var speed: float = 200.0`. Beyond that, every variable, constant, parameter, and return type in all six scripts is explicitly typed: `const GRAVITY: float = 980.0`, `const JUMP_VELOCITY: float = -400.0`, `var states: Dictionary = {}`, `var current_state: State`, `func transition_to(state_name: StringName, msg: Dictionary = {}) -> void`, `func apply_gravity(delta: float) -> void`, `func get_move_direction() -> float`, `func is_jump_requested() -> bool`, `func is_moving() -> bool`, `func flip_sprite(direction: float) -> void`, etc. Static typing is consistently applied throughout."
+        },
+        {
+          "text": "The implementation uses GDScript (not C# or other languages)",
+          "passed": true,
+          "evidence": "All six files produced (state.gd, state_machine.gd, player.gd, player_idle.gd, player_running.gd, player_jumping.gd) use GDScript syntax: `class_name`, `extends`, `@onready`, `@export`, `func`, `signal` keywords, and `.gd` file extension conventions. No C# or other language constructs appear anywhere in response.md."
+        },
+        {
+          "text": "The state machine references or uses CharacterBody2D",
+          "passed": true,
+          "evidence": "player.gd explicitly declares `extends CharacterBody2D` and is named `class_name Player`. State scripts hold `@export var player: Player` and call CharacterBody2D-specific methods through that reference: `player.is_on_floor()`, `player.velocity`, `player.move_and_slide()` (via `player.move()`). The scene hierarchy diagram also shows `Player (CharacterBody2D)` as the root containing the `StateMachine` node."
+        },
+        {
+          "text": "The code uses signals with proper Godot 4 syntax",
+          "passed": true,
+          "evidence": "Two signals are declared with typed parameters using Godot 4 syntax: `signal state_changed(from_state: StringName, to_state: StringName)` appears in both state_machine.gd and player.gd. Emission uses the Godot 4 `.emit()` method: `state_changed.emit(previous_state.name, current_state.name)` in state_machine.gd and `state_changed.emit(from_state, to_state)` in player.gd. The transcript (Step 1) also confirms the skill's typed signal syntax was deliberately adopted: 'Use `signal health_changed(new_health: int)` syntax (typed signal parameters)'."
+        },
+        {
+          "text": "State transitions are handled without tight coupling",
+          "passed": true,
+          "evidence": "No state script directly imports, instantiates, or calls methods on another state script. Transitions are requested through `state_machine.transition_to(&\"StateName\", ...)`, delegating all state-switching logic to the StateMachine node. State scripts interact with the player only through named helper methods (`player.apply_gravity`, `player.move`, `player.get_move_direction`, `player.is_jump_requested`, `player.flip_sprite`, `player.is_on_floor`) rather than directly manipulating raw CharacterBody2D internals. The transcript (Step 3) also documents this design decision: 'Decided to encapsulate gravity and move_and_slide() behind helper methods on Player so state scripts stay lean'."
+        },
+        {
+          "text": "The code follows Godot 4 patterns (not Godot 3 syntax)",
+          "passed": true,
+          "evidence": "Multiple Godot 4-specific patterns are used throughout: (1) `@onready` and `@export` annotations (Godot 3 used `onready` and `export` as keywords without `@`); (2) `move_and_slide()` called with no arguments \u2014 in Godot 3 it required a velocity argument; (3) `Node.PROCESS_MODE_DISABLED` / `Node.PROCESS_MODE_INHERIT` \u2014 the process mode API changed significantly in Godot 4; (4) `signal state_changed(from_state: StringName, to_state: StringName)` with typed parameters \u2014 Godot 3 did not support typed signal parameters; (5) `StringName` literals with `&\"...\"` syntax, a Godot 4 feature; (6) `push_error(...)` call pattern consistent with Godot 4. No Godot 3 patterns (e.g., `kinematic_body`, `.move_and_slide(velocity, ...)`, `yield`) appear."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 0.0,
+        "tokens": 13748,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)",
+          "passed": true,
+          "evidence": "response.md uses FileAccess exclusively throughout: 'FileAccess.open_encrypted_with_pass(path, FileAccess.WRITE, ENCRYPTION_KEY)', 'FileAccess.file_exists(file_path)', 'FileAccess.get_open_error()'. The deprecated Godot 3 File class does not appear anywhere in the code."
+        },
+        {
+          "text": "The implementation mentions or includes encryption support",
+          "passed": true,
+          "evidence": "response.md implements _write_encrypted() and _read_encrypted() helpers that use 'FileAccess.open_encrypted_with_pass()' with AES-256-CBC. The transcript (Step 3) states 'Selected FileAccess.open_encrypted_with_pass() for AES-256-CBC encryption' and an entire 'Encryption Details' section in response.md documents the mechanism and security considerations."
+        },
+        {
+          "text": "The code uses static typing",
+          "passed": true,
+          "evidence": "response.md consistently uses explicit type annotations throughout all scripts. Examples: 'var health: int = 100', 'var file: FileAccess = FileAccess.open_encrypted_with_pass(...)', 'func save_game(slot: int, player_data: PlayerData, quest_data: QuestData) -> bool', 'var json_string: String = JSON.stringify(save_payload)', 'var result: bool = _write_encrypted(file_path, json_string)'. Static typing is applied to function parameters, return types, and local variables."
+        },
+        {
+          "text": "The solution organizes saveable nodes with a consistent interface or pattern",
+          "passed": true,
+          "evidence": "Both PlayerData.gd and QuestData.gd implement the same serialization interface: to_dict() -> Dictionary and from_dict(data: Dictionary) -> void. SaveManager calls player_data.to_dict() and quest_data.to_dict() when saving, and player_data.from_dict() / quest_data.from_dict() when loading, applying this pattern uniformly. The transcript (Step 4-5) confirms this was a deliberate design choice."
+        },
+        {
+          "text": "The save data includes player stats like health, level, and position",
+          "passed": true,
+          "evidence": "PlayerData.gd defines 'var health: int = 100', 'var level: int = 1', 'var position_x: float = 0.0', 'var position_y: float = 0.0', 'var position_z: float = 0.0'. PlayerData.to_dict() serializes all these fields: 'health', 'max_health', 'level', 'experience', 'position_x', 'position_y', 'position_z'. These are included in the save payload under the 'player' key in SaveManager.save_game()."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)",
+          "passed": true,
+          "evidence": "response.md contains multiple type-annotated declarations: 'const SPEED : float = 200.0', 'const JUMP_VELOCITY: float = -400.0', 'const GRAVITY : float = 980.0', 'var current_state: State = State.IDLE', 'var previous_state: State = State.IDLE', 'func _physics_process(delta: float) -> void:', 'func _get_horizontal_input() -> float:', 'var direction: float = _get_horizontal_input()'. Static typing is used pervasively throughout."
+        },
+        {
+          "text": "The implementation uses GDScript (not C# or other languages)",
+          "passed": true,
+          "evidence": "The code block in response.md is explicitly tagged ```gdscript and uses unambiguous GDScript syntax: 'extends CharacterBody2D', 'func', 'var', 'const', '@onready', 'match', 'enum'. No C# or other language syntax is present."
+        },
+        {
+          "text": "The state machine references or uses CharacterBody2D",
+          "passed": true,
+          "evidence": "The script begins with 'extends CharacterBody2D'. The file structure and scene setup in response.md specify the root node is CharacterBody2D. The transcript Step 1 explicitly identifies 'Target node: CharacterBody2D (Godot 4)'."
+        },
+        {
+          "text": "The code uses signals with proper Godot 4 syntax",
+          "passed": false,
+          "evidence": "No signals are defined or emitted anywhere in the implementation. The response.md code contains no 'signal' declarations and no 'emit_signal()' or '.emit()' calls. Signals are entirely absent from the output."
+        },
+        {
+          "text": "State transitions are handled without tight coupling",
+          "passed": true,
+          "evidence": "State transitions are centralized in the '_evaluate_transitions()' function which evaluates conditions (is_on_floor(), _get_horizontal_input(), Input.is_action_just_pressed) and calls '_enter_state(new_state)'. Individual per-state handler functions (_state_idle, _state_running, _state_jumping) do not directly reference or call each other. The design explicitly separates enter logic, per-frame logic, and transition evaluation into distinct methods as noted in the transcript Step 2."
+        },
+        {
+          "text": "The code follows Godot 4 patterns (not Godot 3 syntax)",
+          "passed": true,
+          "evidence": "Multiple Godot 4-specific patterns are used: (1) 'move_and_slide()' called with no arguments (Godot 4 style \u2014 velocity is a property, not a parameter); (2) 'Input.get_axis(\"move_left\", \"move_right\")' which is Godot 4 API; (3) '@onready' annotation syntax; (4) typed enums with 'enum State { ... }'. The transcript Notes section explicitly states: 'The _get_horizontal_input() helper uses Input.get_axis(), which is the idiomatic Godot 4 API (replaces the Godot 3 get_action_strength pattern)' and 'move_and_slide() in Godot 4 takes no arguments (velocity is a property), unlike Godot 3.'"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 7423.5,
+        "stddev": 10498.4144,
+        "min": 0,
+        "max": 14847
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.915,
+        "stddev": 0.1202,
+        "min": 0.83,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 6874.0,
+        "stddev": 9721.304,
+        "min": 0,
+        "max": 13748
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.08",
+      "time_seconds": "+0.0",
+      "tokens": "+550"
+    }
+  },
+  "notes": []
+}

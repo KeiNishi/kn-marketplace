@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "skill_name": "implementation-workflow",
+    "skill_path": "plugins/kn-gamedev-workflow/skills/implementation-workflow",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:19Z",
+    "evals_run": [
+      1
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 1726,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "TaskProgress.md is created or updated in the docs_for_ai/ directory",
+          "passed": true,
+          "evidence": "Transcript Step 5 states: 'Created docs_for_ai/TaskProgress.md in the work directory'. Step 7 confirms it was copied to the outputs directory. The file is present in outputs/ with substantive content (483 chars)."
+        },
+        {
+          "text": "The log entry includes the date in YYYY-MM-DD format",
+          "passed": true,
+          "evidence": "Log entry header in TaskProgress.md: '### 2026-02-28 | Player Movement [Phase 1, Task 1]'. The date '2026-02-28' is in YYYY-MM-DD format."
+        },
+        {
+          "text": "The entry includes the task name referencing Phase 1, Task 1",
+          "passed": true,
+          "evidence": "Log entry header: '### 2026-02-28 | Player Movement [Phase 1, Task 1]'. The task name 'Player Movement' and phase/task reference '[Phase 1, Task 1]' are both present."
+        },
+        {
+          "text": "The entry lists the modified files: PlayerController.cs and PlayerModel.cs",
+          "passed": true,
+          "evidence": "TaskProgress.md contains: '- **Files**: `Assets/_Project/Scripts/Player/PlayerController.cs`, `Assets/_Project/Scripts/Player/PlayerModel.cs`'. Both required files are listed (with full paths)."
+        },
+        {
+          "text": "The Done field contains a brief completion summary (max 2 sentences)",
+          "passed": true,
+          "evidence": "TaskProgress.md contains: '- **Done**: Implemented WASD/arrow key movement with Rigidbody and jump mechanic via space bar. PlayerController handles input and movement; PlayerModel manages stats and state.' This is exactly 2 sentences, within the stated maximum."
+        },
+        {
+          "text": "The Status line is updated with the current phase and next task information",
+          "passed": true,
+          "evidence": "TaskProgress.md line 3: '**Status**: Phase 1/2 - Player Systems | Next: Animation (Phase 1, Task 2) | Updated: 2026-02-28'. Current phase (Phase 1/2 - Player Systems) and next task (Animation, Phase 1, Task 2) are both present."
+        },
+        {
+          "text": "The entry follows the exact format: ### [YYYY-MM-DD] | [Task Name] [Phase N, Task M]",
+          "passed": true,
+          "evidence": "Log entry header: '### 2026-02-28 | Player Movement [Phase 1, Task 1]'. This matches the specified format exactly: '### ' prefix, date in YYYY-MM-DD, ' | ', task name, then phase/task in brackets."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.43,
+        "passed": 3,
+        "failed": 4,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "TaskProgress.md is created or updated in the docs_for_ai/ directory",
+          "passed": false,
+          "evidence": "TaskProgress.md was created in the outputs/ directory (outputs/TaskProgress.md), not in docs_for_ai/. The transcript Step 5 says it was 'Saved to outputs directory.' The docs_for_ai/ directory was only read from, never written to."
+        },
+        {
+          "text": "The log entry includes the date in YYYY-MM-DD format",
+          "passed": true,
+          "evidence": "TaskProgress.md line 16 contains '| Completed At | 2026-02-28 |' which is YYYY-MM-DD format. The date is present and correctly formatted."
+        },
+        {
+          "text": "The entry includes the task name referencing Phase 1, Task 1",
+          "passed": true,
+          "evidence": "TaskProgress.md has '## Phase 1: Player Systems' and '### Task 1: Player Movement' clearly referencing Phase 1, Task 1. The progress summary table also lists 'Phase 1 | Player Movement | COMPLETE'."
+        },
+        {
+          "text": "The entry lists the modified files: PlayerController.cs and PlayerModel.cs",
+          "passed": true,
+          "evidence": "TaskProgress.md line 17 has '| Files Modified | `Assets/_Project/Scripts/Player/PlayerController.cs`, `Assets/_Project/Scripts/Player/PlayerModel.cs` |' \u2014 both files are listed."
+        },
+        {
+          "text": "The Done field contains a brief completion summary (max 2 sentences)",
+          "passed": false,
+          "evidence": "There is no 'Done' field in TaskProgress.md. The file uses 'Description' and 'Components Implemented' fields instead. The description ('Implemented WASD/arrow key movement with Rigidbody2D and added jump mechanic with space bar.') is a single sentence, but it is labeled 'Description', not 'Done'. The expected field name is absent."
+        },
+        {
+          "text": "The Status line is updated with the current phase and next task information",
+          "passed": false,
+          "evidence": "TaskProgress.md has an 'Overall Phase Status: In Progress' line for Phase 1 and a progress summary table, but there is no dedicated 'Status' line indicating the current phase and next task (e.g., 'Currently on Phase 1, next task: Task 2 Animation'). The progress summary table shows Task 2 as 'Pending' but this is not a Status line in the expected format."
+        },
+        {
+          "text": "The entry follows the exact format: ### [YYYY-MM-DD] | [Task Name] [Phase N, Task M]",
+          "passed": false,
+          "evidence": "The heading used in TaskProgress.md is '### Task 1: Player Movement' (line 11). This does not follow the required format '### [YYYY-MM-DD] | [Task Name] [Phase N, Task M]'. There is no date in the heading, no pipe separator, and no phase/task number appended to the task name in the heading."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 1726.0,
+        "stddev": 0.0,
+        "min": 1726,
+        "max": 1726
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.43,
+        "stddev": 0.0,
+        "min": 0.43,
+        "max": 0.43
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.57",
+      "time_seconds": "+0.0",
+      "tokens": "+1726"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "unity-gamedev", "runs": [{"id": "eval-player-controller-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# PlayerController - Unity C# Implementation\n\nBelow is the complete Unity C# implementation for a `PlayerController` MonoBehaviour. It includes WASD/arrow key movement, space bar jumping, and a separate `PlayerFollowCamera` component for camera follow using `LateUpdate()`. All conventions from the unity-gamedev-standards skill are applied.\n\n---\n\n## PlayerController.cs\n\nPlace this script on the player GameObject. The GameObject requires a `Rigidbody` component. Set `Rigidbody > Interpolation > Interpolate` in the Inspector to prevent camera stutter.\n\n```csharp\nusing UnityEngine;\n\n/// <summary>\n/// Handles player movement and jumping using Rigidbody physics.\n/// Requires a Rigidbody component on the same GameObject.\n/// NOTE: Set Rigidbody > Interpolation > Interpolate in the Inspector\n///       to prevent camera stutter when using PlayerFollowCamera.\n/// </summary>\n[RequireComponent(typeof(Rigidbody))]\npublic class PlayerController : MonoBehaviour\n{\n    #region Inspector Fields\n\n    [Header(\"Movement\")]\n    [Tooltip(\"Horizontal movement speed in units per second.\")]\n    [SerializeField, Range(1f, 20f)] private float _moveSpeed = 5f;\n\n    [Header(\"Jumping\")]\n    [Tooltip(\"Impulse force applied upward when the player jumps.\")]\n    [SerializeField, Range(1f, 30f)] private float _jumpForce = 10f;\n\n    [Tooltip(\"Maximum distance from the ground to allow jumping.\")]\n    [SerializeField, Range(0.1f, 1f)] private float _groundCheckDistance = 0.2f;\n\n    [Tooltip(\"Layer mask used to detect ground surfaces.\")]\n    [SerializeField] private LayerMask _groundLayerMask = ~0;\n\n    #endregion\n\n    #region Private Fields\n\n    private Rigidbody _rigidbody;\n    private Vector3 _moveInput;\n    private bool _jumpRequested;\n    private bool _isGrounded;\n\n    #endregion\n\n    #region Properties\n\n    /// <summary>Whether the player is currently touching the ground.</summary>\n    public bool IsGrounded => _isGrounded;\n\n    #endregion\n\n    #region Events\n\n    /// <summary>Raised when the player leaves the ground.</summary>\n    public event System.Action OnJumped;\n\n    /// <summary>Raised when the player lands on the ground.</summary>\n    public event System.Action OnLanded;\n\n    #endregion\n\n    #region Unity Lifecycle\n\n    private void Awake()\n    {\n        _rigidbody = GetComponent<Rigidbody>();\n    }\n\n    private void OnEnable()\n    {\n        // Reserved for future event subscriptions.\n    }\n\n    private void OnDisable()\n    {\n        // Unsubscribe all listeners to prevent memory leaks.\n        OnJumped = null;\n        OnLanded = null;\n    }\n\n    private void Update()\n    {\n        HandleMovementInput();\n        HandleJumpInput();\n        CheckGrounded();\n    }\n\n    private void FixedUpdate()\n    {\n        ApplyMovement();\n        ApplyJump();\n    }\n\n    #endregion\n\n    #region Private Methods\n\n    private void HandleMovementInput()\n    {\n        _moveInput.x = Input.GetAxisRaw(\"Horizontal\"); // A/D or Left/Right arrows\n        _moveInput.z = Input.GetAxisRaw(\"Vertical\");   // W/S or Up/Down arrows\n    }\n\n    private void HandleJumpInput()\n    {\n        if (Input.GetKeyDown(KeyCode.Space) && _isGrounded)\n        {\n            _jumpRequested = true;\n        }\n    }\n\n    private void CheckGrounded()\n    {\n        var wasGrounded = _isGrounded;\n        _isGrounded = Physics.Raycast(\n            transform.position,\n            Vector3.down,\n            _groundCheckDistance + 0.01f,\n            _groundLayerMask\n        );\n\n        if (!wasGrounded && _isGrounded)\n        {\n            OnLanded?.Invoke();\n        }\n    }\n\n    private void ApplyMovement()\n    {\n        var horizontalVelocity = _moveInput.normalized * _moveSpeed;\n        var velocity = new Vector3(horizontalVelocity.x, _rigidbody.linearVelocity.y, horizontalVelocity.z);\n        _rigidbody.linearVelocity = velocity;\n    }\n\n    private void ApplyJump()\n    {\n        if (!_jumpRequested) return;\n\n        _jumpRequested = false;\n        // Zero out vertical velocity before applying jump for consistent jump height.\n        _rigidbody.linearVelocity = new Vector3(_rigidbody.linearVelocity.x, 0f, _rigidbody.linearVelocity.z);\n        _rigidbody.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);\n        OnJumped?.Invoke();\n    }\n\n    #endregion\n}\n```\n\n---\n\n## PlayerFollowCamera.cs\n\nPlace this script on the Camera GameObject. Assign the player's `Transform` to the `_target` field in the Inspector. Camera position is updated exclusively in `LateUpdate()` to prevent jitter.\n\n```csharp\nusing UnityEngine;\n\n/// <summary>\n/// Smooth follow camera that tracks a target Transform.\n/// MUST use LateUpdate to read the target's final position after all movement is complete.\n/// </summary>\n[DefaultExecutionOrder(100)] // Ensures this runs after all default-order scripts in LateUpdate.\npublic class PlayerFollowCamera : MonoBehaviour\n{\n    #region Inspector Fields\n\n    [Header(\"Target\")]\n    [Tooltip(\"The Transform this camera will follow. Assign the player's Transform.\")]\n    [SerializeField] private Transform _target;\n\n    [Header(\"Position Settings\")]\n    [Tooltip(\"Offset applied to the target's position to determine the desired camera position.\")]\n    [SerializeField] private Vector3 _offset = new(0f, 5f, -8f);\n\n    [Tooltip(\"Camera position smoothing speed. Higher values produce faster catch-up.\")]\n    [SerializeField, Range(1f, 30f)] private float _positionSmoothSpeed = 8f;\n\n    [Header(\"Look Settings\")]\n    [Tooltip(\"If true, the camera will look at the target each frame.\")]\n    [SerializeField] private bool _lookAtTarget = true;\n\n    [Tooltip(\"Smooth speed for camera rotation toward the target.\")]\n    [SerializeField, Range(1f, 30f)] private float _rotationSmoothSpeed = 10f;\n\n    #endregion\n\n    #region Unity Lifecycle\n\n    private void OnEnable()\n    {\n        // Reserved for future event subscriptions.\n    }\n\n    private void OnDisable()\n    {\n        // Reserved for future event unsubscriptions.\n    }\n\n    /// <summary>\n    /// Camera position and rotation MUST be updated in LateUpdate.\n    /// Using Update() causes 1-frame jitter because it reads the target's position\n    /// before physics and other scripts have finalized it.\n    /// </summary>\n    private void LateUpdate()\n    {\n        if (_target == null) return;\n\n        UpdateCameraPosition();\n\n        if (_lookAtTarget)\n        {\n            UpdateCameraRotation();\n        }\n    }\n\n    #endregion\n\n    #region Private Methods\n\n    private void UpdateCameraPosition()\n    {\n        var desiredPosition = _target.position + _offset;\n        transform.position = Vector3.Lerp(\n            transform.position,\n            desiredPosition,\n            _positionSmoothSpeed * Time.deltaTime\n        );\n    }\n\n    private void UpdateCameraRotation()\n    {\n        var desiredRotation = Quaternion.LookRotation(_target.position - transform.position);\n        transform.rotation = Quaternion.Slerp(\n            transform.rotation,\n            desiredRotation,\n            _rotationSmoothSpeed * Time.deltaTime\n        );\n    }\n\n    #endregion\n}\n```\n\n---\n\n## Setup Instructions\n\n1. **Player GameObject**\n   - Add a `Rigidbody` component.\n   - Set `Rigidbody > Interpolation` to **Interpolate** in the Inspector (prevents camera stutter at high frame rates).\n   - Set `Rigidbody > Freeze Rotation > X, Y, Z` to prevent physics-driven tipping.\n   - Attach `PlayerController.cs`.\n   - Configure `_moveSpeed`, `_jumpForce`, `_groundCheckDistance`, and `_groundLayerMask` in the Inspector.\n\n2. **Camera GameObject**\n   - Attach `PlayerFollowCamera.cs`.\n   - Drag the player's `Transform` into the `_target` field in the Inspector.\n   - Adjust `_offset`, `_positionSmoothSpeed`, and `_rotationSmoothSpeed` to taste.\n\n3. **Ground Layer**\n   - Assign the ground objects to a named layer (e.g., `Ground`).\n   - Set `_groundLayerMask` on the `PlayerController` to that layer.\n\n---\n\n## Key Design Decisions\n\n| Decision | Rationale |\n|----------|-----------|\n| `_jumpRequested` flag | Jump input read in `Update()`, applied in `FixedUpdate()` \u2014 avoids missing a frame |\n| Zero vertical velocity before jump | Ensures consistent jump height regardless of prior vertical speed |\n| `LateUpdate()` for camera | Reads target's final position after all `Update()` and physics callbacks are complete |\n| `[DefaultExecutionOrder(100)]` on camera | Guarantees camera `LateUpdate()` runs after any other scripts at default order |\n| `RequireComponent(typeof(Rigidbody))` | Prevents missing component errors at runtime |\n| No `Rigidbody` property overrides in `Awake()` | Inspector is the source of truth for `mass`, `drag`, `constraints`, etc. |\n"}], "grading": {"expectations": [{"text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)", "passed": true, "evidence": "All private fields in both classes use the _camelCase convention. In PlayerController: _moveSpeed, _jumpForce, _groundCheckDistance, _groundLayerMask, _rigidbody, _moveInput, _jumpRequested, _isGrounded. In PlayerFollowCamera: _target, _offset, _positionSmoothSpeed, _lookAtTarget, _rotationSmoothSpeed. No private field deviates from this convention."}, {"text": "Inspector-configurable fields use [SerializeField] attribute", "passed": true, "evidence": "All inspector-configurable fields use [SerializeField]. In PlayerController: [SerializeField, Range(1f, 20f)] private float _moveSpeed, [SerializeField, Range(1f, 30f)] private float _jumpForce, [SerializeField, Range(0.1f, 1f)] private float _groundCheckDistance, [SerializeField] private LayerMask _groundLayerMask. In PlayerFollowCamera: [SerializeField] private Transform _target, [SerializeField] private Vector3 _offset, [SerializeField, Range(1f, 30f)] private float _positionSmoothSpeed, [SerializeField] private bool _lookAtTarget, [SerializeField, Range(1f, 30f)] private float _rotationSmoothSpeed."}, {"text": "All [SerializeField] fields have [Tooltip] annotations", "passed": true, "evidence": "Every [SerializeField] field in both classes has a [Tooltip] attribute. PlayerController: _moveSpeed has 'Horizontal movement speed in units per second.', _jumpForce has 'Impulse force applied upward when the player jumps.', _groundCheckDistance has 'Maximum distance from the ground to allow jumping.', _groundLayerMask has 'Layer mask used to detect ground surfaces.'. PlayerFollowCamera: _target has 'The Transform this camera will follow. Assign the player Transform.', _offset has 'Offset applied to the target position...', _positionSmoothSpeed has 'Camera position smoothing speed...', _lookAtTarget has 'If true, the camera will look at the target each frame.', _rotationSmoothSpeed has 'Smooth speed for camera rotation toward the target.'."}, {"text": "Physics/Rigidbody code is in FixedUpdate, not Update", "passed": true, "evidence": "In PlayerController, FixedUpdate() calls ApplyMovement() and ApplyJump(), which are the only methods that touch _rigidbody. ApplyMovement() sets _rigidbody.linearVelocity; ApplyJump() zeroes vertical velocity and calls _rigidbody.AddForce(). Update() only reads input (HandleMovementInput, HandleJumpInput) and checks grounded state via Raycast \u2014 no Rigidbody mutations happen there. The _jumpRequested flag bridges input detection in Update() to physics application in FixedUpdate()."}, {"text": "Camera follow code uses LateUpdate, not Update", "passed": true, "evidence": "PlayerFollowCamera has no Update() method. All camera position and rotation logic is inside LateUpdate(), which calls UpdateCameraPosition() (Vector3.Lerp to desiredPosition) and UpdateCameraRotation() (Quaternion.Slerp toward LookRotation). The class also carries [DefaultExecutionOrder(100)] to guarantee it runs after all default-order scripts in LateUpdate."}, {"text": "The class uses #region sections for organization", "passed": true, "evidence": "Both classes use #region sections. PlayerController has: #region Inspector Fields, #region Private Fields, #region Properties, #region Events, #region Unity Lifecycle, #region Private Methods. PlayerFollowCamera has: #region Inspector Fields, #region Unity Lifecycle, #region Private Methods. This matches the standard region structure documented in the skill."}, {"text": "Component references are cached in Awake() using GetComponent", "passed": true, "evidence": "In PlayerController, Awake() contains: _rigidbody = GetComponent<Rigidbody>();. This is the only component reference used, and it is properly cached here. PlayerFollowCamera has no GetComponent calls because its only external reference (_target) is a serialized Transform assigned via Inspector."}, {"text": "Events unsubscribe in OnDisable to prevent memory leaks", "passed": true, "evidence": "PlayerController.OnDisable() nulls both events: 'OnJumped = null;' and 'OnLanded = null;', with the comment 'Unsubscribe all listeners to prevent memory leaks.' PlayerFollowCamera.OnDisable() is a stub comment ('Reserved for future event unsubscriptions.'), which is appropriate since that class defines no events and subscribes to none."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 6, "errors_encountered": 0, "output_chars": 8241, "transcript_chars": 3823}, "timing": {}, "claims": [{"claim": "Physics operations belong in FixedUpdate() \u2014 correctly applied", "type": "process", "verified": true, "evidence": "Confirmed: all Rigidbody mutations (linearVelocity assignment, AddForce) are inside FixedUpdate() via ApplyMovement() and ApplyJump(). No Rigidbody access occurs in Update()."}, {"claim": "Camera follow MUST use LateUpdate() \u2014 correctly applied", "type": "process", "verified": true, "evidence": "PlayerFollowCamera has no Update() method; all position/rotation logic is in LateUpdate(). [DefaultExecutionOrder(100)] is also applied."}, {"claim": "Component references are cached in Awake() only", "type": "process", "verified": true, "evidence": "GetComponent<Rigidbody>() is called once in Awake(). No GetComponent calls appear in Start(), Update(), or FixedUpdate()."}, {"claim": "No Rigidbody property values are set in code (Inspector is source of truth)", "type": "quality", "verified": true, "evidence": "Awake() only caches the reference; it does not set mass, drag, constraints, or any Rigidbody properties. The setup instructions tell the user to configure Interpolation in the Inspector."}, {"claim": "All regions follow the standard structure from the skill documentation", "type": "quality", "verified": true, "evidence": "PlayerController regions: Inspector Fields, Private Fields, Properties, Events, Unity Lifecycle, Private Methods \u2014 matches the documented order exactly. PlayerFollowCamera omits regions not needed (Properties, Events) without including empty ones."}, {"claim": "The OnEnable() method in PlayerController is non-empty only as a stub", "type": "quality", "verified": false, "evidence": "OnEnable() in both classes contains only a comment ('Reserved for future event subscriptions.'). The skill's coding-rules.md states 'Never leave empty Unity callbacks (overhead cost)'. A comment-only method is functionally empty and violates this rule. This is a minor standards violation not caught by any assertion."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"reason": "No assertion checks for the 'never leave empty Unity callbacks' rule. Both OnEnable() methods in the generated code are functionally empty (contain only a placeholder comment), which violates the skill's coding-rules.md. This went undetected because no assertion covers empty callback stubs."}, {"assertion": "Events unsubscribe in OnDisable to prevent memory leaks", "reason": "The assertion passes on the strength of PlayerController nulling its events. It would also pass if only one event was cleaned up and the other was left leaking \u2014 the assertion doesn't specify that ALL events must be unsubscribed. Consider tightening to 'all events declared in the class are cleared or unsubscribed in OnDisable'."}, {"reason": "No assertion checks that [Range] is applied when values have logical bounds \u2014 a convention explicitly required by the skill's coding-rules.md. The implementation does apply [Range] correctly, but it's a meaningful convention worth asserting independently."}, {"reason": "No assertion checks that [Header] attributes are used to group Inspector fields, which is another explicit skill convention. The implementation uses them, but missing headers would not be caught."}], "overall": "All 8 assertions pass with genuine substance \u2014 the code clearly and correctly demonstrates each convention. However, the eval misses a few meaningful conventions from the skill documentation: empty Unity callback stubs (OnEnable with only a comment), [Range] usage on bounded values, and [Header] grouping. The empty OnEnable() stubs are the most notable gap as they directly contradict a documented rule."}}}, {"id": "eval-player-controller-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# Unity PlayerController Implementation\n\n## Overview\n\nA Unity C# PlayerController MonoBehaviour that implements:\n- WASD and arrow key movement using Rigidbody physics\n- Space bar jumping with ground detection\n- A separate CameraFollow script for smooth camera tracking\n\n---\n\n## PlayerController.cs\n\n```csharp\nusing UnityEngine;\n\n[RequireComponent(typeof(Rigidbody))]\npublic class PlayerController : MonoBehaviour\n{\n    [Header(\"Movement Settings\")]\n    [SerializeField] private float moveSpeed = 5f;\n    [SerializeField] private float jumpForce = 7f;\n\n    [Header(\"Ground Detection\")]\n    [SerializeField] private Transform groundCheck;\n    [SerializeField] private float groundCheckRadius = 0.2f;\n    [SerializeField] private LayerMask groundLayer;\n\n    private Rigidbody rb;\n    private bool isGrounded;\n    private Vector3 moveDirection;\n\n    private void Awake()\n    {\n        rb = GetComponent<Rigidbody>();\n\n        // Freeze rotation so the player doesn't tip over from physics forces\n        rb.freezeRotation = true;\n    }\n\n    private void Update()\n    {\n        // Read input every frame (Input polling is best done in Update)\n        float horizontal = Input.GetAxisRaw(\"Horizontal\"); // A/D or Left/Right arrows\n        float vertical   = Input.GetAxisRaw(\"Vertical\");   // W/S or Up/Down arrows\n\n        // Build a movement vector relative to world space (XZ plane)\n        moveDirection = new Vector3(horizontal, 0f, vertical).normalized;\n\n        // Ground detection using an overlap sphere at the feet\n        if (groundCheck != null)\n        {\n            isGrounded = Physics.CheckSphere(\n                groundCheck.position,\n                groundCheckRadius,\n                groundLayer,\n                QueryTriggerInteraction.Ignore\n            );\n        }\n        else\n        {\n            // Fallback: use Rigidbody velocity; not reliable on slopes\n            isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.05f;\n        }\n\n        // Jump: only when grounded and space is pressed\n        if (isGrounded && Input.GetKeyDown(KeyCode.Space))\n        {\n            Jump();\n        }\n    }\n\n    private void FixedUpdate()\n    {\n        // Apply movement in FixedUpdate so it stays in sync with the physics step\n        MovePlayer();\n    }\n\n    private void MovePlayer()\n    {\n        // Preserve the current vertical velocity so gravity still applies\n        Vector3 targetVelocity = moveDirection * moveSpeed;\n        targetVelocity.y = rb.linearVelocity.y;\n        rb.linearVelocity = targetVelocity;\n    }\n\n    private void Jump()\n    {\n        // Reset vertical velocity before applying jump force for consistent jump height\n        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);\n        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);\n    }\n\n    // Visualise the ground-check sphere in the Scene view\n    private void OnDrawGizmosSelected()\n    {\n        if (groundCheck == null) return;\n        Gizmos.color = isGrounded ? Color.green : Color.red;\n        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);\n    }\n}\n```\n\n---\n\n## CameraFollow.cs\n\n```csharp\nusing UnityEngine;\n\npublic class CameraFollow : MonoBehaviour\n{\n    [Header(\"Target\")]\n    [SerializeField] private Transform target;\n\n    [Header(\"Follow Settings\")]\n    [SerializeField] private Vector3 offset = new Vector3(0f, 5f, -8f);\n    [SerializeField] private float smoothSpeed = 8f;\n\n    [Header(\"Look Settings\")]\n    [SerializeField] private bool lookAtTarget = true;\n\n    private void LateUpdate()\n    {\n        // LateUpdate ensures the camera moves after all player movement is complete\n        if (target == null) return;\n\n        Vector3 desiredPosition = target.position + offset;\n\n        // Smoothly interpolate toward the desired position\n        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);\n\n        if (lookAtTarget)\n        {\n            transform.LookAt(target.position);\n        }\n    }\n}\n```\n\n---\n\n## Setup Instructions\n\n### PlayerController Setup\n\n1. Create a GameObject (e.g. a Capsule) and attach **PlayerController.cs**.\n2. Add a **Rigidbody** component (the `[RequireComponent]` attribute will prompt Unity to do this automatically).\n3. Create an empty child GameObject named `GroundCheck` and position it at the base of the capsule (e.g. `Y = -1` relative to the parent).\n4. Assign the `GroundCheck` transform to the **Ground Check** field in the Inspector.\n5. Set **Ground Layer** to the layer your ground/floor objects use (e.g. create a layer called `Ground` and assign it to the floor).\n6. Tune **Move Speed** and **Jump Force** to taste (defaults: 5 and 7).\n\n### CameraFollow Setup\n\n1. Select the **Main Camera** in the Hierarchy.\n2. Attach **CameraFollow.cs** to it.\n3. Drag your player GameObject into the **Target** field.\n4. Adjust **Offset** and **Smooth Speed** as needed (defaults: `(0, 5, -8)` and `8`).\n\n---\n\n## Key Design Decisions\n\n| Decision | Rationale |\n|---|---|\n| `Input.GetAxisRaw` | Returns raw -1/0/1 values with no Unity input smoothing, giving crisper digital movement. |\n| Movement in `FixedUpdate` | Rigidbody physics should always be modified during the fixed physics step. |\n| Input reading in `Update` | `GetKeyDown` only fires for one frame; polling it in `FixedUpdate` can miss the event if the frame rate is higher than the physics rate. |\n| `ForceMode.Impulse` for jump | Applies the full force in a single physics step, producing a snappy jump rather than a gradual push. |\n| Reset Y velocity before jump | Prevents double-jump accumulation and ensures a consistent jump height regardless of fall speed. |\n| `rb.freezeRotation = true` | Stops the Rigidbody from rotating when colliding with geometry, keeping the player upright. |\n| Ground check overlap sphere | More reliable than raycasting for detecting ground on uneven surfaces. |\n| `LateUpdate` for camera | Guarantees the camera reads the player's final position for the frame, eliminating jitter. |\n| `Vector3.Lerp` for camera | Produces smooth follow motion; `smoothSpeed * Time.deltaTime` makes it frame-rate independent. |\n"}], "grading": {"expectations": [{"text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)", "passed": false, "evidence": "All private fields in PlayerController.cs and CameraFollow.cs use plain camelCase without an underscore prefix. Examples: 'private float moveSpeed', 'private float jumpForce', 'private Rigidbody rb', 'private bool isGrounded', 'private Vector3 moveDirection', 'private Transform target', 'private float smoothSpeed'. None follow the _camelCase convention."}, {"text": "Inspector-configurable fields use [SerializeField] attribute", "passed": true, "evidence": "All inspector-configurable fields correctly use [SerializeField]. In PlayerController.cs: '[SerializeField] private float moveSpeed', '[SerializeField] private float jumpForce', '[SerializeField] private Transform groundCheck', '[SerializeField] private float groundCheckRadius', '[SerializeField] private LayerMask groundLayer'. In CameraFollow.cs: '[SerializeField] private Transform target', '[SerializeField] private Vector3 offset', '[SerializeField] private float smoothSpeed', '[SerializeField] private bool lookAtTarget'."}, {"text": "All [SerializeField] fields have [Tooltip] annotations", "passed": false, "evidence": "No [Tooltip] attributes appear anywhere in the code. The code uses [Header(...)] groups for organization (e.g. '[Header(\"Movement Settings\")]', '[Header(\"Ground Detection\")]') but none of the nine [SerializeField] fields across the two scripts have a [Tooltip] annotation."}, {"text": "Physics/Rigidbody code is in FixedUpdate, not Update", "passed": false, "evidence": "Horizontal movement velocity is correctly set inside FixedUpdate via MovePlayer(). However, the Jump() method is called from Update() and directly manipulates Rigidbody state: 'rb.linearVelocity = new Vector3(...)' and 'rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse)'. Both of these Rigidbody operations execute inside Update, violating the expectation."}, {"text": "Camera follow code uses LateUpdate, not Update", "passed": true, "evidence": "CameraFollow.cs implements 'private void LateUpdate()' for all camera positioning logic: 'transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime)' and 'transform.LookAt(target.position)'. There is no Update method in CameraFollow.cs."}, {"text": "The class uses #region sections for organization", "passed": false, "evidence": "Neither PlayerController.cs nor CameraFollow.cs contains any #region directives. The code uses [Header(...)] attributes and inline comments for organization instead, but no #region/#endregion blocks are present."}, {"text": "Component references are cached in Awake() using GetComponent", "passed": true, "evidence": "PlayerController.cs has an Awake() method that caches the Rigidbody: 'private void Awake() { rb = GetComponent<Rigidbody>(); rb.freezeRotation = true; }'. CameraFollow.cs has no component dependencies to cache (it uses a serialized Transform reference instead). The Rigidbody reference is correctly cached in Awake."}, {"text": "Events unsubscribe in OnDisable to prevent memory leaks", "passed": false, "evidence": "Neither PlayerController.cs nor CameraFollow.cs subscribes to any C# events or Unity events, and neither implements OnDisable(). There is no event subscription or unsubscription code anywhere in the output. The assertion cannot be satisfied because the pattern is entirely absent from the implementation."}], "summary": {"passed": 3, "failed": 5, "total": 8, "pass_rate": 0.375}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": null, "total_steps": 6, "errors_encountered": 0, "output_chars": 4821, "transcript_chars": 1890}, "timing": {}, "claims": [{"claim": "Input polling is best done in Update", "type": "process", "verified": true, "evidence": "The code reads Input.GetAxisRaw and Input.GetKeyDown in Update(), which is correct for avoiding missed single-frame events. The design decisions table also explicitly states this rationale."}, {"claim": "Movement in FixedUpdate (Rigidbody physics should always be modified during the fixed physics step)", "type": "process", "verified": false, "evidence": "Partially true for horizontal movement (MovePlayer is called from FixedUpdate), but false for jumping: Jump() is invoked from Update(), and it modifies rb.linearVelocity and calls rb.AddForce inside Update, not FixedUpdate."}, {"claim": "LateUpdate ensures the camera moves after all player movement is complete", "type": "process", "verified": true, "evidence": "CameraFollow.cs correctly implements LateUpdate for all camera positioning, which executes after all Update calls in the same frame."}, {"claim": "The implementation targets Unity 6+ where Rigidbody.velocity is replaced by Rigidbody.linearVelocity", "type": "factual", "verified": true, "evidence": "The code consistently uses 'rb.linearVelocity' throughout (e.g., 'isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.05f', 'targetVelocity.y = rb.linearVelocity.y'), confirming Unity 6+ API usage."}, {"claim": "No external skill documentation was consulted during this run", "type": "process", "verified": true, "evidence": "Transcript Step Notes states: 'No external skill documentation was consulted during this run; all decisions were made from general Unity/C# knowledge.' No web fetch or documentation tool calls are recorded in the transcript."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "Events unsubscribe in OnDisable to prevent memory leaks", "reason": "The assertion cannot meaningfully fail or pass if the implementation doesn't use events at all. A minimal implementation that simply omits event-driven patterns entirely would trivially 'satisfy' this by coincidence (no subscriptions = no leaks), or trivially 'fail' because OnDisable is absent. The assertion should be paired with a requirement that the implementation demonstrates event usage (e.g., 'subscribes to an InputSystem action or Unity event in OnEnable and unsubscribes in OnDisable') to make the pattern testable."}, {"reason": "No assertion checks whether Jump() correctly executes Rigidbody operations inside FixedUpdate vs Update. The existing assertion (expectation 4) is framed broadly as 'Physics/Rigidbody code is in FixedUpdate', but the grader had to reason carefully about Jump() being called from Update. An explicit assertion like 'Jump force is applied inside FixedUpdate or via a flag deferred to FixedUpdate' would catch this common architectural mistake more precisely."}, {"reason": "No assertion checks code correctness or playability. The implementation could have subtle bugs (e.g., the fallback isGrounded check using 'rb.linearVelocity.y < 0.05f' is unreliable) that no assertion would catch. Consider adding a quality assertion such as 'Ground detection uses Physics.CheckSphere rather than a velocity heuristic'."}], "overall": "The assertions cover most of the important Unity coding conventions but have two significant gaps: the _camelCase prefix and #region assertions are clear-cut style checks that the baseline fails cleanly; the [Tooltip] and Jump-in-FixedUpdate failures reveal real gaps in the baseline output. The Events/OnDisable assertion is problematic because the implementation uses no events, making the assertion untestable in a meaningful way."}}}, {"id": "eval-scriptable-object-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# WeaponData ScriptableObject\n\n## WeaponData.cs\n\n```csharp\nusing UnityEngine;\n\n[CreateAssetMenu(fileName = \"SO_WeaponData\", menuName = \"Game/Weapon Data\")]\npublic class WeaponData : ScriptableObject\n{\n    [Header(\"Basic Info\")]\n\n    [Tooltip(\"Display name of the weapon shown in UI and inventory\")]\n    public string WeaponName;\n\n    [Tooltip(\"Icon sprite used in inventory and HUD\")]\n    public Sprite Icon;\n\n    [Header(\"Combat Stats\")]\n\n    [Tooltip(\"Damage dealt per hit\")]\n    [Range(1, 100)]\n    public int Damage = 10;\n\n    [Tooltip(\"Number of attacks per second\")]\n    [Range(0.1f, 5f)]\n    public float AttackSpeed = 1f;\n\n    [Tooltip(\"Maximum attack range in world units\")]\n    [Range(0.5f, 20f)]\n    public float Range = 2f;\n}\n```\n\n## WeaponController.cs (MonoBehaviour usage example)\n\n```csharp\nusing UnityEngine;\n\npublic class WeaponController : MonoBehaviour\n{\n    #region Inspector Fields\n\n    [Header(\"Weapon Configuration\")]\n    [Tooltip(\"ScriptableObject containing weapon stats and settings\")]\n    [SerializeField] private WeaponData _weaponData;\n\n    [Header(\"References\")]\n    [Tooltip(\"Transform point from which attacks originate\")]\n    [SerializeField] private Transform _attackOrigin;\n\n    #endregion\n\n    #region Private Fields\n\n    private float _attackCooldown;\n    private float _lastAttackTime;\n\n    #endregion\n\n    #region Unity Lifecycle\n\n    private void Awake()\n    {\n        if (_weaponData == null)\n        {\n            Debug.LogError($\"[WeaponController] WeaponData is not assigned on {gameObject.name}.\");\n            return;\n        }\n\n        _attackCooldown = 1f / _weaponData.AttackSpeed;\n    }\n\n    private void Update()\n    {\n        HandleAttackInput();\n    }\n\n    #endregion\n\n    #region Public Methods\n\n    public string GetWeaponName() => _weaponData != null ? _weaponData.WeaponName : string.Empty;\n\n    public Sprite GetIcon() => _weaponData != null ? _weaponData.Icon : null;\n\n    #endregion\n\n    #region Private Methods\n\n    private void HandleAttackInput()\n    {\n        if (Input.GetButtonDown(\"Fire1\") && CanAttack())\n        {\n            PerformAttack();\n        }\n    }\n\n    private bool CanAttack()\n    {\n        return Time.time >= _lastAttackTime + _attackCooldown;\n    }\n\n    private void PerformAttack()\n    {\n        _lastAttackTime = Time.time;\n\n        var hits = Physics.SphereCastAll(\n            _attackOrigin.position,\n            0.5f,\n            _attackOrigin.forward,\n            _weaponData.Range\n        );\n\n        foreach (var hit in hits)\n        {\n            if (hit.collider.TryGetComponent<IDamageable>(out var damageable))\n            {\n                damageable.TakeDamage(_weaponData.Damage);\n            }\n        }\n\n        Debug.Log($\"[WeaponController] Attacked with {_weaponData.WeaponName} for {_weaponData.Damage} damage.\");\n    }\n\n    #endregion\n}\n```\n\n## IDamageable.cs (Interface)\n\n```csharp\npublic interface IDamageable\n{\n    void TakeDamage(int amount);\n}\n```\n\n## How to Use\n\n### Creating the Asset\n\n1. In the Unity Project window, right-click the `Assets/_Project/ScriptableObjects/` folder.\n2. Select **Game > Weapon Data**.\n3. A new file named `SO_WeaponData.asset` is created.\n4. Rename it following the convention: `SO_WeaponData_Sword.asset`.\n5. Fill in WeaponName, Icon, Damage, AttackSpeed, and Range in the Inspector.\n\n### Wiring in the Scene\n\n1. Add a `WeaponController` component to your player or weapon GameObject.\n2. Drag the `SO_WeaponData_Sword.asset` into the **Weapon Data** field.\n3. Assign a Transform for **Attack Origin** (e.g., the weapon tip).\n4. Press Play \u2014 the weapon reads all stats directly from the asset.\n\n### Asset Naming Convention\n\n```\nSO_WeaponData_<Name>.asset\n```\n\nExamples:\n- `SO_WeaponData_Sword.asset`\n- `SO_WeaponData_Bow.asset`\n- `SO_WeaponData_Staff.asset`\n```\n"}], "grading": {"expectations": [{"text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName", "passed": true, "evidence": "response.md line 8: `[CreateAssetMenu(fileName = \"SO_WeaponData\", menuName = \"Game/Weapon Data\")]` \u2014 both required named parameters are present and correctly formatted."}, {"text": "Public fields or properties use PascalCase", "passed": true, "evidence": "All five public fields in WeaponData.cs use PascalCase: `WeaponName` (string), `Icon` (Sprite), `Damage` (int), `AttackSpeed` (float), `Range` (float). No snake_case or camelCase public fields are present."}, {"text": "Fields have [Tooltip] annotations describing their purpose", "passed": true, "evidence": "Every Inspector-visible field in WeaponData.cs has a [Tooltip]: `[Tooltip(\"Display name of the weapon shown in UI and inventory\")]`, `[Tooltip(\"Icon sprite used in inventory and HUD\")]`, `[Tooltip(\"Damage dealt per hit\")]`, `[Tooltip(\"Number of attacks per second\")]`, `[Tooltip(\"Maximum attack range in world units\")]`. Each tooltip describes the field's purpose clearly."}, {"text": "Numeric fields use [Range] attribute where bounds make sense", "passed": true, "evidence": "All three numeric fields carry [Range]: `[Range(1, 100)]` on Damage (int), `[Range(0.1f, 5f)]` on AttackSpeed (float), `[Range(0.5f, 20f)]` on Range (float). The non-numeric fields (WeaponName string, Icon Sprite) correctly have no [Range]. Bounds are domain-appropriate (e.g., 1\u2013100 for damage, 0.1\u20135 attacks/sec)."}, {"text": "The class name follows PascalCase convention", "passed": true, "evidence": "response.md line 9: `public class WeaponData : ScriptableObject` \u2014 `WeaponData` is correctly PascalCase. The supporting classes `WeaponController` and `IDamageable` also follow PascalCase."}, {"text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour", "passed": true, "evidence": "response.md includes a complete `WeaponController : MonoBehaviour` class that references `WeaponData` via `[SerializeField] private WeaponData _weaponData;` and reads its fields (`_weaponData.AttackSpeed`, `_weaponData.Range`, `_weaponData.Damage`, `_weaponData.WeaponName`, `_weaponData.Icon`). A prose 'How to Use' section with step-by-step instructions for creating the asset and wiring it into a scene is also provided."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"total_steps": 6, "errors_encountered": 0, "output_chars": 3758, "transcript_chars": 1812}, "timing": {}, "claims": [{"claim": "Applied [CreateAssetMenu(fileName = \"SO_WeaponData\", menuName = \"Game/Weapon Data\")] per the skill's required format", "type": "factual", "verified": true, "evidence": "response.md line 8 exactly matches this string."}, {"claim": "All numeric fields use [Range]", "type": "factual", "verified": true, "evidence": "Damage, AttackSpeed, and Range all have [Range] annotations with appropriate bounds; WeaponName and Icon (non-numeric) do not."}, {"claim": "Awake() used only for caching derived values and null checking \u2014 no Inspector value overrides", "type": "process", "verified": true, "evidence": "WeaponController.Awake() performs a null check on _weaponData and computes `_attackCooldown = 1f / _weaponData.AttackSpeed`. No Inspector fields are overwritten."}, {"claim": "TryGetComponent<T>() used instead of GetComponent<T>() != null", "type": "process", "verified": true, "evidence": "response.md line 117: `hit.collider.TryGetComponent<IDamageable>(out var damageable)` confirms the best-practice pattern is used."}, {"claim": "No errors were encountered during execution", "type": "factual", "verified": true, "evidence": "metrics.json: `\"errors_encountered\": 0`."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "Public fields or properties use PascalCase", "reason": "This assertion passes even if only one public field is PascalCase. A stronger form would also require that no public fields violate the convention \u2014 e.g., 'All public fields use PascalCase and no public fields use camelCase or snake_case.'"}, {"assertion": "Fields have [Tooltip] annotations describing their purpose", "reason": "The assertion passes as long as [Tooltip] text is present, but does not check whether the descriptions are meaningful. A tooltip like [Tooltip(\"field\")] would technically satisfy it. Consider adding a minimum-quality bar such as requiring the tooltip to mention the field's unit or effect."}, {"reason": "No assertion checks that the [Header] grouping attribute is used to visually organize the Inspector \u2014 a notable convention prescribed by the skill's reference material (scriptable-objects.md). The output correctly uses [Header(\"Basic Info\")] and [Header(\"Combat Stats\")], but this is unchecked."}, {"reason": "No assertion verifies that the MonoBehaviour example uses [SerializeField] with a private backing field (the prescribed pattern) rather than a public field for the ScriptableObject reference. The output does this correctly, but the eval would not catch a violation."}], "overall": "All six assertions are satisfied with genuine, high-quality output. The assertions cover the most important structural and style requirements. The main gap is that several Unity-specific conventions (Header grouping, private [SerializeField] for the SO reference in the MonoBehaviour) go unchecked, and two assertions (PascalCase, Tooltip quality) could be strengthened to avoid false positives on minimal or trivial implementations."}}}, {"id": "eval-scriptable-object-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "response.md", "type": "text", "content": "# WeaponData ScriptableObject - Unity Implementation\n\n## Overview\n\nThis implementation creates a `WeaponData` ScriptableObject to store weapon configuration data in Unity. It includes the weapon stats (name, damage, attack speed, range, and sprite icon) and demonstrates how to use it in a MonoBehaviour-based weapon system.\n\n---\n\n## 1. WeaponData ScriptableObject\n\n```csharp\n// WeaponData.cs\n// Place in: Assets/Scripts/Weapons/WeaponData.cs\n\nusing UnityEngine;\n\n[CreateAssetMenu(fileName = \"NewWeapon\", menuName = \"Weapons/Weapon Data\", order = 0)]\npublic class WeaponData : ScriptableObject\n{\n    [Header(\"Basic Info\")]\n    [Tooltip(\"Display name of the weapon.\")]\n    public string weaponName = \"Unnamed Weapon\";\n\n    [Header(\"Stats\")]\n    [Tooltip(\"Damage dealt per hit.\")]\n    [Min(0f)]\n    public float damage = 10f;\n\n    [Tooltip(\"Number of attacks per second.\")]\n    [Min(0.01f)]\n    public float attackSpeed = 1f;\n\n    [Tooltip(\"Maximum attack range in world units.\")]\n    [Min(0f)]\n    public float range = 2f;\n\n    [Header(\"Visuals\")]\n    [Tooltip(\"Icon displayed in the UI inventory or HUD.\")]\n    public Sprite icon;\n\n    /// <summary>\n    /// Returns the time in seconds between each attack, derived from attackSpeed.\n    /// </summary>\n    public float AttackInterval => 1f / attackSpeed;\n}\n```\n\n### How to Create an Asset in the Editor\n\n1. Right-click in the **Project** window.\n2. Navigate to **Create > Weapons > Weapon Data**.\n3. Name the new asset (e.g., `Sword`, `Bow`, `FireStaff`).\n4. Fill in the fields in the **Inspector**.\n\n---\n\n## 2. WeaponController MonoBehaviour\n\nThis component reads from a `WeaponData` asset and drives attack logic at runtime.\n\n```csharp\n// WeaponController.cs\n// Place in: Assets/Scripts/Weapons/WeaponController.cs\n\nusing UnityEngine;\n\n/// <summary>\n/// Drives weapon behavior at runtime using a WeaponData ScriptableObject.\n/// Attach to a weapon GameObject (e.g., the player's hand or weapon slot).\n/// </summary>\npublic class WeaponController : MonoBehaviour\n{\n    [Header(\"Weapon Configuration\")]\n    [Tooltip(\"Assign a WeaponData asset to configure this weapon.\")]\n    [SerializeField] private WeaponData weaponData;\n\n    private float _attackCooldown;\n    private float _timeSinceLastAttack;\n\n    private void Start()\n    {\n        if (weaponData == null)\n        {\n            Debug.LogError($\"[WeaponController] No WeaponData assigned on {gameObject.name}!\");\n            enabled = false;\n            return;\n        }\n\n        _attackCooldown = weaponData.AttackInterval;\n        _timeSinceLastAttack = _attackCooldown; // ready to attack immediately\n\n        Debug.Log($\"[WeaponController] Equipped: {weaponData.weaponName} \" +\n                  $\"| Damage: {weaponData.damage} \" +\n                  $\"| Attack Speed: {weaponData.attackSpeed}/s \" +\n                  $\"| Range: {weaponData.range}m\");\n    }\n\n    private void Update()\n    {\n        _timeSinceLastAttack += Time.deltaTime;\n\n        // Example: attack on left mouse button / fire button\n        if (Input.GetButton(\"Fire1\") && CanAttack())\n        {\n            PerformAttack();\n        }\n    }\n\n    /// <summary>\n    /// Returns true if enough time has passed since the last attack.\n    /// </summary>\n    private bool CanAttack()\n    {\n        return _timeSinceLastAttack >= _attackCooldown;\n    }\n\n    /// <summary>\n    /// Executes an attack: raycasts within range and applies damage.\n    /// </summary>\n    private void PerformAttack()\n    {\n        _timeSinceLastAttack = 0f;\n\n        Debug.Log($\"[WeaponController] {weaponData.weaponName} attacks for {weaponData.damage} damage!\");\n\n        // Raycast-based hit detection (2D example using the weapon's forward direction)\n        RaycastHit2D hit = Physics2D.Raycast(\n            transform.position,\n            transform.right,\n            weaponData.range\n        );\n\n        if (hit.collider != null)\n        {\n            // Try to find a health component and apply damage\n            IDamageable damageable = hit.collider.GetComponent<IDamageable>();\n            if (damageable != null)\n            {\n                damageable.TakeDamage(weaponData.damage);\n                Debug.Log($\"[WeaponController] Hit {hit.collider.name} for {weaponData.damage} damage.\");\n            }\n        }\n    }\n\n    /// <summary>\n    /// Hot-swaps the weapon data at runtime (e.g., picking up a new weapon).\n    /// </summary>\n    public void EquipWeapon(WeaponData newWeaponData)\n    {\n        if (newWeaponData == null)\n        {\n            Debug.LogWarning(\"[WeaponController] Tried to equip a null WeaponData.\");\n            return;\n        }\n\n        weaponData = newWeaponData;\n        _attackCooldown = weaponData.AttackInterval;\n        _timeSinceLastAttack = _attackCooldown;\n\n        Debug.Log($\"[WeaponController] Switched to: {weaponData.weaponName}\");\n    }\n\n    /// <summary>\n    /// Exposes the current weapon data (e.g., for UI to read the icon and name).\n    /// </summary>\n    public WeaponData CurrentWeaponData => weaponData;\n}\n```\n\n---\n\n## 3. IDamageable Interface\n\nA simple interface so the weapon system is decoupled from specific enemy types.\n\n```csharp\n// IDamageable.cs\n// Place in: Assets/Scripts/Interfaces/IDamageable.cs\n\n/// <summary>\n/// Any GameObject that can receive damage should implement this interface.\n/// </summary>\npublic interface IDamageable\n{\n    void TakeDamage(float amount);\n}\n```\n\n---\n\n## 4. Example Enemy Implementation\n\n```csharp\n// EnemyHealth.cs\n// Place in: Assets/Scripts/Enemies/EnemyHealth.cs\n\nusing UnityEngine;\n\npublic class EnemyHealth : MonoBehaviour, IDamageable\n{\n    [SerializeField] private float maxHealth = 100f;\n    private float _currentHealth;\n\n    private void Awake()\n    {\n        _currentHealth = maxHealth;\n    }\n\n    public void TakeDamage(float amount)\n    {\n        _currentHealth -= amount;\n        Debug.Log($\"[EnemyHealth] {gameObject.name} took {amount} damage. HP: {_currentHealth}/{maxHealth}\");\n\n        if (_currentHealth <= 0f)\n        {\n            Die();\n        }\n    }\n\n    private void Die()\n    {\n        Debug.Log($\"[EnemyHealth] {gameObject.name} died.\");\n        Destroy(gameObject);\n    }\n}\n```\n\n---\n\n## 5. Example UI Integration\n\nReading the weapon icon and name to display in a HUD:\n\n```csharp\n// WeaponHUD.cs\n// Place in: Assets/Scripts/UI/WeaponHUD.cs\n\nusing UnityEngine;\nusing UnityEngine.UI;\nusing TMPro;\n\npublic class WeaponHUD : MonoBehaviour\n{\n    [SerializeField] private WeaponController weaponController;\n    [SerializeField] private Image weaponIconImage;\n    [SerializeField] private TextMeshProUGUI weaponNameText;\n\n    private void Update()\n    {\n        WeaponData data = weaponController.CurrentWeaponData;\n        if (data == null) return;\n\n        weaponIconImage.sprite = data.icon;\n        weaponNameText.text = data.weaponName;\n    }\n}\n```\n\n---\n\n## 6. Folder Structure\n\n```\nAssets/\n  Scripts/\n    Interfaces/\n      IDamageable.cs\n    Weapons/\n      WeaponData.cs          <-- ScriptableObject definition\n      WeaponController.cs    <-- MonoBehaviour using the SO\n    Enemies/\n      EnemyHealth.cs\n    UI/\n      WeaponHUD.cs\n  ScriptableObjects/\n    Weapons/\n      Sword.asset            <-- WeaponData asset instance\n      Bow.asset\n      FireStaff.asset\n```\n\n---\n\n## Key Design Decisions\n\n| Decision | Reason |\n|---|---|\n| `ScriptableObject` for data | Decouples data from runtime logic; assets are shareable across scenes and prefabs |\n| `[CreateAssetMenu]` attribute | Enables right-click creation in the Unity Editor without scripting |\n| `AttackInterval` computed property | Keeps data consistent; no need to store both speed and interval |\n| `IDamageable` interface | Weapon system does not depend on concrete enemy types (open/closed principle) |\n| `[Min(...)]` attribute | Prevents invalid values (negative damage, zero attack speed) directly in the Inspector |\n| `[Header]` and `[Tooltip]` | Improves editor usability for designers tweaking values |\n"}], "grading": {"expectations": [{"text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName", "passed": true, "evidence": "response.md line 17: `[CreateAssetMenu(fileName = \"NewWeapon\", menuName = \"Weapons/Weapon Data\", order = 0)]` \u2014 both fileName and menuName are explicitly set."}, {"text": "Public fields or properties use PascalCase", "passed": false, "evidence": "All five public fields in WeaponData use camelCase: `weaponName`, `damage`, `attackSpeed`, `range`, `icon`. Only the computed property `AttackInterval` uses PascalCase, which is standard for C# properties. Unity convention often keeps serialized fields as camelCase, but the assertion expects PascalCase for public fields, which is not satisfied here."}, {"text": "Fields have [Tooltip] annotations describing their purpose", "passed": true, "evidence": "All five fields in WeaponData have [Tooltip] annotations: `[Tooltip(\"Display name of the weapon.\")]`, `[Tooltip(\"Damage dealt per hit.\")]`, `[Tooltip(\"Number of attacks per second.\")]`, `[Tooltip(\"Maximum attack range in world units.\")]`, `[Tooltip(\"Icon displayed in the UI inventory or HUD.\")]`."}, {"text": "Numeric fields use [Range] attribute where bounds make sense", "passed": false, "evidence": "Numeric fields `damage`, `attackSpeed`, and `range` use `[Min(...)]` attribute instead of `[Range(min, max)]`. Specifically: `[Min(0f)]` for damage and range, `[Min(0.01f)]` for attackSpeed. While `[Min]` provides a lower bound, `[Range]` was not used, so the Inspector will not show a slider. Upper bounds that would make sense (e.g., max damage, max range) are not defined."}, {"text": "The class name follows PascalCase convention", "passed": true, "evidence": "The class is declared as `public class WeaponData : ScriptableObject` \u2014 `WeaponData` correctly follows PascalCase convention."}, {"text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour", "passed": true, "evidence": "Section 2 of response.md provides a complete `WeaponController : MonoBehaviour` class that accepts a `WeaponData` reference via `[SerializeField] private WeaponData weaponData`, reads `weaponData.AttackInterval`, `weaponData.damage`, `weaponData.range`, and `weaponData.weaponName` in runtime logic. Additional examples include `WeaponHUD : MonoBehaviour` reading `CurrentWeaponData` for UI display."}], "summary": {"passed": 4, "failed": 2, "total": 6, "pass_rate": 0.67}, "execution_metrics": {"total_steps": 8, "errors_encountered": 0}, "timing": {}, "claims": [{"claim": "Used [Header], [Tooltip], and [Min] attributes for inspector usability and data validation", "type": "process", "verified": true, "evidence": "response.md confirms all three attribute types appear in the WeaponData class: [Header(\"Basic Info\")], [Header(\"Stats\")], [Header(\"Visuals\")], [Tooltip(...)] on every field, and [Min(0f)] / [Min(0.01f)] on numeric fields."}, {"claim": "Added a computed property AttackInterval (1f / attackSpeed) to avoid redundant data", "type": "factual", "verified": true, "evidence": "response.md line 44: `public float AttackInterval => 1f / attackSpeed;` is present in the WeaponData class."}, {"claim": "Implementation was produced entirely from general Unity knowledge without referencing any skill documentation or external resources", "type": "process", "verified": false, "evidence": "This is a self-reported claim in the transcript and cannot be verified from outputs alone. The transcript states it explicitly, but there is no mechanism to confirm no external resources were consulted."}, {"claim": "WeaponController provides EquipWeapon(WeaponData) for runtime weapon swapping", "type": "factual", "verified": true, "evidence": "response.md shows the `EquipWeapon(WeaponData newWeaponData)` public method in WeaponController, with logic to swap weapon data and reset cooldown."}], "user_notes_summary": {}, "eval_feedback": {"suggestions": [{"assertion": "Public fields or properties use PascalCase", "reason": "Unity's own style guides and common community practice use camelCase for serialized private fields with [SerializeField] and PascalCase for public properties. The assertion as written may be in tension with Unity conventions. It would be worth clarifying whether PascalCase is expected for all public fields (which Unity convention discourages in favor of properties), or only for public-facing properties/methods. As currently written, the assertion fails \u2014 but the output is arguably more idiomatic Unity C# than the assertion demands."}, {"assertion": "Numeric fields use [Range] attribute where bounds make sense", "reason": "[Min] is a reasonable substitute when only a lower bound is semantically meaningful (e.g., damage can be arbitrarily large). The assertion could be weakened to accept either [Range] or [Min] where an upper bound cannot be meaningfully predetermined, or it could be strengthened by specifying concrete fields that must use [Range] with particular values. As written, [Min] satisfying the spirit but not the letter of [Range] creates grading ambiguity."}, {"reason": "No assertion checks that the ScriptableObject inherits from UnityEngine.ScriptableObject \u2014 a script that does not extend ScriptableObject would not function as a ScriptableObject despite having [CreateAssetMenu]. The class declaration `WeaponData : ScriptableObject` is correct here, but this fundamental requirement goes unchecked."}, {"reason": "No assertion checks that the required fields from the task (weapon name, damage, attack speed, range, sprite icon) are all present. A ScriptableObject with only two of the five fields could still satisfy all six current assertions."}], "overall": "The assertion set covers formatting and structural conventions well but misses two critical correctness checks: that the class actually inherits from ScriptableObject, and that all five required data fields are present. The PascalCase and [Range] assertions also create friction with Unity-specific conventions that differ from general C# style, which may cause consistent false failures on otherwise correct Unity code."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "unity-gamedev", "skill_path": "plugins/unity-gamedev-standards/skills/unity-gamedev", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-02-28T08:26:19Z", "evals_run": [1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 0.0, "tokens": 8241, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)", "passed": true, "evidence": "All private fields in both classes use the _camelCase convention. In PlayerController: _moveSpeed, _jumpForce, _groundCheckDistance, _groundLayerMask, _rigidbody, _moveInput, _jumpRequested, _isGrounded. In PlayerFollowCamera: _target, _offset, _positionSmoothSpeed, _lookAtTarget, _rotationSmoothSpeed. No private field deviates from this convention."}, {"text": "Inspector-configurable fields use [SerializeField] attribute", "passed": true, "evidence": "All inspector-configurable fields use [SerializeField]. In PlayerController: [SerializeField, Range(1f, 20f)] private float _moveSpeed, [SerializeField, Range(1f, 30f)] private float _jumpForce, [SerializeField, Range(0.1f, 1f)] private float _groundCheckDistance, [SerializeField] private LayerMask _groundLayerMask. In PlayerFollowCamera: [SerializeField] private Transform _target, [SerializeField] private Vector3 _offset, [SerializeField, Range(1f, 30f)] private float _positionSmoothSpeed, [SerializeField] private bool _lookAtTarget, [SerializeField, Range(1f, 30f)] private float _rotationSmoothSpeed."}, {"text": "All [SerializeField] fields have [Tooltip] annotations", "passed": true, "evidence": "Every [SerializeField] field in both classes has a [Tooltip] attribute. PlayerController: _moveSpeed has 'Horizontal movement speed in units per second.', _jumpForce has 'Impulse force applied upward when the player jumps.', _groundCheckDistance has 'Maximum distance from the ground to allow jumping.', _groundLayerMask has 'Layer mask used to detect ground surfaces.'. PlayerFollowCamera: _target has 'The Transform this camera will follow. Assign the player Transform.', _offset has 'Offset applied to the target position...', _positionSmoothSpeed has 'Camera position smoothing speed...', _lookAtTarget has 'If true, the camera will look at the target each frame.', _rotationSmoothSpeed has 'Smooth speed for camera rotation toward the target.'."}, {"text": "Physics/Rigidbody code is in FixedUpdate, not Update", "passed": true, "evidence": "In PlayerController, FixedUpdate() calls ApplyMovement() and ApplyJump(), which are the only methods that touch _rigidbody. ApplyMovement() sets _rigidbody.linearVelocity; ApplyJump() zeroes vertical velocity and calls _rigidbody.AddForce(). Update() only reads input (HandleMovementInput, HandleJumpInput) and checks grounded state via Raycast \u2014 no Rigidbody mutations happen there. The _jumpRequested flag bridges input detection in Update() to physics application in FixedUpdate()."}, {"text": "Camera follow code uses LateUpdate, not Update", "passed": true, "evidence": "PlayerFollowCamera has no Update() method. All camera position and rotation logic is inside LateUpdate(), which calls UpdateCameraPosition() (Vector3.Lerp to desiredPosition) and UpdateCameraRotation() (Quaternion.Slerp toward LookRotation). The class also carries [DefaultExecutionOrder(100)] to guarantee it runs after all default-order scripts in LateUpdate."}, {"text": "The class uses #region sections for organization", "passed": true, "evidence": "Both classes use #region sections. PlayerController has: #region Inspector Fields, #region Private Fields, #region Properties, #region Events, #region Unity Lifecycle, #region Private Methods. PlayerFollowCamera has: #region Inspector Fields, #region Unity Lifecycle, #region Private Methods. This matches the standard region structure documented in the skill."}, {"text": "Component references are cached in Awake() using GetComponent", "passed": true, "evidence": "In PlayerController, Awake() contains: _rigidbody = GetComponent<Rigidbody>();. This is the only component reference used, and it is properly cached here. PlayerFollowCamera has no GetComponent calls because its only external reference (_target) is a serialized Transform assigned via Inspector."}, {"text": "Events unsubscribe in OnDisable to prevent memory leaks", "passed": true, "evidence": "PlayerController.OnDisable() nulls both events: 'OnJumped = null;' and 'OnLanded = null;', with the comment 'Unsubscribe all listeners to prevent memory leaks.' PlayerFollowCamera.OnDisable() is a stub comment ('Reserved for future event unsubscriptions.'), which is appropriate since that class defines no events and subscribes to none."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 0.0, "tokens": 3758, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName", "passed": true, "evidence": "response.md line 8: `[CreateAssetMenu(fileName = \"SO_WeaponData\", menuName = \"Game/Weapon Data\")]` \u2014 both required named parameters are present and correctly formatted."}, {"text": "Public fields or properties use PascalCase", "passed": true, "evidence": "All five public fields in WeaponData.cs use PascalCase: `WeaponName` (string), `Icon` (Sprite), `Damage` (int), `AttackSpeed` (float), `Range` (float). No snake_case or camelCase public fields are present."}, {"text": "Fields have [Tooltip] annotations describing their purpose", "passed": true, "evidence": "Every Inspector-visible field in WeaponData.cs has a [Tooltip]: `[Tooltip(\"Display name of the weapon shown in UI and inventory\")]`, `[Tooltip(\"Icon sprite used in inventory and HUD\")]`, `[Tooltip(\"Damage dealt per hit\")]`, `[Tooltip(\"Number of attacks per second\")]`, `[Tooltip(\"Maximum attack range in world units\")]`. Each tooltip describes the field's purpose clearly."}, {"text": "Numeric fields use [Range] attribute where bounds make sense", "passed": true, "evidence": "All three numeric fields carry [Range]: `[Range(1, 100)]` on Damage (int), `[Range(0.1f, 5f)]` on AttackSpeed (float), `[Range(0.5f, 20f)]` on Range (float). The non-numeric fields (WeaponName string, Icon Sprite) correctly have no [Range]. Bounds are domain-appropriate (e.g., 1\u2013100 for damage, 0.1\u20135 attacks/sec)."}, {"text": "The class name follows PascalCase convention", "passed": true, "evidence": "response.md line 9: `public class WeaponData : ScriptableObject` \u2014 `WeaponData` is correctly PascalCase. The supporting classes `WeaponController` and `IDamageable` also follow PascalCase."}, {"text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour", "passed": true, "evidence": "response.md includes a complete `WeaponController : MonoBehaviour` class that references `WeaponData` via `[SerializeField] private WeaponData _weaponData;` and reads its fields (`_weaponData.AttackSpeed`, `_weaponData.Range`, `_weaponData.Damage`, `_weaponData.WeaponName`, `_weaponData.Icon`). A prose 'How to Use' section with step-by-step instructions for creating the asset and wiring it into a scene is also provided."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.375, "passed": 3, "failed": 5, "total": 8, "time_seconds": 0.0, "tokens": 4821, "tool_calls": null, "errors": 0}, "expectations": [{"text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)", "passed": false, "evidence": "All private fields in PlayerController.cs and CameraFollow.cs use plain camelCase without an underscore prefix. Examples: 'private float moveSpeed', 'private float jumpForce', 'private Rigidbody rb', 'private bool isGrounded', 'private Vector3 moveDirection', 'private Transform target', 'private float smoothSpeed'. None follow the _camelCase convention."}, {"text": "Inspector-configurable fields use [SerializeField] attribute", "passed": true, "evidence": "All inspector-configurable fields correctly use [SerializeField]. In PlayerController.cs: '[SerializeField] private float moveSpeed', '[SerializeField] private float jumpForce', '[SerializeField] private Transform groundCheck', '[SerializeField] private float groundCheckRadius', '[SerializeField] private LayerMask groundLayer'. In CameraFollow.cs: '[SerializeField] private Transform target', '[SerializeField] private Vector3 offset', '[SerializeField] private float smoothSpeed', '[SerializeField] private bool lookAtTarget'."}, {"text": "All [SerializeField] fields have [Tooltip] annotations", "passed": false, "evidence": "No [Tooltip] attributes appear anywhere in the code. The code uses [Header(...)] groups for organization (e.g. '[Header(\"Movement Settings\")]', '[Header(\"Ground Detection\")]') but none of the nine [SerializeField] fields across the two scripts have a [Tooltip] annotation."}, {"text": "Physics/Rigidbody code is in FixedUpdate, not Update", "passed": false, "evidence": "Horizontal movement velocity is correctly set inside FixedUpdate via MovePlayer(). However, the Jump() method is called from Update() and directly manipulates Rigidbody state: 'rb.linearVelocity = new Vector3(...)' and 'rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse)'. Both of these Rigidbody operations execute inside Update, violating the expectation."}, {"text": "Camera follow code uses LateUpdate, not Update", "passed": true, "evidence": "CameraFollow.cs implements 'private void LateUpdate()' for all camera positioning logic: 'transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime)' and 'transform.LookAt(target.position)'. There is no Update method in CameraFollow.cs."}, {"text": "The class uses #region sections for organization", "passed": false, "evidence": "Neither PlayerController.cs nor CameraFollow.cs contains any #region directives. The code uses [Header(...)] attributes and inline comments for organization instead, but no #region/#endregion blocks are present."}, {"text": "Component references are cached in Awake() using GetComponent", "passed": true, "evidence": "PlayerController.cs has an Awake() method that caches the Rigidbody: 'private void Awake() { rb = GetComponent<Rigidbody>(); rb.freezeRotation = true; }'. CameraFollow.cs has no component dependencies to cache (it uses a serialized Transform reference instead). The Rigidbody reference is correctly cached in Awake."}, {"text": "Events unsubscribe in OnDisable to prevent memory leaks", "passed": false, "evidence": "Neither PlayerController.cs nor CameraFollow.cs subscribes to any C# events or Unity events, and neither implements OnDisable(). There is no event subscription or unsubscription code anywhere in the output. The assertion cannot be satisfied because the pattern is entirely absent from the implementation."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.67, "passed": 4, "failed": 2, "total": 6, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName", "passed": true, "evidence": "response.md line 17: `[CreateAssetMenu(fileName = \"NewWeapon\", menuName = \"Weapons/Weapon Data\", order = 0)]` \u2014 both fileName and menuName are explicitly set."}, {"text": "Public fields or properties use PascalCase", "passed": false, "evidence": "All five public fields in WeaponData use camelCase: `weaponName`, `damage`, `attackSpeed`, `range`, `icon`. Only the computed property `AttackInterval` uses PascalCase, which is standard for C# properties. Unity convention often keeps serialized fields as camelCase, but the assertion expects PascalCase for public fields, which is not satisfied here."}, {"text": "Fields have [Tooltip] annotations describing their purpose", "passed": true, "evidence": "All five fields in WeaponData have [Tooltip] annotations: `[Tooltip(\"Display name of the weapon.\")]`, `[Tooltip(\"Damage dealt per hit.\")]`, `[Tooltip(\"Number of attacks per second.\")]`, `[Tooltip(\"Maximum attack range in world units.\")]`, `[Tooltip(\"Icon displayed in the UI inventory or HUD.\")]`."}, {"text": "Numeric fields use [Range] attribute where bounds make sense", "passed": false, "evidence": "Numeric fields `damage`, `attackSpeed`, and `range` use `[Min(...)]` attribute instead of `[Range(min, max)]`. Specifically: `[Min(0f)]` for damage and range, `[Min(0.01f)]` for attackSpeed. While `[Min]` provides a lower bound, `[Range]` was not used, so the Inspector will not show a slider. Upper bounds that would make sense (e.g., max damage, max range) are not defined."}, {"text": "The class name follows PascalCase convention", "passed": true, "evidence": "The class is declared as `public class WeaponData : ScriptableObject` \u2014 `WeaponData` correctly follows PascalCase convention."}, {"text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour", "passed": true, "evidence": "Section 2 of response.md provides a complete `WeaponController : MonoBehaviour` class that accepts a `WeaponData` reference via `[SerializeField] private WeaponData weaponData`, reads `weaponData.AttackInterval`, `weaponData.damage`, `weaponData.range`, and `weaponData.weaponName` in runtime logic. Additional examples include `WeaponHUD : MonoBehaviour` reading `CurrentWeaponData` for UI display."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 5999.5, "stddev": 3169.9597, "min": 3758, "max": 8241}}, "without_skill": {"pass_rate": {"mean": 0.5225, "stddev": 0.2086, "min": 0.375, "max": 0.67}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 2410.5, "stddev": 3408.9618, "min": 0, "max": 4821}}, "delta": {"pass_rate": "+0.48", "time_seconds": "+0.0", "tokens": "+3589"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

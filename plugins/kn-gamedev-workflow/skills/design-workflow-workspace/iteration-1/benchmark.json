@@ -1,0 +1,179 @@
+{
+  "metadata": {
+    "skill_name": "design-workflow",
+    "skill_path": "plugins/kn-gamedev-workflow/skills/design-workflow",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:19Z",
+    "evals_run": [
+      1
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 46152,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A docs_for_ai/ directory is created with proper subdirectories (game_design/ and implementation/)",
+          "passed": true,
+          "evidence": "Directory listing confirms: outputs/docs_for_ai/ contains game_design/ and implementation/ subdirectories. Transcript Step 5 explicitly states: 'Created outputs/docs_for_ai/', 'Created outputs/docs_for_ai/game_design/', 'Created outputs/docs_for_ai/implementation/'."
+        },
+        {
+          "text": "GameDesignOverview.md is created at docs_for_ai/GameDesignOverview.md",
+          "passed": true,
+          "evidence": "File exists at outputs/docs_for_ai/GameDesignOverview.md (4124 bytes). Content is substantive: full game design document for 'Purrfect Run' with 8 sections including Game Overview, Core Concept, World and Setting, Design File Manifest, Cross-Cutting Concerns, Technical Requirements, Content Scope Summary, and Notes."
+        },
+        {
+          "text": "ImplementationPlanOverview.md is created at docs_for_ai/ImplementationPlanOverview.md",
+          "passed": true,
+          "evidence": "File exists at outputs/docs_for_ai/ImplementationPlanOverview.md (6212 bytes). Content is substantive: includes Project Structure, Phase Summary, Implementation File Manifest, Key Constants, Dependencies, and Testing Strategy sections."
+        },
+        {
+          "text": "All documents are written in English",
+          "passed": true,
+          "evidence": "All files read (GameDesignOverview.md, ImplementationPlanOverview.md, 01_Player_Design.md, 02_Collectibles_Design.md, 01_Player_Implementation.md) are written entirely in English. No non-English text found in any sampled document."
+        },
+        {
+          "text": "Variable values are marked with [EXAMPLE: value] notation",
+          "passed": true,
+          "evidence": "Multiple instances of [EXAMPLE:] notation confirmed across files. In GameDesignOverview.md: '[EXAMPLE: 30-60 minutes]', '[EXAMPLE: 60 FPS]', '[EXAMPLE: < 3 seconds]', '[EXAMPLE: 10-20 per level]'. In ImplementationPlanOverview.md: '[EXAMPLE: 6.0f]', '[EXAMPLE: 12.0f]', '[EXAMPLE: 0.12f]', etc. In 01_Player_Design.md: '[EXAMPLE: 6.0 units/sec]', '[EXAMPLE: 12.0 units]', '[EXAMPLE: 0.12 seconds]'."
+        },
+        {
+          "text": "The documents include a File Manifest section listing all detail files",
+          "passed": true,
+          "evidence": "GameDesignOverview.md has '## 4. Design File Manifest' table listing all 4 design detail files with filename, domain, and description. ImplementationPlanOverview.md has '## 3. Implementation File Manifest' table listing all 5 implementation detail files. Both manifests use markdown table format with hyperlinks to the referenced files."
+        },
+        {
+          "text": "At least one game design detail file is created in docs_for_ai/game_design/",
+          "passed": true,
+          "evidence": "Four game design detail files confirmed in docs_for_ai/game_design/: 01_Player_Design.md (2735 bytes), 02_Collectibles_Design.md (2547 bytes), 03_Enemies_Design.md (2865 bytes), 04_LevelContent_Design.md (2996 bytes). Sampled files contain substantive content with Mechanics, Entities, Player Actions, Progression, and Dependencies sections."
+        },
+        {
+          "text": "At least one implementation detail file is created in docs_for_ai/implementation/",
+          "passed": true,
+          "evidence": "Five implementation detail files confirmed in docs_for_ai/implementation/: 01_Player_Implementation.md (5294 bytes), 02_Collectibles_Implementation.md (4393 bytes), 03_Enemies_Implementation.md (4763 bytes), 04_LevelContent_Implementation.md (5299 bytes), 05_UIAndPolish_Implementation.md (4924 bytes). Sampled 01_Player_Implementation.md contains Architecture (class definitions with properties and methods), State Management diagram, Tasks, System-Specific Constants, Asset Requirements, and Dependencies sections."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.125,
+        "passed": 1,
+        "failed": 7,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 27593,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "A docs_for_ai/ directory is created with proper subdirectories (game_design/ and implementation/)",
+          "passed": false,
+          "evidence": "The outputs directory contains only: game_design_document.md, implementation_plan.md, metrics.json, transcript.md. No docs_for_ai/ directory was created, and no subdirectories game_design/ or implementation/ exist anywhere in the outputs."
+        },
+        {
+          "text": "GameDesignOverview.md is created at docs_for_ai/GameDesignOverview.md",
+          "passed": false,
+          "evidence": "No docs_for_ai/ directory exists. The executor created game_design_document.md directly in the outputs/ directory. The required file path docs_for_ai/GameDesignOverview.md does not exist."
+        },
+        {
+          "text": "ImplementationPlanOverview.md is created at docs_for_ai/ImplementationPlanOverview.md",
+          "passed": false,
+          "evidence": "No docs_for_ai/ directory exists. The executor created implementation_plan.md directly in the outputs/ directory. The required file path docs_for_ai/ImplementationPlanOverview.md does not exist."
+        },
+        {
+          "text": "All documents are written in English",
+          "passed": true,
+          "evidence": "Both game_design_document.md and implementation_plan.md are written entirely in English. Sample from game_design_document.md: 'Cat & Fish is a charming 2D side-scrolling platformer for mobile devices.' Sample from implementation_plan.md: 'Unity 2022.3 LTS ... Universal Render Pipeline (URP) 2D'. No non-English content found in either document."
+        },
+        {
+          "text": "Variable values are marked with [EXAMPLE: value] notation",
+          "passed": false,
+          "evidence": "Neither document uses [EXAMPLE: value] notation. Values are stated as concrete facts throughout. Examples: 'Run Speed | 5 units/sec (base), 7 units/sec (sprinting)', 'Coyote Time | 0.1 seconds', 'Jump Buffer | 0.15 seconds'. No bracketed example notation appears anywhere in either document."
+        },
+        {
+          "text": "The documents include a File Manifest section listing all detail files",
+          "passed": false,
+          "evidence": "Neither game_design_document.md nor implementation_plan.md contains a 'File Manifest' section or any equivalent listing of detail files. The GDD has 10 sections (Game Overview, Gameplay Design, Player Character, Fish, Enemies, Level Design, Visual Design, Audio Design, Progression & Retention, Accessibility); none is a file manifest. The implementation plan similarly has no file manifest section."
+        },
+        {
+          "text": "At least one game design detail file is created in docs_for_ai/game_design/",
+          "passed": false,
+          "evidence": "No docs_for_ai/game_design/ directory exists. The outputs directory contains only flat files: game_design_document.md, implementation_plan.md, metrics.json, transcript.md. No detail files were created in any subdirectory."
+        },
+        {
+          "text": "At least one implementation detail file is created in docs_for_ai/implementation/",
+          "passed": false,
+          "evidence": "No docs_for_ai/implementation/ directory exists. The outputs directory contains only flat files: game_design_document.md, implementation_plan.md, metrics.json, transcript.md. No detail files were created in any subdirectory."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 46152.0,
+        "stddev": 0.0,
+        "min": 46152,
+        "max": 46152
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.125,
+        "stddev": 0.0,
+        "min": 0.125,
+        "max": 0.125
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 27593.0,
+        "stddev": 0.0,
+        "min": 27593,
+        "max": 27593
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.88",
+      "time_seconds": "+0.0",
+      "tokens": "+18559"
+    }
+  },
+  "notes": []
+}

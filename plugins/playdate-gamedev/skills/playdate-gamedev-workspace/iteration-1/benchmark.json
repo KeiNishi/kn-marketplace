@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "skill_name": "playdate-gamedev",
+    "skill_path": "plugins/playdate-gamedev/skills/playdate-gamedev",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:30Z",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 12215,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The pool avoids runtime malloc/free in the game loop",
+          "passed": true,
+          "evidence": "The pool is declared as 'static Bullet g_bullet_pool[MAX_BULLETS]' (BSS allocation, zero cost at runtime). All 128 sprites are pre-created in bullet_pool_init() so newSprite() never runs in the game loop. bullet_pool_update() contains only position math, moveTo, setVisible, and bullet_pool_return calls \u2014 no allocation. The Key Design Decisions section explicitly states: 'There is no malloc, no realloc, and no fragmentation. Every frame is allocation-free inside the pool update loop.'"
+        },
+        {
+          "text": "The bullet pool uses a struct with snake_case field names",
+          "passed": true,
+          "evidence": "The Bullet struct in bullet.h defines fields: x, y, vel_x, vel_y, type, active, sprite \u2014 all snake_case. Specifically: 'float vel_x; float vel_y; int active;' confirm multi-word fields use underscores."
+        },
+        {
+          "text": "Function names follow snake_case convention",
+          "passed": true,
+          "evidence": "All five exported functions follow snake_case: bullet_pool_init, bullet_pool_cleanup, bullet_pool_get, bullet_pool_return, bullet_pool_update. Internal helpers also conform. The naming conventions section of response.md confirms: 'Functions: snake_case (bullet_pool_get, bullet_pool_return)'."
+        },
+        {
+          "text": "The implementation uses a fixed-size array or pre-allocated memory",
+          "passed": true,
+          "evidence": "bullet.c declares 'static Bullet g_bullet_pool[MAX_BULLETS]' where MAX_BULLETS is 128. This is a compile-time fixed-size static array in BSS. No dynamic resizing occurs anywhere in the implementation."
+        },
+        {
+          "text": "The code includes functions for getting a bullet from the pool and returning it",
+          "passed": true,
+          "evidence": "bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type) scans for the first inactive slot, configures it, sets active=1, reveals the sprite, and returns a Bullet*. bullet_pool_return(Bullet* bullet) sets active=0, zeroes position fields, and hides the sprite. Both are declared in bullet.h and fully implemented in bullet.c."
+        },
+        {
+          "text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE",
+          "passed": true,
+          "evidence": "MAX_BULLETS, SCREEN_W, SCREEN_H, OFFSCREEN_MARGIN, BITMAP_PLAYER_BULLET, BITMAP_ENEMY_BULLET are all defined with #define in screaming snake case. The BulletType enum values BULLET_TYPE_PLAYER and BULLET_TYPE_ENEMY also follow SCREAMING_SNAKE_CASE. The naming conventions section confirms: 'Constants: SCREAMING_SNAKE_CASE (MAX_BULLETS, BULLET_TYPE_PLAYER)'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The code includes the eventHandler function as the entry point",
+          "passed": true,
+          "evidence": "Found in main.c (response.md): `int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg)` is declared and implemented as the top-level entry point, with the required `#ifdef _WINDLL __declspec(dllexport) #endif` guard. The transcript also confirms: 'eventHandler handles kEventInit: stores g_pd, sets 30fps, calls game_init(), registers game_update'."
+        },
+        {
+          "text": "A global PlaydateAPI pointer (g_pd) is declared",
+          "passed": true,
+          "evidence": "Found in main.c (response.md): `PlaydateAPI* g_pd = NULL;` is declared at file scope. It is also referenced as `extern PlaydateAPI* g_pd;` in both game.c and player.c, which is the canonical multi-file pattern."
+        },
+        {
+          "text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)",
+          "passed": true,
+          "evidence": "player.c uses `g_pd->system->getButtonState(&current, &pushed, &released)` directly. Crank input is read via `g_pd->system->getCrankAngle()` and `g_pd->system->isCrankDocked()` rather than `getCrankChange()`, but the expectation lists these as examples ('e.g.'). Additional g_pd API calls appear throughout: `g_pd->graphics->clear`, `g_pd->sprite->drawSprites`, `g_pd->system->setUpdateCallback`, `g_pd->system->realloc`, `g_pd->system->logToConsole`, and `g_pd->system->drawFPS`."
+        },
+        {
+          "text": "Variable names follow snake_case convention",
+          "passed": true,
+          "evidence": "All local variables in player.c use snake_case: `crank_change`, `crank_angle`, `multiplier`, `current`, `pushed`, `released`. Functions are likewise snake_case: `player_create`, `player_destroy`, `player_update`, `player_draw_callback`, `clamp_f`, `game_init`, `game_update`. The transcript's conventions table confirms: 'snake_case functions: Yes'."
+        },
+        {
+          "text": "The player is represented as a struct with snake_case fields",
+          "passed": true,
+          "evidence": "Defined in player.c: `struct Player { float x; float y; float speed; LCDSprite* sprite; };`. All four fields (`x`, `y`, `speed`, `sprite`) use snake_case. The struct definition is hidden in the .c file with only a forward declaration `typedef struct Player Player;` in player.h, following the coding standards."
+        },
+        {
+          "text": "Memory allocation uses g_pd->system->realloc instead of malloc",
+          "passed": true,
+          "evidence": "player.c uses `Player* player = g_pd->system->realloc(NULL, sizeof(Player));` for allocation and `g_pd->system->realloc(player, 0);` for deallocation (both in player_create and player_destroy). The response.md design notes state: 'All structs are allocated with g_pd->system->realloc(NULL, size) and freed with g_pd->system->realloc(ptr, 0). stdlib malloc/free are avoided.'"
+        },
+        {
+          "text": "The game uses g_pd->system->setUpdateCallback for the game loop",
+          "passed": true,
+          "evidence": "Found in main.c (response.md): `pd->system->setUpdateCallback(game_update, NULL);` is called inside the `kEventInit` branch of `eventHandler`. The transcript confirms: 'registers game_update' and 'setUpdateCallback for game loop: Yes'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The pool avoids runtime malloc/free in the game loop",
+          "passed": true,
+          "evidence": "The response.md explicitly states 'A bullet pool pre-allocates all bullets at startup and reuses them, eliminating runtime malloc/free calls.' No malloc or free calls appear anywhere in the code. The pool is declared as a static global ('static BulletPool g_bullet_pool;') and initialized with memset in BulletPool_Init. The game loop (game_update) calls only BulletPool_Spawn, BulletPool_Update, BulletPool_CheckCollision, BulletPool_Return, and BulletPool_Draw \u2014 none of which allocate heap memory."
+        },
+        {
+          "text": "The bullet pool uses a struct with snake_case field names",
+          "passed": true,
+          "evidence": "The BulletPool struct in response.md has fields: 'bullets', 'count', and 'active_count' \u2014 all snake_case. The Bullet struct has fields: 'x', 'y', 'vx', 'vy', 'speed', 'active', 'damage', 'owner' \u2014 all snake_case."
+        },
+        {
+          "text": "Function names follow snake_case convention",
+          "passed": false,
+          "evidence": "All function names use PascalCase_PascalCase format, not snake_case. Examples: BulletPool_Init, BulletPool_Spawn, BulletPool_Return, BulletPool_Update, BulletPool_Draw, BulletPool_CheckCollision. True snake_case would be bullet_pool_init, bullet_pool_spawn, etc. The underscore separates a PascalCase type prefix from a PascalCase verb, which is a C namespace convention but not snake_case."
+        },
+        {
+          "text": "The implementation uses a fixed-size array or pre-allocated memory",
+          "passed": true,
+          "evidence": "response.md defines 'Bullet bullets[MAX_BULLETS]' inside the BulletPool struct, where MAX_BULLETS is the compile-time constant 64. This is a fixed-size array embedded directly in the struct with no dynamic allocation. The Key Design Decisions table confirms: 'Fixed-size array of structs \u2014 No heap allocation; cache-friendly linear scan'."
+        },
+        {
+          "text": "The code includes functions for getting a bullet from the pool and returning it",
+          "passed": true,
+          "evidence": "BulletPool_Spawn (response.md lines 56-77) acquires a bullet from the pool by scanning for the first inactive slot, initializing it, and returning a pointer to it. BulletPool_Return (response.md lines 85-93) deactivates a bullet by setting b->active = false and decrementing active_count. Both functions are clearly implemented and demonstrated in the integration example."
+        },
+        {
+          "text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE",
+          "passed": true,
+          "evidence": "response.md defines '#define MAX_BULLETS 64', '#define SCREEN_W 400', and '#define SCREEN_H 240' \u2014 all use SCREAMING_SNAKE_CASE. MAX_BULLETS is the primary constant referenced in the expectation and it conforms correctly."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.43,
+        "passed": 3,
+        "failed": 4,
+        "total": 7,
+        "time_seconds": 0.0,
+        "tokens": 8990,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The code includes the eventHandler function as the entry point",
+          "passed": true,
+          "evidence": "response.md line 167: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)` is defined and handles kEventInit and kEventTerminate lifecycle events."
+        },
+        {
+          "text": "A global PlaydateAPI pointer (g_pd) is declared",
+          "passed": false,
+          "evidence": "The global PlaydateAPI pointer is declared as `static PlaydateAPI *pd = NULL;` (response.md line 41), not as `g_pd`. The variable name `g_pd` does not appear anywhere in the code."
+        },
+        {
+          "text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)",
+          "passed": false,
+          "evidence": "All API calls are made via `pd->` not `g_pd->`. For example: `pd->system->getCrankAngle()` (line 79), `pd->system->getButtonState(...)` (line 101). Additionally, `getCrankChange` is never called \u2014 the code uses `getCrankAngle()` instead."
+        },
+        {
+          "text": "Variable names follow snake_case convention",
+          "passed": true,
+          "evidence": "All local variables use snake_case: `crank_angle`, `normalised`, `current_buttons`, `pushed_buttons`, `released_buttons`, `hud_buf`, `crank_speed_modifier`, `base_speed`. Functions also use snake_case: `player_init`, `player_update`, `player_draw`, `player_free`."
+        },
+        {
+          "text": "The player is represented as a struct with snake_case fields",
+          "passed": true,
+          "evidence": "response.md lines 29-38: `typedef struct Player { float x; float y; float speed; float base_speed; float crank_speed_modifier; LCDBitmap *bitmap; int width; int height; } Player;` \u2014 all fields are snake_case."
+        },
+        {
+          "text": "Memory allocation uses g_pd->system->realloc instead of malloc",
+          "passed": false,
+          "evidence": "No call to `pd->system->realloc` (or `g_pd->system->realloc`) appears anywhere in the code. The code includes `<stdlib.h>` (line 22) and uses `pd->graphics->newBitmap()` for player bitmap allocation. No dynamic memory allocation via the Playdate allocator is performed."
+        },
+        {
+          "text": "The game uses g_pd->system->setUpdateCallback for the game loop",
+          "passed": false,
+          "evidence": "The code does call `setUpdateCallback` (response.md line 178: `pd->system->setUpdateCallback(update, NULL)`), but it is invoked through `pd`, not `g_pd`. Since the global pointer is named `pd` throughout, this expectation fails on the naming requirement."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 6107.5,
+        "stddev": 8637.3093,
+        "min": 0,
+        "max": 12215
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.63,
+        "stddev": 0.2828,
+        "min": 0.43,
+        "max": 0.83
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 4495.0,
+        "stddev": 6356.89,
+        "min": 0,
+        "max": 8990
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.37",
+      "time_seconds": "+0.0",
+      "tokens": "+1612"
+    }
+  },
+  "notes": []
+}

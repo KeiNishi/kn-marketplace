@@ -1,0 +1,104 @@
+{
+  "expectations": [
+    {
+      "text": "The pool avoids runtime malloc/free in the game loop",
+      "passed": true,
+      "evidence": "The pool is declared as 'static Bullet g_bullet_pool[MAX_BULLETS]' (BSS allocation, zero cost at runtime). All 128 sprites are pre-created in bullet_pool_init() so newSprite() never runs in the game loop. bullet_pool_update() contains only position math, moveTo, setVisible, and bullet_pool_return calls \u2014 no allocation. The Key Design Decisions section explicitly states: 'There is no malloc, no realloc, and no fragmentation. Every frame is allocation-free inside the pool update loop.'"
+    },
+    {
+      "text": "The bullet pool uses a struct with snake_case field names",
+      "passed": true,
+      "evidence": "The Bullet struct in bullet.h defines fields: x, y, vel_x, vel_y, type, active, sprite \u2014 all snake_case. Specifically: 'float vel_x; float vel_y; int active;' confirm multi-word fields use underscores."
+    },
+    {
+      "text": "Function names follow snake_case convention",
+      "passed": true,
+      "evidence": "All five exported functions follow snake_case: bullet_pool_init, bullet_pool_cleanup, bullet_pool_get, bullet_pool_return, bullet_pool_update. Internal helpers also conform. The naming conventions section of response.md confirms: 'Functions: snake_case (bullet_pool_get, bullet_pool_return)'."
+    },
+    {
+      "text": "The implementation uses a fixed-size array or pre-allocated memory",
+      "passed": true,
+      "evidence": "bullet.c declares 'static Bullet g_bullet_pool[MAX_BULLETS]' where MAX_BULLETS is 128. This is a compile-time fixed-size static array in BSS. No dynamic resizing occurs anywhere in the implementation."
+    },
+    {
+      "text": "The code includes functions for getting a bullet from the pool and returning it",
+      "passed": true,
+      "evidence": "bullet_pool_get(float x, float y, float vel_x, float vel_y, BulletType type) scans for the first inactive slot, configures it, sets active=1, reveals the sprite, and returns a Bullet*. bullet_pool_return(Bullet* bullet) sets active=0, zeroes position fields, and hides the sprite. Both are declared in bullet.h and fully implemented in bullet.c."
+    },
+    {
+      "text": "Constants like MAX_BULLETS use SCREAMING_SNAKE_CASE",
+      "passed": true,
+      "evidence": "MAX_BULLETS, SCREEN_W, SCREEN_H, OFFSCREEN_MARGIN, BITMAP_PLAYER_BULLET, BITMAP_ENEMY_BULLET are all defined with #define in screaming snake case. The BulletType enum values BULLET_TYPE_PLAYER and BULLET_TYPE_ENEMY also follow SCREAMING_SNAKE_CASE. The naming conventions section confirms: 'Constants: SCREAMING_SNAKE_CASE (MAX_BULLETS, BULLET_TYPE_PLAYER)'."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_steps": 5,
+    "errors_encountered": 0,
+    "output_chars": 12215,
+    "transcript_chars": 4246
+  },
+  "timing": {},
+  "claims": [
+    {
+      "claim": "Pre-loading bitmaps at init means bullet_pool_get() never allocates",
+      "type": "quality",
+      "verified": true,
+      "evidence": "bullet_pool_get() calls only setImage (pointer assignment), moveTo, setVisible \u2014 no allocation calls. Sprites are already created in bullet_pool_init(). The claim holds."
+    },
+    {
+      "claim": "The implementation follows Playdate naming conventions from SKILL.md",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript Step 1 documents reading SKILL.md and extracting naming rules. The output applies all of them: constants in SCREAMING_SNAKE_CASE, types in PascalCase (Bullet, BulletType), functions and locals in snake_case, globals prefixed with g_ (g_bullet_pool, g_bmp_player, g_pool_initialized)."
+    },
+    {
+      "claim": "Sprites are pre-created so spawn is O(1) and allocation-free",
+      "type": "quality",
+      "verified": true,
+      "evidence": "bullet_pool_init() calls g_pd->sprite->newSprite() exactly once per pool slot in a loop. bullet_pool_get() does not call newSprite(). The scan to find a free slot is O(MAX_BULLETS) worst-case (128 iterations), not O(1), but the allocation-free claim is accurate."
+    },
+    {
+      "claim": "References/performance.md contained a worked bullet pool example that was used",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript Step 3 documents reading performance.md and extracting 'static Bullet bullet_pool[BULLET_POOL_SIZE]', the init guard, spawn/despawn pattern, and the setVisible hide technique. All of these appear in the final implementation."
+    },
+    {
+      "claim": "NULL is returned when the pool is exhausted",
+      "type": "factual",
+      "verified": true,
+      "evidence": "bullet_pool_get() ends with 'g_pd->system->logToConsole(...); return NULL;' after the scan loop, and the usage example shows 'if (!b) { return; }' handling."
+    },
+    {
+      "claim": "bullet_pool_return is safe to call with NULL",
+      "type": "factual",
+      "verified": true,
+      "evidence": "First line of bullet_pool_return: 'if (!bullet) return;'"
+    }
+  ],
+  "user_notes_summary": {},
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "All six assertions passed, but none verifies that the update loop itself is free of allocations at the call-site level \u2014 specifically that bullet_pool_update() does not invoke any Playdate API that internally allocates (e.g., moveWithCollisions). The implementation uses moveTo (safe), but an assertion targeting the update loop body specifically would be more discriminating than the general pool-avoids-malloc assertion."
+      },
+      {
+        "assertion": "The bullet pool uses a struct with snake_case field names",
+        "reason": "This assertion would also pass for any struct that happens to have at least one snake_case field, even if other fields violated the convention. A stronger form would assert that ALL multi-word field names use snake_case (e.g., vel_x, vel_y, active) rather than any."
+      },
+      {
+        "reason": "No assertion checks that the BulletType enum values (BULLET_TYPE_PLAYER, BULLET_TYPE_ENEMY) or the g_ global naming convention are applied. These are key Playdate conventions from the skill guide that the implementation correctly follows, and they go unvalidated."
+      },
+      {
+        "reason": "No assertion verifies that sprites are pre-allocated at init time rather than at spawn time \u2014 which is the specific design decision that makes bullet_pool_get() allocation-free. The existing 'avoids runtime malloc' assertion covers the outcome but not this critical mechanism."
+      }
+    ],
+    "overall": "All expectations pass cleanly and the implementation is high quality. The main gap is that assertions test naming and structure but do not probe the timing of allocation (init vs. spawn), which is the core correctness property of a pool system. Adding one assertion about where newSprite() is called would make the eval meaningfully more discriminating."
+  }
+}

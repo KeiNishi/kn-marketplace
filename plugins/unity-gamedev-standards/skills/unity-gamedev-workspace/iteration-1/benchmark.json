@@ -1,0 +1,276 @@
+{
+  "metadata": {
+    "skill_name": "unity-gamedev",
+    "skill_path": "plugins/unity-gamedev-standards/skills/unity-gamedev",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-02-28T08:26:19Z",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 8241,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+          "passed": true,
+          "evidence": "All private fields in both classes use the _camelCase convention. In PlayerController: _moveSpeed, _jumpForce, _groundCheckDistance, _groundLayerMask, _rigidbody, _moveInput, _jumpRequested, _isGrounded. In PlayerFollowCamera: _target, _offset, _positionSmoothSpeed, _lookAtTarget, _rotationSmoothSpeed. No private field deviates from this convention."
+        },
+        {
+          "text": "Inspector-configurable fields use [SerializeField] attribute",
+          "passed": true,
+          "evidence": "All inspector-configurable fields use [SerializeField]. In PlayerController: [SerializeField, Range(1f, 20f)] private float _moveSpeed, [SerializeField, Range(1f, 30f)] private float _jumpForce, [SerializeField, Range(0.1f, 1f)] private float _groundCheckDistance, [SerializeField] private LayerMask _groundLayerMask. In PlayerFollowCamera: [SerializeField] private Transform _target, [SerializeField] private Vector3 _offset, [SerializeField, Range(1f, 30f)] private float _positionSmoothSpeed, [SerializeField] private bool _lookAtTarget, [SerializeField, Range(1f, 30f)] private float _rotationSmoothSpeed."
+        },
+        {
+          "text": "All [SerializeField] fields have [Tooltip] annotations",
+          "passed": true,
+          "evidence": "Every [SerializeField] field in both classes has a [Tooltip] attribute. PlayerController: _moveSpeed has 'Horizontal movement speed in units per second.', _jumpForce has 'Impulse force applied upward when the player jumps.', _groundCheckDistance has 'Maximum distance from the ground to allow jumping.', _groundLayerMask has 'Layer mask used to detect ground surfaces.'. PlayerFollowCamera: _target has 'The Transform this camera will follow. Assign the player Transform.', _offset has 'Offset applied to the target position...', _positionSmoothSpeed has 'Camera position smoothing speed...', _lookAtTarget has 'If true, the camera will look at the target each frame.', _rotationSmoothSpeed has 'Smooth speed for camera rotation toward the target.'."
+        },
+        {
+          "text": "Physics/Rigidbody code is in FixedUpdate, not Update",
+          "passed": true,
+          "evidence": "In PlayerController, FixedUpdate() calls ApplyMovement() and ApplyJump(), which are the only methods that touch _rigidbody. ApplyMovement() sets _rigidbody.linearVelocity; ApplyJump() zeroes vertical velocity and calls _rigidbody.AddForce(). Update() only reads input (HandleMovementInput, HandleJumpInput) and checks grounded state via Raycast \u2014 no Rigidbody mutations happen there. The _jumpRequested flag bridges input detection in Update() to physics application in FixedUpdate()."
+        },
+        {
+          "text": "Camera follow code uses LateUpdate, not Update",
+          "passed": true,
+          "evidence": "PlayerFollowCamera has no Update() method. All camera position and rotation logic is inside LateUpdate(), which calls UpdateCameraPosition() (Vector3.Lerp to desiredPosition) and UpdateCameraRotation() (Quaternion.Slerp toward LookRotation). The class also carries [DefaultExecutionOrder(100)] to guarantee it runs after all default-order scripts in LateUpdate."
+        },
+        {
+          "text": "The class uses #region sections for organization",
+          "passed": true,
+          "evidence": "Both classes use #region sections. PlayerController has: #region Inspector Fields, #region Private Fields, #region Properties, #region Events, #region Unity Lifecycle, #region Private Methods. PlayerFollowCamera has: #region Inspector Fields, #region Unity Lifecycle, #region Private Methods. This matches the standard region structure documented in the skill."
+        },
+        {
+          "text": "Component references are cached in Awake() using GetComponent",
+          "passed": true,
+          "evidence": "In PlayerController, Awake() contains: _rigidbody = GetComponent<Rigidbody>();. This is the only component reference used, and it is properly cached here. PlayerFollowCamera has no GetComponent calls because its only external reference (_target) is a serialized Transform assigned via Inspector."
+        },
+        {
+          "text": "Events unsubscribe in OnDisable to prevent memory leaks",
+          "passed": true,
+          "evidence": "PlayerController.OnDisable() nulls both events: 'OnJumped = null;' and 'OnLanded = null;', with the comment 'Unsubscribe all listeners to prevent memory leaks.' PlayerFollowCamera.OnDisable() is a stub comment ('Reserved for future event unsubscriptions.'), which is appropriate since that class defines no events and subscribes to none."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 3758,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName",
+          "passed": true,
+          "evidence": "response.md line 8: `[CreateAssetMenu(fileName = \"SO_WeaponData\", menuName = \"Game/Weapon Data\")]` \u2014 both required named parameters are present and correctly formatted."
+        },
+        {
+          "text": "Public fields or properties use PascalCase",
+          "passed": true,
+          "evidence": "All five public fields in WeaponData.cs use PascalCase: `WeaponName` (string), `Icon` (Sprite), `Damage` (int), `AttackSpeed` (float), `Range` (float). No snake_case or camelCase public fields are present."
+        },
+        {
+          "text": "Fields have [Tooltip] annotations describing their purpose",
+          "passed": true,
+          "evidence": "Every Inspector-visible field in WeaponData.cs has a [Tooltip]: `[Tooltip(\"Display name of the weapon shown in UI and inventory\")]`, `[Tooltip(\"Icon sprite used in inventory and HUD\")]`, `[Tooltip(\"Damage dealt per hit\")]`, `[Tooltip(\"Number of attacks per second\")]`, `[Tooltip(\"Maximum attack range in world units\")]`. Each tooltip describes the field's purpose clearly."
+        },
+        {
+          "text": "Numeric fields use [Range] attribute where bounds make sense",
+          "passed": true,
+          "evidence": "All three numeric fields carry [Range]: `[Range(1, 100)]` on Damage (int), `[Range(0.1f, 5f)]` on AttackSpeed (float), `[Range(0.5f, 20f)]` on Range (float). The non-numeric fields (WeaponName string, Icon Sprite) correctly have no [Range]. Bounds are domain-appropriate (e.g., 1\u2013100 for damage, 0.1\u20135 attacks/sec)."
+        },
+        {
+          "text": "The class name follows PascalCase convention",
+          "passed": true,
+          "evidence": "response.md line 9: `public class WeaponData : ScriptableObject` \u2014 `WeaponData` is correctly PascalCase. The supporting classes `WeaponController` and `IDamageable` also follow PascalCase."
+        },
+        {
+          "text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour",
+          "passed": true,
+          "evidence": "response.md includes a complete `WeaponController : MonoBehaviour` class that references `WeaponData` via `[SerializeField] private WeaponData _weaponData;` and reads its fields (`_weaponData.AttackSpeed`, `_weaponData.Range`, `_weaponData.Damage`, `_weaponData.WeaponName`, `_weaponData.Icon`). A prose 'How to Use' section with step-by-step instructions for creating the asset and wiring it into a scene is also provided."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.375,
+        "passed": 3,
+        "failed": 5,
+        "total": 8,
+        "time_seconds": 0.0,
+        "tokens": 4821,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+          "passed": false,
+          "evidence": "All private fields in PlayerController.cs and CameraFollow.cs use plain camelCase without an underscore prefix. Examples: 'private float moveSpeed', 'private float jumpForce', 'private Rigidbody rb', 'private bool isGrounded', 'private Vector3 moveDirection', 'private Transform target', 'private float smoothSpeed'. None follow the _camelCase convention."
+        },
+        {
+          "text": "Inspector-configurable fields use [SerializeField] attribute",
+          "passed": true,
+          "evidence": "All inspector-configurable fields correctly use [SerializeField]. In PlayerController.cs: '[SerializeField] private float moveSpeed', '[SerializeField] private float jumpForce', '[SerializeField] private Transform groundCheck', '[SerializeField] private float groundCheckRadius', '[SerializeField] private LayerMask groundLayer'. In CameraFollow.cs: '[SerializeField] private Transform target', '[SerializeField] private Vector3 offset', '[SerializeField] private float smoothSpeed', '[SerializeField] private bool lookAtTarget'."
+        },
+        {
+          "text": "All [SerializeField] fields have [Tooltip] annotations",
+          "passed": false,
+          "evidence": "No [Tooltip] attributes appear anywhere in the code. The code uses [Header(...)] groups for organization (e.g. '[Header(\"Movement Settings\")]', '[Header(\"Ground Detection\")]') but none of the nine [SerializeField] fields across the two scripts have a [Tooltip] annotation."
+        },
+        {
+          "text": "Physics/Rigidbody code is in FixedUpdate, not Update",
+          "passed": false,
+          "evidence": "Horizontal movement velocity is correctly set inside FixedUpdate via MovePlayer(). However, the Jump() method is called from Update() and directly manipulates Rigidbody state: 'rb.linearVelocity = new Vector3(...)' and 'rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse)'. Both of these Rigidbody operations execute inside Update, violating the expectation."
+        },
+        {
+          "text": "Camera follow code uses LateUpdate, not Update",
+          "passed": true,
+          "evidence": "CameraFollow.cs implements 'private void LateUpdate()' for all camera positioning logic: 'transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime)' and 'transform.LookAt(target.position)'. There is no Update method in CameraFollow.cs."
+        },
+        {
+          "text": "The class uses #region sections for organization",
+          "passed": false,
+          "evidence": "Neither PlayerController.cs nor CameraFollow.cs contains any #region directives. The code uses [Header(...)] attributes and inline comments for organization instead, but no #region/#endregion blocks are present."
+        },
+        {
+          "text": "Component references are cached in Awake() using GetComponent",
+          "passed": true,
+          "evidence": "PlayerController.cs has an Awake() method that caches the Rigidbody: 'private void Awake() { rb = GetComponent<Rigidbody>(); rb.freezeRotation = true; }'. CameraFollow.cs has no component dependencies to cache (it uses a serialized Transform reference instead). The Rigidbody reference is correctly cached in Awake."
+        },
+        {
+          "text": "Events unsubscribe in OnDisable to prevent memory leaks",
+          "passed": false,
+          "evidence": "Neither PlayerController.cs nor CameraFollow.cs subscribes to any C# events or Unity events, and neither implements OnDisable(). There is no event subscription or unsubscription code anywhere in the output. The assertion cannot be satisfied because the pattern is entirely absent from the implementation."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.67,
+        "passed": 4,
+        "failed": 2,
+        "total": 6,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName",
+          "passed": true,
+          "evidence": "response.md line 17: `[CreateAssetMenu(fileName = \"NewWeapon\", menuName = \"Weapons/Weapon Data\", order = 0)]` \u2014 both fileName and menuName are explicitly set."
+        },
+        {
+          "text": "Public fields or properties use PascalCase",
+          "passed": false,
+          "evidence": "All five public fields in WeaponData use camelCase: `weaponName`, `damage`, `attackSpeed`, `range`, `icon`. Only the computed property `AttackInterval` uses PascalCase, which is standard for C# properties. Unity convention often keeps serialized fields as camelCase, but the assertion expects PascalCase for public fields, which is not satisfied here."
+        },
+        {
+          "text": "Fields have [Tooltip] annotations describing their purpose",
+          "passed": true,
+          "evidence": "All five fields in WeaponData have [Tooltip] annotations: `[Tooltip(\"Display name of the weapon.\")]`, `[Tooltip(\"Damage dealt per hit.\")]`, `[Tooltip(\"Number of attacks per second.\")]`, `[Tooltip(\"Maximum attack range in world units.\")]`, `[Tooltip(\"Icon displayed in the UI inventory or HUD.\")]`."
+        },
+        {
+          "text": "Numeric fields use [Range] attribute where bounds make sense",
+          "passed": false,
+          "evidence": "Numeric fields `damage`, `attackSpeed`, and `range` use `[Min(...)]` attribute instead of `[Range(min, max)]`. Specifically: `[Min(0f)]` for damage and range, `[Min(0.01f)]` for attackSpeed. While `[Min]` provides a lower bound, `[Range]` was not used, so the Inspector will not show a slider. Upper bounds that would make sense (e.g., max damage, max range) are not defined."
+        },
+        {
+          "text": "The class name follows PascalCase convention",
+          "passed": true,
+          "evidence": "The class is declared as `public class WeaponData : ScriptableObject` \u2014 `WeaponData` correctly follows PascalCase convention."
+        },
+        {
+          "text": "An example is provided showing how to use the ScriptableObject in a MonoBehaviour",
+          "passed": true,
+          "evidence": "Section 2 of response.md provides a complete `WeaponController : MonoBehaviour` class that accepts a `WeaponData` reference via `[SerializeField] private WeaponData weaponData`, reads `weaponData.AttackInterval`, `weaponData.damage`, `weaponData.range`, and `weaponData.weaponName` in runtime logic. Additional examples include `WeaponHUD : MonoBehaviour` reading `CurrentWeaponData` for UI display."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 5999.5,
+        "stddev": 3169.9597,
+        "min": 3758,
+        "max": 8241
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5225,
+        "stddev": 0.2086,
+        "min": 0.375,
+        "max": 0.67
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 2410.5,
+        "stddev": 3408.9618,
+        "min": 0,
+        "max": 4821
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.48",
+      "time_seconds": "+0.0",
+      "tokens": "+3589"
+    }
+  },
+  "notes": []
+}
