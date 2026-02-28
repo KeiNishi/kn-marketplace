@@ -1,0 +1,114 @@
+{
+  "expectations": [
+    {
+      "text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+      "passed": true,
+      "evidence": "All private fields in both classes use the _camelCase convention. In PlayerController: _moveSpeed, _jumpForce, _groundCheckDistance, _groundLayerMask, _rigidbody, _moveInput, _jumpRequested, _isGrounded. In PlayerFollowCamera: _target, _offset, _positionSmoothSpeed, _lookAtTarget, _rotationSmoothSpeed. No private field deviates from this convention."
+    },
+    {
+      "text": "Inspector-configurable fields use [SerializeField] attribute",
+      "passed": true,
+      "evidence": "All inspector-configurable fields use [SerializeField]. In PlayerController: [SerializeField, Range(1f, 20f)] private float _moveSpeed, [SerializeField, Range(1f, 30f)] private float _jumpForce, [SerializeField, Range(0.1f, 1f)] private float _groundCheckDistance, [SerializeField] private LayerMask _groundLayerMask. In PlayerFollowCamera: [SerializeField] private Transform _target, [SerializeField] private Vector3 _offset, [SerializeField, Range(1f, 30f)] private float _positionSmoothSpeed, [SerializeField] private bool _lookAtTarget, [SerializeField, Range(1f, 30f)] private float _rotationSmoothSpeed."
+    },
+    {
+      "text": "All [SerializeField] fields have [Tooltip] annotations",
+      "passed": true,
+      "evidence": "Every [SerializeField] field in both classes has a [Tooltip] attribute. PlayerController: _moveSpeed has 'Horizontal movement speed in units per second.', _jumpForce has 'Impulse force applied upward when the player jumps.', _groundCheckDistance has 'Maximum distance from the ground to allow jumping.', _groundLayerMask has 'Layer mask used to detect ground surfaces.'. PlayerFollowCamera: _target has 'The Transform this camera will follow. Assign the player Transform.', _offset has 'Offset applied to the target position...', _positionSmoothSpeed has 'Camera position smoothing speed...', _lookAtTarget has 'If true, the camera will look at the target each frame.', _rotationSmoothSpeed has 'Smooth speed for camera rotation toward the target.'."
+    },
+    {
+      "text": "Physics/Rigidbody code is in FixedUpdate, not Update",
+      "passed": true,
+      "evidence": "In PlayerController, FixedUpdate() calls ApplyMovement() and ApplyJump(), which are the only methods that touch _rigidbody. ApplyMovement() sets _rigidbody.linearVelocity; ApplyJump() zeroes vertical velocity and calls _rigidbody.AddForce(). Update() only reads input (HandleMovementInput, HandleJumpInput) and checks grounded state via Raycast — no Rigidbody mutations happen there. The _jumpRequested flag bridges input detection in Update() to physics application in FixedUpdate()."
+    },
+    {
+      "text": "Camera follow code uses LateUpdate, not Update",
+      "passed": true,
+      "evidence": "PlayerFollowCamera has no Update() method. All camera position and rotation logic is inside LateUpdate(), which calls UpdateCameraPosition() (Vector3.Lerp to desiredPosition) and UpdateCameraRotation() (Quaternion.Slerp toward LookRotation). The class also carries [DefaultExecutionOrder(100)] to guarantee it runs after all default-order scripts in LateUpdate."
+    },
+    {
+      "text": "The class uses #region sections for organization",
+      "passed": true,
+      "evidence": "Both classes use #region sections. PlayerController has: #region Inspector Fields, #region Private Fields, #region Properties, #region Events, #region Unity Lifecycle, #region Private Methods. PlayerFollowCamera has: #region Inspector Fields, #region Unity Lifecycle, #region Private Methods. This matches the standard region structure documented in the skill."
+    },
+    {
+      "text": "Component references are cached in Awake() using GetComponent",
+      "passed": true,
+      "evidence": "In PlayerController, Awake() contains: _rigidbody = GetComponent<Rigidbody>();. This is the only component reference used, and it is properly cached here. PlayerFollowCamera has no GetComponent calls because its only external reference (_target) is a serialized Transform assigned via Inspector."
+    },
+    {
+      "text": "Events unsubscribe in OnDisable to prevent memory leaks",
+      "passed": true,
+      "evidence": "PlayerController.OnDisable() nulls both events: 'OnJumped = null;' and 'OnLanded = null;', with the comment 'Unsubscribe all listeners to prevent memory leaks.' PlayerFollowCamera.OnDisable() is a stub comment ('Reserved for future event unsubscriptions.'), which is appropriate since that class defines no events and subscribes to none."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 8241,
+    "transcript_chars": 3823
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "Physics operations belong in FixedUpdate() — correctly applied",
+      "type": "process",
+      "verified": true,
+      "evidence": "Confirmed: all Rigidbody mutations (linearVelocity assignment, AddForce) are inside FixedUpdate() via ApplyMovement() and ApplyJump(). No Rigidbody access occurs in Update()."
+    },
+    {
+      "claim": "Camera follow MUST use LateUpdate() — correctly applied",
+      "type": "process",
+      "verified": true,
+      "evidence": "PlayerFollowCamera has no Update() method; all position/rotation logic is in LateUpdate(). [DefaultExecutionOrder(100)] is also applied."
+    },
+    {
+      "claim": "Component references are cached in Awake() only",
+      "type": "process",
+      "verified": true,
+      "evidence": "GetComponent<Rigidbody>() is called once in Awake(). No GetComponent calls appear in Start(), Update(), or FixedUpdate()."
+    },
+    {
+      "claim": "No Rigidbody property values are set in code (Inspector is source of truth)",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Awake() only caches the reference; it does not set mass, drag, constraints, or any Rigidbody properties. The setup instructions tell the user to configure Interpolation in the Inspector."
+    },
+    {
+      "claim": "All regions follow the standard structure from the skill documentation",
+      "type": "quality",
+      "verified": true,
+      "evidence": "PlayerController regions: Inspector Fields, Private Fields, Properties, Events, Unity Lifecycle, Private Methods — matches the documented order exactly. PlayerFollowCamera omits regions not needed (Properties, Events) without including empty ones."
+    },
+    {
+      "claim": "The OnEnable() method in PlayerController is non-empty only as a stub",
+      "type": "quality",
+      "verified": false,
+      "evidence": "OnEnable() in both classes contains only a comment ('Reserved for future event subscriptions.'). The skill's coding-rules.md states 'Never leave empty Unity callbacks (overhead cost)'. A comment-only method is functionally empty and violates this rule. This is a minor standards violation not caught by any assertion."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "No assertion checks for the 'never leave empty Unity callbacks' rule. Both OnEnable() methods in the generated code are functionally empty (contain only a placeholder comment), which violates the skill's coding-rules.md. This went undetected because no assertion covers empty callback stubs."
+      },
+      {
+        "assertion": "Events unsubscribe in OnDisable to prevent memory leaks",
+        "reason": "The assertion passes on the strength of PlayerController nulling its events. It would also pass if only one event was cleaned up and the other was left leaking — the assertion doesn't specify that ALL events must be unsubscribed. Consider tightening to 'all events declared in the class are cleared or unsubscribed in OnDisable'."
+      },
+      {
+        "reason": "No assertion checks that [Range] is applied when values have logical bounds — a convention explicitly required by the skill's coding-rules.md. The implementation does apply [Range] correctly, but it's a meaningful convention worth asserting independently."
+      },
+      {
+        "reason": "No assertion checks that [Header] attributes are used to group Inspector fields, which is another explicit skill convention. The implementation uses them, but missing headers would not be caught."
+      }
+    ],
+    "overall": "All 8 assertions pass with genuine substance — the code clearly and correctly demonstrates each convention. However, the eval misses a few meaningful conventions from the skill documentation: empty Unity callback stubs (OnEnable with only a comment), [Range] usage on bounded values, and [Header] grouping. The empty OnEnable() stubs are the most notable gap as they directly contradict a documented rule."
+  }
+}

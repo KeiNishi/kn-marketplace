@@ -1,0 +1,106 @@
+{
+  "expectations": [
+    {
+      "text": "The code includes the eventHandler function as the entry point",
+      "passed": true,
+      "evidence": "response.md line 167: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)` is defined and handles kEventInit and kEventTerminate lifecycle events."
+    },
+    {
+      "text": "A global PlaydateAPI pointer (g_pd) is declared",
+      "passed": false,
+      "evidence": "The global PlaydateAPI pointer is declared as `static PlaydateAPI *pd = NULL;` (response.md line 41), not as `g_pd`. The variable name `g_pd` does not appear anywhere in the code."
+    },
+    {
+      "text": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)",
+      "passed": false,
+      "evidence": "All API calls are made via `pd->` not `g_pd->`. For example: `pd->system->getCrankAngle()` (line 79), `pd->system->getButtonState(...)` (line 101). Additionally, `getCrankChange` is never called — the code uses `getCrankAngle()` instead."
+    },
+    {
+      "text": "Variable names follow snake_case convention",
+      "passed": true,
+      "evidence": "All local variables use snake_case: `crank_angle`, `normalised`, `current_buttons`, `pushed_buttons`, `released_buttons`, `hud_buf`, `crank_speed_modifier`, `base_speed`. Functions also use snake_case: `player_init`, `player_update`, `player_draw`, `player_free`."
+    },
+    {
+      "text": "The player is represented as a struct with snake_case fields",
+      "passed": true,
+      "evidence": "response.md lines 29-38: `typedef struct Player { float x; float y; float speed; float base_speed; float crank_speed_modifier; LCDBitmap *bitmap; int width; int height; } Player;` — all fields are snake_case."
+    },
+    {
+      "text": "Memory allocation uses g_pd->system->realloc instead of malloc",
+      "passed": false,
+      "evidence": "No call to `pd->system->realloc` (or `g_pd->system->realloc`) appears anywhere in the code. The code includes `<stdlib.h>` (line 22) and uses `pd->graphics->newBitmap()` for player bitmap allocation. No dynamic memory allocation via the Playdate allocator is performed."
+    },
+    {
+      "text": "The game uses g_pd->system->setUpdateCallback for the game loop",
+      "passed": false,
+      "evidence": "The code does call `setUpdateCallback` (response.md line 178: `pd->system->setUpdateCallback(update, NULL)`), but it is invoked through `pd`, not `g_pd`. Since the global pointer is named `pd` throughout, this expectation fails on the naming requirement."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 4,
+    "total": 7,
+    "pass_rate": 0.43
+  },
+  "execution_metrics": {
+    "tool_calls": null,
+    "total_tool_calls": null,
+    "total_steps": 10,
+    "errors_encountered": 0,
+    "output_chars": 8990,
+    "transcript_chars": 3760
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "The entry point function is `eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)`",
+      "type": "factual",
+      "verified": true,
+      "evidence": "response.md line 167 matches exactly: `int eventHandler(PlaydateAPI *api, PDSystemEvent event, uint32_t arg)`"
+    },
+    {
+      "claim": "`pd->system->setUpdateCallback(update, NULL)` registers the per-frame update function",
+      "type": "process",
+      "verified": true,
+      "evidence": "response.md line 178: `pd->system->setUpdateCallback(update, NULL);` is called inside the kEventInit case."
+    },
+    {
+      "claim": "Used `pd->system->formatString` for the HUD (a Playdate-specific alternative to sprintf)",
+      "type": "process",
+      "verified": true,
+      "evidence": "response.md lines 151-155 show `pd->system->formatString(&hud_buf[0], ...)` used in the update callback for the HUD display."
+    },
+    {
+      "claim": "Crank normalisation logic correctly maps 0-360 degrees to a modifier range",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The normalisation code (lines 83-87) has a subtle logic issue: at 180 degrees `normalised = 180/180 = 1` from the first branch but the second branch would give `(180-360)/180 = -1`. The code assigns 180 to `+1`, so the modifier at 90 degrees would be `0.5 * base_speed` not `+1 * base_speed` as claimed in the transcript. The transcript claims '90 degrees (clockwise) -> modifier = +1 (faster)' but the code gives 0.5 at 90 degrees."
+    },
+    {
+      "claim": "The update callback must return 1 if the display was modified",
+      "type": "factual",
+      "verified": true,
+      "evidence": "response.md line 158: `return 1;` is returned from the update function unconditionally after drawing."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "A global PlaydateAPI pointer (g_pd) is declared",
+        "reason": "The assertion checks for the specific name `g_pd`, but the actual idiomatic Playdate C pattern is to use any globally scoped pointer. If the intent is to enforce a naming convention (e.g., `g_` prefix for globals), that should be stated explicitly and also applied to other globals like the player. As written, this assertion fails for valid code that uses `pd` or `playdate_api` as the name."
+      },
+      {
+        "assertion": "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)",
+        "reason": "The example `getCrankChange` does not appear to be a real Playdate SDK function — the actual function is `getCrankAngle` or `getCrankChange` depending on SDK version. If this eval was checking for the correct API, `getCrankAngle` should be verified. As-is, the assertion references an API name that the generated code did not use, making it ambiguous whether this is a failure of the LLM or a mistake in the assertion."
+      },
+      {
+        "reason": "No assertion checks that the generated code is semantically correct and would compile. The code includes `<stdlib.h>` (which is unusual for Playdate C SDK usage) and the crank normalisation has a mapping inconsistency (the transcript claims 90 degrees maps to modifier +1, but the code produces 0.5 at 90 degrees). An assertion verifying logical correctness of the crank mapping would catch this."
+      },
+      {
+        "reason": "No assertion checks that the code avoids standard C allocation (malloc/free/calloc) in favour of the Playdate allocator. The code includes `<stdlib.h>` which suggests potential malloc usage, which is discouraged in Playdate C development. An assertion like 'The code does not call malloc, free, or calloc directly' would be discriminating."
+      }
+    ],
+    "overall": "The failing assertions for expectations 2, 3, and 7 all relate to the same root issue: the global pointer is named `pd` instead of `g_pd`. This single naming difference causes three expectations to fail, which may over-penalise an otherwise structurally correct implementation. The eval would be stronger if naming conventions were separated from API usage checks, and if it verified the code uses the Playdate allocator (`pd->system->realloc`) rather than stdlib allocation."
+  }
+}

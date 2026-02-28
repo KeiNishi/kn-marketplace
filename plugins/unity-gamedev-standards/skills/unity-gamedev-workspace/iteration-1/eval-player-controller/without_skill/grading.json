@@ -1,0 +1,107 @@
+{
+  "expectations": [
+    {
+      "text": "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+      "passed": false,
+      "evidence": "All private fields in PlayerController.cs and CameraFollow.cs use plain camelCase without an underscore prefix. Examples: 'private float moveSpeed', 'private float jumpForce', 'private Rigidbody rb', 'private bool isGrounded', 'private Vector3 moveDirection', 'private Transform target', 'private float smoothSpeed'. None follow the _camelCase convention."
+    },
+    {
+      "text": "Inspector-configurable fields use [SerializeField] attribute",
+      "passed": true,
+      "evidence": "All inspector-configurable fields correctly use [SerializeField]. In PlayerController.cs: '[SerializeField] private float moveSpeed', '[SerializeField] private float jumpForce', '[SerializeField] private Transform groundCheck', '[SerializeField] private float groundCheckRadius', '[SerializeField] private LayerMask groundLayer'. In CameraFollow.cs: '[SerializeField] private Transform target', '[SerializeField] private Vector3 offset', '[SerializeField] private float smoothSpeed', '[SerializeField] private bool lookAtTarget'."
+    },
+    {
+      "text": "All [SerializeField] fields have [Tooltip] annotations",
+      "passed": false,
+      "evidence": "No [Tooltip] attributes appear anywhere in the code. The code uses [Header(...)] groups for organization (e.g. '[Header(\"Movement Settings\")]', '[Header(\"Ground Detection\")]') but none of the nine [SerializeField] fields across the two scripts have a [Tooltip] annotation."
+    },
+    {
+      "text": "Physics/Rigidbody code is in FixedUpdate, not Update",
+      "passed": false,
+      "evidence": "Horizontal movement velocity is correctly set inside FixedUpdate via MovePlayer(). However, the Jump() method is called from Update() and directly manipulates Rigidbody state: 'rb.linearVelocity = new Vector3(...)' and 'rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse)'. Both of these Rigidbody operations execute inside Update, violating the expectation."
+    },
+    {
+      "text": "Camera follow code uses LateUpdate, not Update",
+      "passed": true,
+      "evidence": "CameraFollow.cs implements 'private void LateUpdate()' for all camera positioning logic: 'transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime)' and 'transform.LookAt(target.position)'. There is no Update method in CameraFollow.cs."
+    },
+    {
+      "text": "The class uses #region sections for organization",
+      "passed": false,
+      "evidence": "Neither PlayerController.cs nor CameraFollow.cs contains any #region directives. The code uses [Header(...)] attributes and inline comments for organization instead, but no #region/#endregion blocks are present."
+    },
+    {
+      "text": "Component references are cached in Awake() using GetComponent",
+      "passed": true,
+      "evidence": "PlayerController.cs has an Awake() method that caches the Rigidbody: 'private void Awake() { rb = GetComponent<Rigidbody>(); rb.freezeRotation = true; }'. CameraFollow.cs has no component dependencies to cache (it uses a serialized Transform reference instead). The Rigidbody reference is correctly cached in Awake."
+    },
+    {
+      "text": "Events unsubscribe in OnDisable to prevent memory leaks",
+      "passed": false,
+      "evidence": "Neither PlayerController.cs nor CameraFollow.cs subscribes to any C# events or Unity events, and neither implements OnDisable(). There is no event subscription or unsubscription code anywhere in the output. The assertion cannot be satisfied because the pattern is entirely absent from the implementation."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 5,
+    "total": 8,
+    "pass_rate": 0.375
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 4821,
+    "transcript_chars": 1890
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "Input polling is best done in Update",
+      "type": "process",
+      "verified": true,
+      "evidence": "The code reads Input.GetAxisRaw and Input.GetKeyDown in Update(), which is correct for avoiding missed single-frame events. The design decisions table also explicitly states this rationale."
+    },
+    {
+      "claim": "Movement in FixedUpdate (Rigidbody physics should always be modified during the fixed physics step)",
+      "type": "process",
+      "verified": false,
+      "evidence": "Partially true for horizontal movement (MovePlayer is called from FixedUpdate), but false for jumping: Jump() is invoked from Update(), and it modifies rb.linearVelocity and calls rb.AddForce inside Update, not FixedUpdate."
+    },
+    {
+      "claim": "LateUpdate ensures the camera moves after all player movement is complete",
+      "type": "process",
+      "verified": true,
+      "evidence": "CameraFollow.cs correctly implements LateUpdate for all camera positioning, which executes after all Update calls in the same frame."
+    },
+    {
+      "claim": "The implementation targets Unity 6+ where Rigidbody.velocity is replaced by Rigidbody.linearVelocity",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The code consistently uses 'rb.linearVelocity' throughout (e.g., 'isGrounded = Mathf.Abs(rb.linearVelocity.y) < 0.05f', 'targetVelocity.y = rb.linearVelocity.y'), confirming Unity 6+ API usage."
+    },
+    {
+      "claim": "No external skill documentation was consulted during this run",
+      "type": "process",
+      "verified": true,
+      "evidence": "Transcript Step Notes states: 'No external skill documentation was consulted during this run; all decisions were made from general Unity/C# knowledge.' No web fetch or documentation tool calls are recorded in the transcript."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Events unsubscribe in OnDisable to prevent memory leaks",
+        "reason": "The assertion cannot meaningfully fail or pass if the implementation doesn't use events at all. A minimal implementation that simply omits event-driven patterns entirely would trivially 'satisfy' this by coincidence (no subscriptions = no leaks), or trivially 'fail' because OnDisable is absent. The assertion should be paired with a requirement that the implementation demonstrates event usage (e.g., 'subscribes to an InputSystem action or Unity event in OnEnable and unsubscribes in OnDisable') to make the pattern testable."
+      },
+      {
+        "reason": "No assertion checks whether Jump() correctly executes Rigidbody operations inside FixedUpdate vs Update. The existing assertion (expectation 4) is framed broadly as 'Physics/Rigidbody code is in FixedUpdate', but the grader had to reason carefully about Jump() being called from Update. An explicit assertion like 'Jump force is applied inside FixedUpdate or via a flag deferred to FixedUpdate' would catch this common architectural mistake more precisely."
+      },
+      {
+        "reason": "No assertion checks code correctness or playability. The implementation could have subtle bugs (e.g., the fallback isGrounded check using 'rb.linearVelocity.y < 0.05f' is unreliable) that no assertion would catch. Consider adding a quality assertion such as 'Ground detection uses Physics.CheckSphere rather than a velocity heuristic'."
+      }
+    ],
+    "overall": "The assertions cover most of the important Unity coding conventions but have two significant gaps: the _camelCase prefix and #region assertions are clear-cut style checks that the baseline fails cleanly; the [Tooltip] and Jump-in-FixedUpdate failures reveal real gaps in the baseline output. The Events/OnDisable assertion is problematic because the implementation uses no events, making the assertion untestable in a meaningful way."
+  }
+}
