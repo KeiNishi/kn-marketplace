@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "jwt-auth-pr",
+  "prompt": "Create a pull request for the new JWT authentication feature I just implemented. The changes add OAuth2 login support to the auth module - I modified src/auth/login.ts and src/auth/middleware.ts, and added tests in tests/auth.test.ts.",
+  "assertions": [
+    "The PR title follows the conventional commit format: type(scope): Summary",
+    "The PR title uses one of the valid types: feat, fix, perf, test, docs, refactor, build, ci, chore, or revert",
+    "The PR title summary starts with a capital letter",
+    "The PR title summary does not end with a period",
+    "The response includes a 'gh pr create' command",
+    "The PR body contains a Summary section",
+    "The PR body contains a Related Issues section",
+    "The PR body contains a Checklist section",
+    "The response includes or mentions a git push command"
+  ]
+}

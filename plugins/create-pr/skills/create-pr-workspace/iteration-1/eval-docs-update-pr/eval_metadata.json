@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "docs-update-pr",
+  "prompt": "I updated the README.md with better installation instructions and added API documentation to docs/api-reference.md. Create a pull request for these documentation changes.",
+  "assertions": [
+    "The PR title uses 'docs' type since the changes are documentation only",
+    "The PR title follows the conventional commit format",
+    "The response checks git status or git diff as part of the workflow",
+    "The PR body includes a Summary section",
+    "The PR body contains a Checklist section"
+  ]
+}

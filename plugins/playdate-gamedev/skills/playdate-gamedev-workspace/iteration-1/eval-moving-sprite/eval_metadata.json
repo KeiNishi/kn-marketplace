@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "moving-sprite",
+  "prompt": "Create a simple Playdate game in C with a moving player sprite. The player should move left and right with the D-pad, and the crank controls their speed. Show me the main.c entry point and the player update logic.",
+  "assertions": [
+    "The code includes the eventHandler function as the entry point",
+    "A global PlaydateAPI pointer (g_pd) is declared",
+    "The code uses Playdate APIs via g_pd (e.g., g_pd->system->getButtonState, g_pd->system->getCrankChange)",
+    "Variable names follow snake_case convention",
+    "The player is represented as a struct with snake_case fields",
+    "Memory allocation uses g_pd->system->realloc instead of malloc",
+    "The game uses g_pd->system->setUpdateCallback for the game loop"
+  ]
+}

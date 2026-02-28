@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "platformer-design",
+  "prompt": "I want to design a simple 2D platformer game. The player is a cat that can run and jump, collects fish, and avoids dogs. It's a Unity mobile game with 5 levels. Help me create the game design and implementation plan documents.",
+  "assertions": [
+    "A docs_for_ai/ directory is created with proper subdirectories (game_design/ and implementation/)",
+    "GameDesignOverview.md is created at docs_for_ai/GameDesignOverview.md",
+    "ImplementationPlanOverview.md is created at docs_for_ai/ImplementationPlanOverview.md",
+    "All documents are written in English",
+    "Variable values are marked with [EXAMPLE: value] notation",
+    "The documents include a File Manifest section listing all detail files",
+    "At least one game design detail file is created in docs_for_ai/game_design/",
+    "At least one implementation detail file is created in docs_for_ai/implementation/"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "skill_name": "create-pr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create a pull request for the new JWT authentication feature I just implemented. The changes add OAuth2 login support to the auth module - I modified src/auth/login.ts and src/auth/middleware.ts, and added tests in tests/auth.test.ts.",
+      "expected_output": "A GitHub PR with a conventional commit title like 'feat(auth): Add OAuth2 login support', proper PR body with Summary, Related Issues, and Checklist sections, and includes git push command.",
+      "files": [],
+      "expectations": [
+        "The PR title follows the conventional commit format: type(scope): Summary",
+        "The PR title uses one of the valid types: feat, fix, perf, test, docs, refactor, build, ci, chore, or revert",
+        "The PR title summary starts with a capital letter",
+        "The PR title summary does not end with a period",
+        "The response includes a 'gh pr create' command",
+        "The PR body contains a Summary section",
+        "The PR body contains a Related Issues section",
+        "The PR body contains a Checklist section",
+        "The response includes or mentions a git push command"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I fixed a bug where the payment API was returning a 500 error on large file uploads (over 10MB). The fix is in api/payment.py where I added proper chunked upload handling. Please make a PR for this.",
+      "expected_output": "A GitHub PR with a title like 'fix(api): Resolve 500 error on large file uploads', proper PR body structure, and workflow steps.",
+      "files": [],
+      "expectations": [
+        "The PR title starts with 'fix' type since this is a bug fix",
+        "The PR title follows the pattern type(scope): Summary",
+        "The PR title summary starts with a capital letter",
+        "The response includes a 'gh pr create' command with --title flag",
+        "The PR body includes a Summary section describing the fix",
+        "The PR body includes a Checklist with PR title format check"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I updated the README.md with better installation instructions and added API documentation to docs/api-reference.md. Create a pull request for these documentation changes.",
+      "expected_output": "A GitHub PR with a title like 'docs: Update README and add API reference documentation', using the 'docs' type.",
+      "files": [],
+      "expectations": [
+        "The PR title uses 'docs' type since the changes are documentation only",
+        "The PR title follows the conventional commit format",
+        "The response checks git status or git diff as part of the workflow",
+        "The PR body includes a Summary section",
+        "The PR body contains a Checklist section"
+      ]
+    }
+  ]
+}

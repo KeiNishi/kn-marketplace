@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "player-controller",
+  "prompt": "Write a Unity C# PlayerController MonoBehaviour script with WASD/arrow key movement, space bar jumping, and camera follow. The player uses a Rigidbody for physics.",
+  "assertions": [
+    "Private fields use _camelCase prefix (e.g., _moveSpeed, _jumpForce)",
+    "Inspector-configurable fields use [SerializeField] attribute",
+    "All [SerializeField] fields have [Tooltip] annotations",
+    "Physics/Rigidbody code is in FixedUpdate, not Update",
+    "Camera follow code uses LateUpdate, not Update",
+    "The class uses #region sections for organization",
+    "Component references are cached in Awake() using GetComponent",
+    "Events unsubscribe in OnDisable to prevent memory leaks"
+  ]
+}

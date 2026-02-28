@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "scriptable-object",
+  "prompt": "Create a ScriptableObject for storing weapon configuration data in Unity. The weapon should have a name, damage value, attack speed, range, and a sprite icon. Also show how to create and use it in a weapon system.",
+  "assertions": [
+    "The ScriptableObject class has [CreateAssetMenu] attribute with fileName and menuName",
+    "Public fields or properties use PascalCase",
+    "Fields have [Tooltip] annotations describing their purpose",
+    "Numeric fields use [Range] attribute where bounds make sense",
+    "The class name follows PascalCase convention",
+    "An example is provided showing how to use the ScriptableObject in a MonoBehaviour"
+  ]
+}

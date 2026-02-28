@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "payment-bugfix-pr",
+  "prompt": "I fixed a bug where the payment API was returning a 500 error on large file uploads (over 10MB). The fix is in api/payment.py where I added proper chunked upload handling. Please make a PR for this.",
+  "assertions": [
+    "The PR title starts with 'fix' type since this is a bug fix",
+    "The PR title follows the pattern type(scope): Summary",
+    "The PR title summary starts with a capital letter",
+    "The response includes a 'gh pr create' command with --title flag",
+    "The PR body includes a Summary section describing the fix",
+    "The PR body includes a Checklist with PR title format check"
+  ]
+}

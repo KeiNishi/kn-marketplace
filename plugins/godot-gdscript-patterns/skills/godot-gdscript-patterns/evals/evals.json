@@ -1,0 +1,32 @@
+{
+  "skill_name": "godot-gdscript-patterns",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Implement a state machine for a Godot 4 character that can switch between Idle, Running, and Jumping states. The character uses CharacterBody2D and needs to detect state transitions based on velocity and input.",
+      "expected_output": "A GDScript state machine implementation with separate state classes or a state enum, proper signal usage, static typing, and following Godot 4 patterns.",
+      "files": [],
+      "expectations": [
+        "The code uses static typing with type annotations (e.g., var speed: float = 200.0)",
+        "The implementation uses GDScript (not C# or other languages)",
+        "The state machine references or uses CharacterBody2D",
+        "The code uses signals with proper Godot 4 syntax (signal name or signal name(param: type))",
+        "State transitions are handled without tight coupling (using signals or delegation)",
+        "The code follows Godot 4 patterns (not Godot 3 syntax like yield or connect with string method names)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm building a Godot 4 RPG. How do I implement a save/load system that can save player stats (health, level, position) and quest progress? The save should work on multiple platforms and support encryption.",
+      "expected_output": "A Godot 4 save system implementation using FileAccess or ConfigFile, with encryption support, and proper node structure for saveable objects.",
+      "files": [],
+      "expectations": [
+        "The save system uses Godot 4 APIs (FileAccess, not the deprecated File class from Godot 3)",
+        "The implementation mentions or includes encryption support",
+        "The code uses static typing",
+        "The solution organizes saveable nodes with a consistent interface or pattern",
+        "The save data includes player stats like health, level, and position"
+      ]
+    }
+  ]
+}
