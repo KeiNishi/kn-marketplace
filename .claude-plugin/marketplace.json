@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
@@ -83,6 +83,21 @@
         "workflow",
         "documentation",
         "planning"
+      ]
+    },
+    {
+      "name": "skill-creator",
+      "source": "./plugins/skill-creator",
+      "description": "Create new skills, improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, update or optimize an existing skill, run evals to test a skill, or benchmark skill performance with variance analysis.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Anthropic",
+        "email": "support@anthropic.com"
+      },
+      "tags": [
+        "skills",
+        "evaluation",
+        "productivity"
       ]
     }
   ]
