@@ -1,0 +1,116 @@
+{
+  "expectations": [
+    {
+      "text": "The PR title follows the conventional commit format: type(scope): Summary",
+      "passed": true,
+      "evidence": "response.md line 56: 'feat(auth): Add OAuth2 login support with JWT authentication' — matches the pattern type(scope): Summary exactly. The transcript also validates against the regex: ^(feat|fix|perf|test|docs|refactor|build|ci|chore|revert)(\\([a-zA-Z0-9 -]+\\))?!?: [A-Z].+[^.]$"
+    },
+    {
+      "text": "The PR title uses one of the valid types: feat, fix, perf, test, docs, refactor, build, ci, chore, or revert",
+      "passed": true,
+      "evidence": "response.md line 56: PR title uses type 'feat', which is explicitly listed as a valid type. The response also calls this out: 'Type: feat - valid'"
+    },
+    {
+      "text": "The PR title summary starts with a capital letter",
+      "passed": true,
+      "evidence": "response.md line 56: The summary portion is 'Add OAuth2 login support with JWT authentication' — begins with capital 'A'. The response confirms: 'Summary starts with capital \"A\" - valid'"
+    },
+    {
+      "text": "The PR title summary does not end with a period",
+      "passed": true,
+      "evidence": "response.md line 56: The title ends with '...JWT authentication' — no trailing period. The response confirms: 'Summary does not end with period - valid'"
+    },
+    {
+      "text": "The response includes a 'gh pr create' command",
+      "passed": true,
+      "evidence": "response.md line 69: Full command beginning with 'gh pr create --title \"feat(auth): Add OAuth2 login support with JWT authentication\" --body \"$(cat <<'EOF'' is present, including the complete PR body as a heredoc."
+    },
+    {
+      "text": "The PR body contains a Summary section",
+      "passed": true,
+      "evidence": "response.md lines 71 and 113: '## Summary' section appears both in the gh CLI command heredoc body and in the rendered PR body section, with substantive content describing the OAuth2 and JWT changes."
+    },
+    {
+      "text": "The PR body contains a Related Issues section",
+      "passed": true,
+      "evidence": "response.md lines 95 and 137: '## Related Issues' section appears in both the heredoc and rendered PR body, containing a comment placeholder '<!-- Use \"closes #<issue-number>\", \"fixes #<issue-number>\", or \"resolves #<issue-number>\" to auto-close issues -->'."
+    },
+    {
+      "text": "The PR body contains a Checklist section",
+      "passed": true,
+      "evidence": "response.md lines 99 and 141: '## Checklist' section appears in both the heredoc and rendered PR body with three checklist items: PR title format (checked), Tests included (checked), Documentation updated (unchecked)."
+    },
+    {
+      "text": "The response includes or mentions a git push command",
+      "passed": true,
+      "evidence": "response.md line 48: 'git push -u origin HEAD' appears as a bash command block under '## Step 3: Push Branch'. The transcript (Step 4) also documents this command with explanation that it 'pushes the current branch to the remote and sets the upstream tracking reference'."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {},
+    "total_tool_calls": null,
+    "total_steps": 6,
+    "errors_encountered": 0,
+    "output_chars": 3726,
+    "transcript_chars": 2936
+  },
+  "timing": null,
+  "claims": [
+    {
+      "claim": "Commands 'git status', 'git diff --stat', 'git log origin/main..HEAD --oneline' were actually run",
+      "type": "process",
+      "verified": false,
+      "evidence": "The transcript explicitly says 'Would run the following commands (hypothetical)' and the response labels git output as 'Expected output (hypothetical)'. No commands were actually executed — this was a fully simulated run without real tool calls."
+    },
+    {
+      "claim": "The git push command was actually executed",
+      "type": "process",
+      "verified": false,
+      "evidence": "Step 4 in transcript is labeled '(Hypothetical)' and the response shows git push as a code block without evidence of execution. No actual push occurred."
+    },
+    {
+      "claim": "The 'gh pr create' command was actually executed and a PR was created",
+      "type": "process",
+      "verified": false,
+      "evidence": "Step 5 in transcript is labeled '(Hypothetical)'. The response shows the command but no real PR URL was produced — only a placeholder 'https://github.com/<owner>/<repo>/pull/42'. No actual PR was created."
+    },
+    {
+      "claim": "The PR title is 57 characters total (as stated in transcript Step 3)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "'feat(auth): Add OAuth2 login support with JWT authentication' is 60 characters, not 57 as claimed. This is a minor inaccuracy in the self-reported metric."
+    },
+    {
+      "claim": "All required PR body sections are present with meaningful content",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Summary section contains substantive description of changes and test instructions. Related Issues contains a placeholder comment (acceptable given no issue number was provided). Checklist contains three relevant items with appropriate checked/unchecked states."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "No assertion checks whether the commands were actually executed vs. described hypothetically. In this run, ALL git and gh commands were simulated — no real tool calls were made, no real PR was created. All 9 assertions pass despite the skill being entirely hypothetical. An assertion like 'A Bash tool call was made for git push' or 'A real PR URL was returned' would catch this failure mode."
+      },
+      {
+        "assertion": "The response includes a 'gh pr create' command",
+        "reason": "This passes even when the command is presented in a code block but never run. A stronger assertion would be: 'The gh pr create command was executed and returned a PR URL', which would fail here since the output only contains a placeholder URL."
+      },
+      {
+        "assertion": "The response includes or mentions a git push command",
+        "reason": "Same issue — mentioning the command in a code block satisfies this, even when no push occurred. The assertion cannot distinguish between a simulated response and actual execution."
+      },
+      {
+        "reason": "No assertion verifies that the PR title character count stays within conventional commit guidelines (typically 72 chars for the full title). The skill states titles should be under 72 characters, and the actual title is 60 chars — but an unchecked edge case."
+      }
+    ],
+    "overall": "All 9 assertions pass, but the eval has a fundamental blind spot: it cannot detect whether the skill actually executed commands or merely described what it would do. This run was entirely hypothetical — a simulated response with no real git or gh tool calls — yet it achieves a perfect score. The evals should include at least one assertion requiring evidence of real execution (e.g., presence of an actual PR URL, a Bash tool call in the transcript, or a non-placeholder output)."
+  }
+}
