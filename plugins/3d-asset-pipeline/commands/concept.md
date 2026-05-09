@@ -32,6 +32,40 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonic
 
 4. Confirm that `stages.concept.status` is `done` and that `concept/canonical.png` exists.
 
+## Moderation Recovery
+
+If the script exits with `failureKind: "moderation_blocked"` in the concept stage record, OpenAI's safety system rejected the prompt. Surface a friendly retry message to the user. Do not auto-soften the description; ask the user for a new description with less violent or sensitive language, then re-run the concept stage with that description:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new description>"
+```
+
+`--description` overwrites the manifest description and resets the concept stage to `pending` before regenerating.
+
+## Approval Gate
+
+After the concept stage reaches `status: done`, the mesh stage will refuse to run until concept is approved. Drive the approval interactively:
+
+1. Display all four PNGs and the canonical multimodally:
+   - `concept/front.png`
+   - `concept/three-quarter.png`
+   - `concept/side.png`
+   - `concept/back.png`
+   - `concept/canonical.png`
+2. Compare against `pipeline.json.description`.
+3. Use `AskUserQuestion` with options:
+   - **Approve** — accept the canonical and unblock mesh generation.
+   - **Change canonical** — select a different angle as canonical, then approve.
+   - **Re-roll with new description** — supply softer or different prompt language and regenerate.
+   - **Stop** — leave the concept un-approved; mesh remains blocked until `/3d-pipeline:approve <slug>` is run later.
+4. Map answers to:
+   - Approve → `python "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve`
+   - Change canonical → `python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>` then approve
+   - Re-roll → `python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new text>"` then loop back to step 1
+   - Stop → end the command and print the location of `concept/`
+
+The approval gate is enforced mechanically — `mesh_hunyuan.py`, `mesh_meshy.py`, and `mesh_tripo.py` all refuse to run when `stages.concept.approved` is not `true`.
+
 ## Notes
 
 - The script reads `OPENAI_API_KEY` only from `~/.claude/3d-pipeline/.env`.

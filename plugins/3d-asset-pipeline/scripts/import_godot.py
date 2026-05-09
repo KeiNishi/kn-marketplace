@@ -5,13 +5,15 @@ import base64
 import hashlib
 import re
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
 try:
-    from . import _common, _manifest
+    from . import _common, _credentials, _manifest
 except ImportError:
     import _common  # type: ignore
+    import _credentials  # type: ignore
     import _manifest  # type: ignore
 
 
@@ -82,6 +84,90 @@ def _validate_project(project_value: str) -> Path:
     if not (project / "project.godot").is_file():
         raise ValueError(f"Godot project root must contain project.godot: {project}")
     return project
+
+
+def _godot_display(value: str | None) -> str | None:
+    if not value:
+        return None
+    path = Path(value)
+    if path.exists():
+        return path.resolve().as_posix()
+    return value
+
+
+def _resolve_godot(godot_arg: str | None) -> str | None:
+    if godot_arg:
+        expanded = Path(godot_arg).expanduser()
+        if expanded.is_file():
+            return str(expanded.resolve())
+        found = shutil.which(godot_arg)
+        if found:
+            return found
+        LOGGER.warning("Godot binary from --godot was not found: %s", godot_arg)
+        return None
+
+    env_godot = _credentials.optional("GODOT_BIN")
+    if env_godot:
+        expanded = Path(env_godot).expanduser()
+        if expanded.is_file():
+            return str(expanded.resolve())
+        found = shutil.which(env_godot)
+        if found:
+            return found
+        LOGGER.warning("GODOT_BIN is set but the binary was not found: %s", env_godot)
+
+    return shutil.which("godot") or shutil.which("godot4")
+
+
+def _tail(value: str, *, limit: int = 2000) -> str:
+    text = value.strip()
+    if len(text) <= limit:
+        return text
+    return text[-limit:]
+
+
+def _build_import_cache(project_root: Path, godot_arg: str | None, no_cache: bool) -> dict[str, Any]:
+    godot = _resolve_godot(godot_arg)
+    result = {"importCacheBuilt": False, "godotBin": _godot_display(godot)}
+
+    if no_cache:
+        LOGGER.info("Skipping Godot import cache build because --no-import-cache was set")
+        return result
+
+    if not godot:
+        LOGGER.warning(
+            "Godot binary not found; continuing without building the import cache. "
+            "If `.import` files do not regenerate, run `godot --headless --import` "
+            "from the Godot project root."
+        )
+        return result
+
+    try:
+        completed = subprocess.run(
+            [godot, "--headless", "--import"],
+            cwd=str(project_root),
+            timeout=300,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.TimeoutExpired:
+        LOGGER.warning("Godot import cache build timed out after 300 seconds")
+        return result
+    except OSError as exc:
+        LOGGER.warning("Godot import cache build could not start: %s", exc)
+        return result
+
+    if completed.returncode != 0:
+        tail = _tail(completed.stdout or completed.stderr or "")
+        if tail:
+            LOGGER.warning("Godot import cache build exited with %s; output tail: %s", completed.returncode, tail)
+        else:
+            LOGGER.warning("Godot import cache build exited with %s", completed.returncode)
+        return result
+
+    result["importCacheBuilt"] = True
+    return result
 
 
 def _stage_status(manifest: dict[str, Any], stage: str) -> str:
@@ -189,6 +275,8 @@ def import_asset(slug: str, args: argparse.Namespace) -> dict[str, Any]:
         scene_file.write_text(_scene_content(scene_uid, ext_id, slug, ext), encoding="utf-8", newline="\n")
         scene_path = _rel_to_project(project, scene_file)
 
+    import_cache = _build_import_cache(project, args.godot, args.no_import_cache)
+
     return _manifest.update_stage(
         slug,
         "engine",
@@ -199,6 +287,8 @@ def import_asset(slug: str, args: argparse.Namespace) -> dict[str, Any]:
             "targetPath": _rel_to_project(project, target),
             "importFile": _rel_to_project(project, import_file),
             "scenePath": scene_path,
+            "importCacheBuilt": import_cache["importCacheBuilt"],
+            "godotBin": import_cache["godotBin"],
             "completedAt": _common.iso_now(),
         },
         base,
@@ -212,6 +302,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--base", help="output base directory; defaults to git root or cwd")
     parser.add_argument("--source-stage", choices=("animated", "mesh", "rigged"))
     parser.add_argument("--scene", action="store_true", help="also emit a wrapper .tscn scene")
+    parser.add_argument("--godot", help="path to Godot executable; overrides GODOT_BIN and PATH lookup")
+    parser.add_argument("--no-import-cache", action="store_true", help="skip running godot --headless --import")
     return parser.parse_args(argv)
 
 

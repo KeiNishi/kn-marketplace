@@ -67,6 +67,59 @@ def _approved_verdict(slug: str, base: Path | None, iteration: int) -> dict[str,
     return None
 
 
+def _verdict_iteration(path: Path) -> int | None:
+    suffix = path.parent.name.removeprefix("iter-")
+    if suffix.isdigit():
+        return int(suffix)
+    return None
+
+
+def _latest_verdict(slug: str, base: Path | None) -> tuple[int, Path, dict[str, Any]] | None:
+    candidates: list[tuple[int, Path]] = []
+    for path in _review_dir(slug, base).glob("iter-*/verdict.json"):
+        iteration = _verdict_iteration(path)
+        if iteration is not None:
+            candidates.append((iteration, path))
+
+    if not candidates:
+        return None
+
+    iteration, path = max(candidates, key=lambda item: item[0])
+    verdict = _read_json(path)
+    if verdict is None:
+        raise ValueError(f"Latest verdict is not a JSON object: {path}")
+    return iteration, path, verdict
+
+
+def _finalize(slug: str, base: Path | None) -> int:
+    latest = _latest_verdict(slug, base)
+    if latest is None:
+        print(f"No verdict.json found for {slug}")
+        return _common.EXIT_REVIEW_UNRESOLVED
+
+    iteration, path, verdict = latest
+    if verdict.get("approved") is not True:
+        print(f"Latest verdict at iter-{iteration} is not approved")
+        return _common.EXIT_REVIEW_UNRESOLVED
+
+    manifest = _manifest.read(slug, base)
+    review = manifest.get("stages", {}).get("review", {})
+    _manifest.update_stage(
+        slug,
+        "review",
+        {
+            "status": "done",
+            "approved": True,
+            "iterations": iteration,
+            "loopEnabled": review.get("loopEnabled", True),
+            "completedAt": _common.iso_now(),
+        },
+        base,
+    )
+    print(f"Review finalized for {slug} from {path.parent.name}")
+    return _common.EXIT_OK
+
+
 def _print_status(slug: str, base: Path | None) -> int:
     manifest = _manifest.read(slug, base)
     review = manifest.get("stages", {}).get("review", {})
@@ -170,9 +223,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--godot", help="path to Godot executable")
     parser.add_argument("--base", help="output base directory; defaults to git root or cwd")
     parser.add_argument("--status", action="store_true", help="print loop status and exit")
+    parser.add_argument("--finalize", action="store_true", help="finalize an already-approved verdict")
     args = parser.parse_args(argv)
-    if not args.status and not args.project:
-        parser.error("--project is required unless --status is used")
+    if not args.status and not args.finalize and not args.project:
+        parser.error("--project is required unless --status or --finalize is used")
     return args
 
 
@@ -180,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     base = _base_dir(args.base)
     try:
+        if args.finalize:
+            return _finalize(args.slug, base)
         if args.status:
             return _print_status(args.slug, base)
         return run(args)

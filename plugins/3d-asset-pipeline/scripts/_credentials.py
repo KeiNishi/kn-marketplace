@@ -51,6 +51,17 @@ def require(*names: str) -> dict[str, str]:
     return {name: values[name] for name in names}
 
 
+def optional(name: str) -> str | None:
+    path = env_path()
+    if not path.exists():
+        return None
+
+    import dotenv
+
+    value = _clean(dotenv.dotenv_values(path).get(name))
+    return value or None
+
+
 def status() -> dict[str, bool]:
     try:
         values = load()

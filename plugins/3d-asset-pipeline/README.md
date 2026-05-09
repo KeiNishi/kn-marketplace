@@ -75,6 +75,7 @@ OPENAI_API_KEY=sk-...
 REPLICATE_API_TOKEN=r8_...
 # Optional: MESHY_API_KEY=msy_...   # enables stages 3-4 (auto-rig, auto-animation)
 # Optional: TRIPO_API_KEY=tsk_...   # quadruped fallback only
+# Optional: GODOT_BIN=C:\path\to\godot.exe   # used by /3d-pipeline:import to auto-build the import cache
 ```
 
 Do not commit this file.
@@ -154,6 +155,59 @@ The remaining stage commands are planned for later chunks.
 
 They are documented here so users can understand the intended workflow before the command files are added.
 
+## Concept Approval Gate
+
+Stage 2 mesh generation is mechanically blocked until a human approves the canonical concept. This prevents accidental mesh spend on un-vetted concept art.
+
+After Stage 1 completes, run:
+
+```text
+/3d-pipeline:approve <slug>
+```
+
+This sets `stages.concept.approved: true` in `pipeline.json`. The mesh preflight in `mesh_hunyuan.py`, `mesh_meshy.py`, and `mesh_tripo.py` refuses to run when `approved` is not `true`.
+
+Other approve options:
+
+```text
+/3d-pipeline:approve <slug> --reject              # withdraw approval
+/3d-pipeline:approve <slug> --canonical <angle>   # change canonical, then approve
+```
+
+If the moderation system rejects a concept prompt, the manifest stage records `failureKind: "moderation_blocked"`. Re-run the concept stage with new wording:
+
+```text
+python scripts/concept_openai.py <slug> --description "<softer text>"
+```
+
+`--description` overwrites the manifest description and resets the concept stage to `pending` before regenerating.
+
+Inside the full pipeline command (`/3d-pipeline:run`), the gate appears as an inline `AskUserQuestion(yes/stop)` prompt that auto-approves on yes.
+
+## Manifest schema 1.2
+
+Plugin v0.2.0 bumps the manifest schema from `1.1` to `1.2`. Manifests with `schemaVersion: "1.1"` are still readable; the first `_manifest.update_stage` call rewrites them as `1.2`.
+
+New fields on the `concept` stage:
+
+- `approved: bool` — set by `scripts/approve_concept.py`. Treated as `false` when absent.
+- `approvedAt: ISO-8601 string | null`
+- `approvedBy: "user" | null`
+- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout"` — set when `status == failed`.
+
+New fields on the `engine` stage:
+
+- `importCacheBuilt: bool` — `true` when `/3d-pipeline:import` ran `godot --headless --import` successfully.
+- `godotBin: string | null` — path to the Godot binary used (no secrets).
+
+## Migrating from 0.1.x
+
+Manifests created by 0.1.x have `schemaVersion: "1.1"` and no `concept.approved` field. After upgrading to 0.2.0:
+
+- In-progress assets where `concept.status == done` will be **blocked at the next mesh attempt** with the new approval-gate error. Run `/3d-pipeline:approve <slug>` once to unblock; this also lazy-migrates the manifest to schema 1.2.
+- New assets initialized with 0.2.0 use schema 1.2 from the start and require explicit approval before mesh.
+- No mass migration is needed; the rewrite happens on the next `update_stage` call for each asset.
+
 ## Dry-Run Mode
 
 Set this environment variable to skip all API calls:
@@ -172,13 +226,26 @@ Fixtures for later stages are planned for later chunks.
 
 Costs depend on provider pricing, selected quality settings, output size, retries, and review loop iterations.
 
-A typical humanoid full run is expected to cost about USD 0.50-2.00 across OpenAI, Replicate, and Meshy.
+### Measured cost: prop run (no rig, no animate)
 
-This is only an estimate.
+Measured on 2026-05-10 with a static prop (`throne-of-swords`, `prop` asset type) running concept → mesh → import → review (1 iteration, approved).
+
+| Stage | Vendor | Cost |
+| --- | --- | --- |
+| Concept (4 PNGs, 1 retry after moderation) | OpenAI `gpt-image-2` | ~USD 0.38 |
+| Mesh (rapid mode) | Replicate `hunyuan-3d-3.1` | ~USD 0.16 |
+| Import + review | local (Godot) | USD 0 |
+| **Total** | | **~USD 0.54** |
+
+A clean prop run without retries is roughly **USD 0.30-0.40** total. The concept retry above was caused by OpenAI moderation rejecting violent prompt language; a single successful concept pass typically costs ~USD 0.19.
+
+### Estimated cost: humanoid full run
+
+A humanoid full run that exercises every stage (concept + mesh + auto-rig + auto-animate + import + review) is expected to cost about USD 0.80-2.50 across OpenAI, Replicate, and Meshy. This is an estimate based on vendor list pricing and is not yet measured in this repo.
 
 Always check current vendor pricing before running a non-dry pipeline.
 
-The planned run command will show a cost preamble before making paid API calls.
+The `/3d-pipeline:run` command shows a cost preamble before making paid API calls.
 
 ## Roadmap
 

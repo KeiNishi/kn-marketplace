@@ -157,7 +157,15 @@ Ask whether to proceed to Stage 2 mesh generation.
 
 Use `AskUserQuestion` with `yes` and `stop`.
 
-If the user chooses `stop`, report the slug and concept folder, then end.
+If the user chooses `stop`, report the slug and concept folder, then end. The user can run `/3d-pipeline:approve <slug>` later to unblock mesh generation, or `/3d-pipeline:concept <slug> --description "<new text>"` to re-roll first.
+
+If the user chooses `yes`, record the approval so the mesh preflight passes:
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve
+```
+
+The mesh scripts refuse to run while `stages.concept.approved` is not `true`. The gate is enforced inside the mesh preflight, so a stopped run can always resume by approving from a separate session.
 
 ## 7. Stage 2 Mesh
 

@@ -25,6 +25,19 @@ This skill coordinates the Godot-first 3D asset pipeline. Use it to inspect `pip
 - Update `updatedAt` whenever a stage changes.
 - Never store API keys or credential paths in the manifest.
 
+## Schema 1.2
+
+Schema bumped from `1.1` to `1.2` in plugin v0.2.0. Manifests with `schemaVersion: "1.1"` are still readable; the first `_manifest.update_stage` call rewrites them as `1.2`.
+
+New fields on the `concept` stage:
+
+- `approved: bool` — set by `scripts/approve_concept.py`. Defaults to absent (treated as `false`).
+- `approvedAt: ISO-8601 string | null` — timestamp of the approval.
+- `approvedBy: "user" | null` — who approved. Currently always `"user"`.
+- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout"` — set when `status == failed` so the concept skill can surface tailored recovery text.
+
+Use `_manifest.concept_approved(manifest)` to check approval; mesh preflight scripts already do this.
+
 ## References
 
 - `references/pipeline-stages.md`
@@ -59,9 +72,8 @@ This skill coordinates the Godot-first 3D asset pipeline. Use it to inspect `pip
 
 ## Approval Gates
 
-- Ask for user approval after canonical concept selection before mesh generation.
-- Ask for user approval after mesh generation before rig, animation, or import.
-- Stop cleanly when the user declines and report the current output folder.
+- **Concept gate (mechanical)**: ask for user approval after canonical concept selection. Mesh scripts (`mesh_hunyuan.py`, `mesh_meshy.py`, `mesh_tripo.py`) refuse to run while `stages.concept.approved` is not `true`. Record approval via `scripts/approve_concept.py <slug> --approve`. Use `/3d-pipeline:approve` as the user-facing command.
+- **Mesh / rig / animate gates (advisory)**: ask for user approval before each subsequent stage. Stop cleanly when the user declines and report the current output folder.
 
 ## Output Layout
 

@@ -105,6 +105,11 @@ def _validate_manifest(slug: str, base: Path | None) -> tuple[dict[str, Any], Pa
     concept = manifest.get("stages", {}).get("concept", {})
     if concept.get("status") != "done":
         raise ValueError("Stage 2 requires stages.concept.status == done before mesh generation")
+    if not _manifest.concept_approved(manifest):
+        raise ValueError(
+            "Concept stage must be approved before mesh generation. "
+            "Run /3d-pipeline:approve <slug> after reviewing concept/canonical.png."
+        )
     asset_dir = _common.output_dir(slug, base)
     return manifest, asset_dir, _concept_image(manifest, asset_dir)
 

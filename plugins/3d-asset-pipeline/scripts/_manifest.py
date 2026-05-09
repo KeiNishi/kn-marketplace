@@ -10,7 +10,8 @@ except ImportError:
     import _common  # type: ignore
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
+SUPPORTED_SCHEMA_VERSIONS = {"1.1", "1.2"}
 ASSET_TYPES = {"humanoid", "quadruped", "prop"}
 STAGES = ("concept", "mesh", "rig", "animate", "engine", "review")
 STATUSES = {"pending", "in_progress", "done", "failed", "skipped"}
@@ -82,14 +83,19 @@ def update_stage(
     manifest = read(slug, base)
     manifest["stages"][stage].update(fields)
     manifest["updatedAt"] = _common.iso_now()
+    if manifest.get("schemaVersion") != SCHEMA_VERSION:
+        manifest["schemaVersion"] = SCHEMA_VERSION
     validate(manifest)
     _common.atomic_write_json(manifest_path(slug, base), manifest)
     return manifest
 
 
 def validate(manifest: dict[str, Any]) -> None:
-    if manifest.get("schemaVersion") != SCHEMA_VERSION:
-        raise ValueError(f"Unsupported schemaVersion: {manifest.get('schemaVersion')}")
+    if manifest.get("schemaVersion") not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(
+            f"Unsupported schemaVersion: {manifest.get('schemaVersion')}; "
+            f"supported: {sorted(SUPPORTED_SCHEMA_VERSIONS)}"
+        )
     if not manifest.get("slug"):
         raise ValueError("Manifest slug is required")
     if manifest.get("assetType") not in ASSET_TYPES:
@@ -108,3 +114,7 @@ def validate(manifest: dict[str, Any]) -> None:
         status = stage_data.get("status")
         if status not in STATUSES:
             raise ValueError(f"Invalid status for stage {stage}: {status}")
+
+
+def concept_approved(manifest: dict[str, Any]) -> bool:
+    return bool(manifest.get("stages", {}).get("concept", {}).get("approved"))

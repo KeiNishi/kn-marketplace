@@ -40,6 +40,10 @@ DRY_RUN_PNG = base64.b64decode(
 )
 
 
+class ModerationBlocked(RuntimeError):
+    """OpenAI rejected the image request for moderation reasons."""
+
+
 def _normalize_angle(angle: str) -> str:
     value = angle.strip().lower()
     value = ANGLE_ALIASES.get(value, value)
@@ -132,6 +136,14 @@ def _request_image(api_key: str, prompt: str, *, model: str, size: str, quality:
     )
     request_id = response.headers.get("x-request-id") or response.headers.get("openai-request-id")
     if response.status_code >= 400:
+        try:
+            body = response.json()
+        except ValueError:
+            body = {}
+        error = body.get("error") if isinstance(body, dict) else None
+        if isinstance(error, dict) and error.get("code") == "moderation_blocked":
+            message = str(error.get("message") or "OpenAI image generation was blocked by moderation")
+            raise ModerationBlocked(message.replace(api_key, "<redacted>"))
         detail = response.text[:500].replace(api_key, "<redacted>")
         raise RuntimeError(f"OpenAI image generation failed with HTTP {response.status_code}: {detail}")
     return _extract_png_bytes(response.json(), api_key), request_id
@@ -240,12 +252,17 @@ def generate(
     return _manifest.read(slug, base)
 
 
-def _mark_failed(slug: str, base: Path | None, message: str) -> None:
+def _mark_failed(slug: str, base: Path | None, message: str, *, failure_kind: str = "api_error") -> None:
     try:
         _manifest.update_stage(
             slug,
             "concept",
-            {"status": "failed", "error": message, "failedAt": _common.iso_now()},
+            {
+                "status": "failed",
+                "error": message,
+                "failureKind": failure_kind,
+                "failedAt": _common.iso_now(),
+            },
             base,
         )
     except Exception:
@@ -264,7 +281,17 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--canonical", default="front", help="canonical angle to copy after generation")
     parser.add_argument("--defer-canonical", action="store_true", help="leave stage in_progress for manual canonical selection")
     parser.add_argument("--select-canonical", help="copy an already generated angle to concept/canonical.png")
+    parser.add_argument("--description", help="replace manifest description and reset the concept stage before generating")
     return parser.parse_args(argv)
+
+
+def _reset_description(slug: str, base: Path | None, description: str) -> None:
+    manifest = _manifest.read(slug, base)
+    manifest["description"] = description
+    manifest["stages"]["concept"] = {"status": "pending"}
+    manifest["updatedAt"] = _common.iso_now()
+    _manifest.validate(manifest)
+    _common.atomic_write_json(_manifest.manifest_path(slug, base), manifest)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -276,6 +303,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.select_canonical:
             manifest = select_canonical(args.slug, args.select_canonical, base=base)
         else:
+            if args.description is not None:
+                _reset_description(args.slug, base, args.description)
             canonical = None if args.defer_canonical else args.canonical
             manifest = generate(
                 args.slug,
@@ -287,6 +316,10 @@ def main(argv: list[str] | None = None) -> int:
                 references=args.reference,
                 canonical=canonical,
             )
+    except ModerationBlocked as exc:
+        LOGGER.error("%s", exc)
+        _mark_failed(args.slug, base, str(exc), failure_kind="moderation_blocked")
+        return _common.EXIT_API_ERROR
     except FileNotFoundError as exc:
         LOGGER.error("%s", exc)
         _mark_failed(args.slug, base, str(exc))
@@ -301,7 +334,7 @@ def main(argv: list[str] | None = None) -> int:
         return _common.EXIT_TIMEOUT
     except Exception as exc:
         LOGGER.error("%s", exc)
-        _mark_failed(args.slug, base, str(exc))
+        _mark_failed(args.slug, base, str(exc), failure_kind="api_error")
         return _common.EXIT_API_ERROR
 
     concept = manifest["stages"]["concept"]
