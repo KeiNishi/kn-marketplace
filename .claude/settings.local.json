@@ -49,7 +49,14 @@
       "Bash(cygpath -w /tmp/parse_transcripts.py)",
       "Bash(cp /tmp/parse_transcripts.py \"C:/Users/24kei/AppData/Local/Temp/parse_transcripts.py\")",
       "Bash(cp /tmp/recent_transcripts.txt \"C:/Users/24kei/AppData/Local/Temp/recent_transcripts.txt\")",
-      "Read(//c/Users/24kei/AppData/Local/Temp/**)"
+      "Read(//c/Users/24kei/AppData/Local/Temp/**)",
+      "Skill(3d-asset-pipeline:3d-pipeline-overview)",
+      "Skill(3d-asset-pipeline:doctor)",
+      "Skill(3d-asset-pipeline:init)",
+      "Skill(3d-asset-pipeline:concept)",
+      "Skill(3d-asset-pipeline:import)",
+      "Skill(3d-asset-pipeline:review)",
+      "Bash(echo \"exitcode=$?\")"
     ]
   }
 }
