@@ -46,10 +46,13 @@ def _pascal_name(slug: str) -> str:
 def _import_content(uid: str) -> str:
     return (
         "[remap]\n"
-        f"uid=uid://{uid}\n"
+        "\n"
         'importer="scene"\n'
         'type="PackedScene"\n'
+        f'uid="uid://{uid}"\n'
+        "\n"
         "[params]\n"
+        "\n"
         'nodes/root_type="Node3D"\n'
         "animation/import=true\n"
         "meshes/ensure_tangents=true\n"

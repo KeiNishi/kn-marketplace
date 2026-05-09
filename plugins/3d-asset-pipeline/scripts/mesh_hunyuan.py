@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import mimetypes
 import shutil
 from pathlib import Path
 from typing import Any
@@ -169,15 +171,16 @@ def generate(slug: str, args: argparse.Namespace) -> dict[str, Any]:
         import requests
 
         client = replicate.Client(api_token=token)
-        with image_path.open("rb") as image_file:
-            prediction = client.predictions.create(
-                model=MODEL,
-                input={
-                    "image": image_file,
-                    "prompt": prompt,
-                    "edition": edition,
-                },
-            )
+        # Hunyuan 3D 3.1 accepts either `image` or `prompt`, not both.
+        if args.input == "text":
+            payload: dict[str, Any] = {"prompt": prompt, "edition": edition}
+        else:
+            mime, _ = mimetypes.guess_type(image_path.name)
+            if not mime:
+                mime = "image/png"
+            encoded = base64.b64encode(image_path.read_bytes()).decode("ascii")
+            payload = {"image": f"data:{mime};base64,{encoded}", "edition": edition}
+        prediction = client.predictions.create(model=MODEL, input=payload)
         prediction_id = str(_prediction_value(prediction, "id") or "")
         if not prediction_id:
             raise RuntimeError("Replicate prediction did not include an id")

@@ -71,6 +71,23 @@ Pre-flight checks failed. Run /3d-pipeline:doctor before running the full pipeli
 
 Do not initialize or modify the manifest after a failed doctor run.
 
+### Meshy fallback to prop mode
+
+`MESHY_API_KEY` is optional. The doctor reports `[WARN]` (not `[FAIL]`) when
+it is missing, so pre-flight will pass.
+
+If the resolved type is `humanoid` or `quadruped` and the doctor output
+contains `[WARN] Credential MESHY_API_KEY: missing optional key`, the
+rig and animate stages cannot run. Use `AskUserQuestion` to ask the user
+to either:
+
+- Switch the run to `--type prop` (rig and animate become `skipped`,
+  pipeline continues through Stage 5 and Stage 6), or
+- Abort and add `MESHY_API_KEY` to `~/.claude/3d-pipeline/.env` first.
+
+If the user picks the prop fallback, replace the resolved `--type` with
+`prop` for the rest of this run and note the override in the run summary.
+
 ## 3. Cost Preamble
 
 Skip this step when `PIPELINE_DRY_RUN=1` is set in the same shell session.

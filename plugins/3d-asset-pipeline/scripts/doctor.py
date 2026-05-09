@@ -15,8 +15,11 @@ except ImportError:
 
 
 Check = tuple[str, str, str]
-REQUIRED_KEYS = ("OPENAI_API_KEY", "REPLICATE_API_TOKEN", "MESHY_API_KEY")
-OPTIONAL_KEYS = ("TRIPO_API_KEY",)
+# Required for stages 1, 2, 5, 6 (concept -> mesh -> import -> review).
+REQUIRED_KEYS = ("OPENAI_API_KEY", "REPLICATE_API_TOKEN")
+# Optional: enables stages 3 and 4 (auto-rig, auto-animation). Without these,
+# humanoid/quadruped runs must fall back to prop mode (rig and animate skipped).
+OPTIONAL_KEYS = ("MESHY_API_KEY", "TRIPO_API_KEY")
 NETWORK_TARGETS = (
     ("OpenAI", "https://api.openai.com/v1/models"),
     ("Replicate", "https://api.replicate.com/v1/models"),

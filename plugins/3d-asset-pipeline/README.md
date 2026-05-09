@@ -73,8 +73,8 @@ Use this format:
 ```dotenv
 OPENAI_API_KEY=sk-...
 REPLICATE_API_TOKEN=r8_...
-MESHY_API_KEY=msy_...
-# Optional: TRIPO_API_KEY=tsk_...
+# Optional: MESHY_API_KEY=msy_...   # enables stages 3-4 (auto-rig, auto-animation)
+# Optional: TRIPO_API_KEY=tsk_...   # quadruped fallback only
 ```
 
 Do not commit this file.
@@ -94,15 +94,15 @@ Expected key providers:
 - Meshy: https://www.meshy.ai/
 - Tripo3D: https://www.tripo3d.ai/
 
-Required keys for the planned full pipeline:
+Required keys for stages 1, 2, 5, and 6:
 
 - `OPENAI_API_KEY`
 - `REPLICATE_API_TOKEN`
-- `MESHY_API_KEY`
 
-Optional key:
+Optional keys:
 
-- `TRIPO_API_KEY`
+- `MESHY_API_KEY` — enables stages 3 and 4 (auto-rig, auto-animation). Without it, humanoid and quadruped runs must fall back to prop mode so the rig and animate stages stay skipped.
+- `TRIPO_API_KEY` — quadruped fallback only.
 
 ## Python Prerequisites
 

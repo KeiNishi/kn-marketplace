@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.3.0"
+    "version": "1.3.1"
   },
   "plugins": [
     {
@@ -104,7 +104,7 @@
       "name": "3d-asset-pipeline",
       "source": "./plugins/3d-asset-pipeline",
       "description": "Godot-first 6-stage 3D asset pipeline from concept art to mesh, rig, animation, import, and in-engine review loop using cloud APIs: gpt-image-2, Hunyuan 3D 3.1 via Replicate, and Meshy v5.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "KN"
       },

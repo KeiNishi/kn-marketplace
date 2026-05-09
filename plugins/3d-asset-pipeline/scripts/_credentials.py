@@ -7,8 +7,10 @@ KNOWN_KEYS = ("OPENAI_API_KEY", "REPLICATE_API_TOKEN", "MESHY_API_KEY", "TRIPO_A
 MISSING_FILE_MESSAGE = (
     "3d-pipeline credentials file not found. Create "
     "%USERPROFILE%\\.claude\\3d-pipeline\\.env "
-    "(or ~/.claude/3d-pipeline/.env on POSIX) with OPENAI_API_KEY, "
-    "REPLICATE_API_TOKEN, and MESHY_API_KEY."
+    "(or ~/.claude/3d-pipeline/.env on POSIX) with OPENAI_API_KEY and "
+    "REPLICATE_API_TOKEN. MESHY_API_KEY is optional and enables auto-rig "
+    "and auto-animation; without it, humanoid/quadruped runs must use "
+    "prop mode."
 )
 
 

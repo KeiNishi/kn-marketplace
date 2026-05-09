@@ -12,5 +12,12 @@ Thumbs.db
 *.tmp
 *.bak
 
+# Python
+__pycache__/
+*.pyc
+
+# 3D asset pipeline outputs (test artifacts, generated assets)
+3d-pipeline-output/
+
 # Add your custom ignores below
 # 個人的なスキルファイルで公開したくないものがあれば、ここに追加してください

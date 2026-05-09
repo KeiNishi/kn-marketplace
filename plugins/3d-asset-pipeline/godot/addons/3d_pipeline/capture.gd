@@ -197,7 +197,7 @@ func _capture_all() -> Dictionary:
 			push_warning("Missing camera: %s" % camera_name)
 			continue
 		var file_name := str(SCREENSHOT_NAMES[camera_name])
-		var output_file := _args["output"].path_join(file_name)
+		var output_file: String = String(_args["output"]).path_join(file_name)
 		await _capture_camera(camera, output_file)
 		images.append({"camera": camera_name, "file": file_name, "path": output_file})
 
@@ -205,7 +205,7 @@ func _capture_all() -> Dictionary:
 	if player != null:
 		_prepare_animation_frame(player)
 		var camera := _root_scene.find_child("CamTQ", true, false) as Camera3D
-		var output_file := _args["output"].path_join("animation-mid.png")
+		var output_file: String = String(_args["output"]).path_join("animation-mid.png")
 		await _capture_camera(camera, output_file)
 		images.append({"camera": "CamTQ", "file": "animation-mid.png", "path": output_file, "animation": player.current_animation})
 
@@ -219,8 +219,13 @@ func _capture_all() -> Dictionary:
 
 
 func _capture_camera(camera: Camera3D, output_file: String) -> void:
-	camera.current = true
-	await process_frame
+	camera.make_current()
+	# Force a synchronous draw with the new camera so the viewport texture
+	# reflects this camera before we read it. Awaiting frame_post_draw is
+	# unreliable when the host window is minimized (frames may be skipped),
+	# so we explicitly drive the renderer and then await one tick to let the
+	# scene tree settle before reading the texture.
+	RenderingServer.force_draw(false)
 	await process_frame
 	var image := root.get_texture().get_image()
 	var err := image.save_png(output_file)
