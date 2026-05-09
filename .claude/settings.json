@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_corpus_ingest__vault_smart_search",
+      "mcp__plugin_corpus_vault-search__read",
+      "mcp__plugin_corpus_vault-search__search"
+    ]
+  }
+}
