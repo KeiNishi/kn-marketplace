@@ -1,0 +1,5 @@
+requests>=2.31
+python-dotenv>=1.0
+pillow>=10.0
+replicate>=0.30
+openai>=1.50

@@ -1,0 +1,63 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ref"]
+size = Vector3(1, 1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(4, 4)
+
+[sub_resource type="Environment" id="Environment_neutral"]
+background_mode = 1
+background_color = Color(0.45, 0.45, 0.45, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.65, 0.65, 0.65, 1)
+ambient_light_energy = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Material_ground"]
+albedo_color = Color(0.34, 0.34, 0.34, 1)
+roughness = 0.8
+
+[node name="ReviewRoot" type="Node3D"]
+
+[node name="AssetSlot" type="Node3D" parent="."]
+
+[node name="RefCube" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 0.5, 0)
+mesh = SubResource("BoxMesh_ref")
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("Material_ground")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 3, 0)
+light_energy = 1.4
+shadow_enabled = true
+
+[node name="FillLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, 0.25, -0.433013, 0, 0.866025, 0.5, 0.5, 0.433013, -0.75, 0, 3, 0)
+light_energy = 0.55
+
+[node name="RimLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, 0.25, 0.433013, 0, 0.866025, -0.5, -0.5, 0.433013, 0.75, 0, 3, 0)
+light_energy = 0.9
+
+[node name="CamFront" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.894427, 0.447214, 0, -0.447214, 0.894427, 0, 1.5, 3)
+current = true
+fov = 45.0
+
+[node name="CamTQ" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, -0.316228, 0.632456, 0, 0.894427, 0.447214, -0.707107, -0.316228, 0.632456, 2.12132, 1.5, 2.12132)
+fov = 45.0
+
+[node name="CamSide" type="Camera3D" parent="."]
+transform = Transform3D(0, -0.447214, 0.894427, 0, 0.894427, 0.447214, -1, 0, 0, 3, 1.5, 0)
+fov = 45.0
+
+[node name="CamBack" type="Camera3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 0.894427, 0.447214, 0, 0.447214, -0.894427, 0, 1.5, -3)
+fov = 45.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_neutral")

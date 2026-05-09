@@ -40,47 +40,6 @@ Pluginを更新した場合、以下の2箇所のバージョンを**必ず同�
 1. `plugins/<plugin-name>/.claude-plugin/plugin.json`
 2. `.claude-plugin/marketplace.json` 内の該当エントリ
 
-## スキル記述時のルール
-
+## プラグイン作成・編集時のルール
 - **必ず英語で記述すること**
-
-## プラグイン開発・レビュー時のルール
-
-### 必須: 公式ドキュメントへの準拠
-
-スキル、コマンド、エージェント、フックなどのプラグインコンポーネントを作成・編集・レビューする際は、**必ずClaude Code公式ドキュメントの記載に沿って行うこと**。
-
-### 参照すべき公式ドキュメント
-
-#### プラグイン・マーケットプレース関連
-
-| コンポーネント | 公式ドキュメントURL |
-|---------------|-------------------|
-| Plugins (プラグイン作成) | https://code.claude.com/docs/en/plugins |
-| Plugins Reference (プラグイン仕様) | https://code.claude.com/docs/en/plugins-reference |
-| Plugin Marketplaces (マーケットプレース作成) | https://code.claude.com/docs/en/plugin-marketplaces |
-| Discover Plugins (プラグインのインストール) | https://code.claude.com/docs/en/discover-plugins |
-
-#### コンポーネント別
-
-| コンポーネント | 公式ドキュメントURL |
-|---------------|-------------------|
-| Skills (スキル) | https://code.claude.com/docs/en/skills |
-| Sub-agents (サブエージェント) | https://code.claude.com/docs/en/sub-agents |
-| Hooks Guide (フック入門) | https://code.claude.com/docs/en/hooks-guide |
-| Hooks Reference (フック仕様) | https://code.claude.com/docs/en/hooks |
-| MCP (外部ツール連携) | https://code.claude.com/docs/en/mcp |
-
-#### 設定・その他
-
-| コンポーネント | 公式ドキュメントURL |
-|---------------|-------------------|
-| Settings (設定) | https://code.claude.com/docs/en/settings |
-| Memory (CLAUDE.md) | https://code.claude.com/docs/en/memory |
-| IAM (権限管理) | https://code.claude.com/docs/en/iam |
-
-### 注意事項
-
-- 公式ドキュメントに記載されていないフィールドやオプションを使用しないこと
-- 不明な点がある場合は、推測せず公式ドキュメントを確認すること
-- レビュー時に公式ドキュメントと矛盾する指摘をしないこと
+- claude-plugins-officialのplugin-devを利用して作成・編集を行うこと。
