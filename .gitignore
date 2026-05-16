@@ -21,3 +21,4 @@ __pycache__/
 
 # Add your custom ignores below
 # 個人的なスキルファイルで公開したくないものがあれば、ここに追加してください
+.claude/settings.local.json
