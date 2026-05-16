@@ -1,6 +1,6 @@
 ---
 name: engine-review-loop
-description: This skill should be used when the user asks to run "stage 6", "engine review", "Godot screenshot capture", "review loop", "/3d-pipeline:review", or any Stage 6 task in the 3D asset pipeline. It covers Godot screenshot capture, multimodal review, fix-instructions.json synthesis, and bounded apply-and-recapture iterations.
+description: This skill should be used when the user asks to run "stage 6", "engine review", "Godot screenshot capture", "review loop", "/3d-pipeline:review-godot", or any Stage 6 task in the 3D asset pipeline. It covers Godot screenshot capture, multimodal review, fix-instructions.json synthesis, and bounded apply-and-recapture iterations.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 

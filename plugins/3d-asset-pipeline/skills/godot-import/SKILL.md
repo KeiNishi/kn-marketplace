@@ -1,6 +1,6 @@
 ---
 name: godot-import
-description: This skill should be used when the user asks to "import to Godot", "drop the asset into Godot", or as stage 5 of the 3D pipeline. Copies the final asset into a Godot 4 project's assets/characters/<slug>/ folder and emits the .import config (and optionally a wrapper .tscn). Also triggers on "/3d-pipeline:import" command. Godot 4 only in v0.1.0; Unity 6 and Unreal 5 are future work.
+description: This skill should be used when the user asks to "import to Godot", "drop the asset into Godot", or as stage 5 of the 3D pipeline. Copies the final asset into a Godot 4 project's assets/characters/<slug>/ folder and emits the .import config (and optionally a wrapper .tscn). Also triggers on "/3d-pipeline:godot-import" command. Godot 4 only in v0.1.0; Unity 6 and Unreal 5 are future work.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 

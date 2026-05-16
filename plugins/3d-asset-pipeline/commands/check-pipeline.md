@@ -1,18 +1,18 @@
 ---
-name: doctor
+name: check-pipeline
 description: Health check for the 3D asset pipeline -- verifies Python, deps, credentials file, required keys, git, and (optionally) network reachability of OpenAI, Replicate, Meshy.
 argument-hint: "[--network]"
 allowed-tools: Bash
 ---
 
-# 3D Pipeline Doctor Command
+# 3D Pipeline Check-Pipeline Command
 
 Run the deterministic health checker for the plugin.
 
 ## Usage
 
 ```text
-/3d-pipeline:doctor [--network]
+/3d-pipeline:check-pipeline [--network]
 ```
 
 Pass all command arguments through to the script.

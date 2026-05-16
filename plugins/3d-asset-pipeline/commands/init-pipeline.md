@@ -1,5 +1,5 @@
 ---
-name: init
+name: init-pipeline
 description: Initialize a 3D asset pipeline manifest before running concept, mesh, rig, animation, import, or review stages.
 argument-hint: "<asset-name> <description> [--type humanoid|quadruped|prop]"
 allowed-tools: Read, Write, Bash
@@ -12,7 +12,7 @@ Create `3d-pipeline-output/<slug>/pipeline.json` for a new asset.
 ## Usage
 
 ```text
-/3d-pipeline:init <asset-name> <description> [--type humanoid|quadruped|prop]
+/3d-pipeline:init-pipeline <asset-name> <description> [--type humanoid|quadruped|prop]
 ```
 
 ## Workflow

@@ -1,11 +1,11 @@
 ---
-name: model
+name: generate-mesh
 description: Stage 2 of the 3D asset pipeline - generate a textured 3D mesh from the canonical concept image. Defaults to Hunyuan 3D 3.1 via Replicate; supports Meshy v5 alt and Tripo3D fallback.
 argument-hint: "<asset-slug> [--vendor hunyuan|meshy|tripo] [--mode rapid|pro] [--target-polys N] [--no-pbr]"
 allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
-# 3D Pipeline Model Command
+# 3D Pipeline Generate-Mesh Command
 
 Generate the Stage 2 mesh for an existing 3D pipeline manifest.
 

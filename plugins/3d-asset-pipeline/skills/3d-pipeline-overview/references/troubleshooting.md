@@ -6,7 +6,7 @@ Use this guide when a stage fails, stalls, produces incomplete files, or needs m
 
 Missing `OPENAI_API_KEY` means the key is absent from `~/.claude/3d-pipeline/.env`.
 
-Run `/3d-pipeline:doctor` and fix the credentials file outside the repository.
+Run `/3d-pipeline:check-pipeline` and fix the credentials file outside the repository.
 
 HTTP `429` means the OpenAI image API rate limit or quota was reached.
 
@@ -40,7 +40,7 @@ If image input is rejected, confirm `concept/canonical.png` is a valid PNG under
 
 Missing `REPLICATE_API_TOKEN` means the token is absent from `~/.claude/3d-pipeline/.env`.
 
-Run `/3d-pipeline:doctor` before rerunning Hunyuan.
+Run `/3d-pipeline:check-pipeline` before rerunning Hunyuan.
 
 ## Stage 2: Meshy mesh_meshy.py
 
@@ -142,6 +142,6 @@ Change that stage `status` to `pending`.
 
 Save the file.
 
-Rerun the stage command or `/3d-pipeline:run`.
+Rerun the stage command or `/3d-pipeline:run-pipeline`.
 
 Keep previous provider task ids in notes when needed for billing or dashboard investigation.

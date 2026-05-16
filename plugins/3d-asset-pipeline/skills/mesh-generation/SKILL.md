@@ -1,6 +1,6 @@
 ---
 name: mesh-generation
-description: This skill should be used when the user asks to "generate a 3D mesh", "convert concept to 3D", "text-to-3D", or as stage 2 of the 3D pipeline. Selects between Hunyuan 3D 3.1 (default), Meshy v5 (alt), or Tripo3D (quadruped fallback) based on asset type and user override. Polls vendor APIs and writes outputs to the mesh stage folder. Also triggers on "/3d-pipeline:model" command.
+description: This skill should be used when the user asks to "generate a 3D mesh", "convert concept to 3D", "text-to-3D", or as stage 2 of the 3D pipeline. Selects between Hunyuan 3D 3.1 (default), Meshy v5 (alt), or Tripo3D (quadruped fallback) based on asset type and user override. Polls vendor APIs and writes outputs to the mesh stage folder. Also triggers on "/3d-pipeline:generate-mesh" command.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 

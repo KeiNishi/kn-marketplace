@@ -75,7 +75,7 @@ OPENAI_API_KEY=sk-...
 REPLICATE_API_TOKEN=r8_...
 # Optional: MESHY_API_KEY=msy_...   # enables stages 3-4 (auto-rig, auto-animation)
 # Optional: TRIPO_API_KEY=tsk_...   # quadruped fallback only
-# Optional: GODOT_BIN=C:\path\to\godot.exe   # used by /3d-pipeline:import to auto-build the import cache
+# Optional: GODOT_BIN=C:\path\to\godot.exe   # used by /3d-pipeline:godot-import to auto-build the import cache
 ```
 
 Do not commit this file.
@@ -130,19 +130,19 @@ Later chunks will add scripts that use these packages.
 The health check command is:
 
 ```text
-/3d-pipeline:doctor
+/3d-pipeline:check-pipeline
 ```
 
 The planned full pipeline command is:
 
 ```text
-/3d-pipeline:run <name> <description>
+/3d-pipeline:run-pipeline <name> <description>
 ```
 
 Example:
 
 ```text
-/3d-pipeline:run knight-hero "Stoic plate armor knight with a longsword"
+/3d-pipeline:run-pipeline knight-hero "Stoic plate armor knight with a longsword"
 ```
 
 The concept stage can be run after a manifest is initialized:
@@ -182,7 +182,7 @@ python scripts/concept_openai.py <slug> --description "<softer text>"
 
 `--description` overwrites the manifest description and resets the concept stage to `pending` before regenerating.
 
-Inside the full pipeline command (`/3d-pipeline:run`), the gate appears as an inline `AskUserQuestion(yes/stop)` prompt that auto-approves on yes.
+Inside the full pipeline command (`/3d-pipeline:run-pipeline`), the gate appears as an inline `AskUserQuestion(yes/stop)` prompt that auto-approves on yes.
 
 ## Manifest schema 1.2
 
@@ -197,7 +197,7 @@ New fields on the `concept` stage:
 
 New fields on the `engine` stage:
 
-- `importCacheBuilt: bool` — `true` when `/3d-pipeline:import` ran `godot --headless --import` successfully.
+- `importCacheBuilt: bool` — `true` when `/3d-pipeline:godot-import` ran `godot --headless --import` successfully.
 - `godotBin: string | null` — path to the Godot binary used (no secrets).
 
 ## Migrating from 0.1.x
@@ -245,7 +245,7 @@ A humanoid full run that exercises every stage (concept + mesh + auto-rig + auto
 
 Always check current vendor pricing before running a non-dry pipeline.
 
-The `/3d-pipeline:run` command shows a cost preamble before making paid API calls.
+The `/3d-pipeline:run-pipeline` command shows a cost preamble before making paid API calls.
 
 ## Roadmap
 

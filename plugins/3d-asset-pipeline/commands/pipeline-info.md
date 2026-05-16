@@ -1,11 +1,11 @@
 ---
-name: status
+name: pipeline-info
 description: Print the pipeline.json status table for an asset slug -- stage names, statuses, vendors, and key file paths.
 argument-hint: "<asset-slug>"
 allowed-tools: Read, Bash
 ---
 
-# 3D Pipeline Status Command
+# 3D Pipeline Info Command
 
 Print the current manifest status for one asset.
 
@@ -14,7 +14,7 @@ Require `<asset-slug>` as the first argument.
 If it is missing, print:
 
 ```text
-Usage: /3d-pipeline:status <asset-slug>
+Usage: /3d-pipeline:pipeline-info <asset-slug>
 ```
 
 Read:
@@ -26,7 +26,7 @@ Read:
 If `pipeline.json` is missing, print:
 
 ```text
-No pipeline.json found for <asset-slug>. Run /3d-pipeline:init or /3d-pipeline:run first.
+No pipeline.json found for <asset-slug>. Run /3d-pipeline:init-pipeline or /3d-pipeline:run-pipeline first.
 ```
 
 Then stop.

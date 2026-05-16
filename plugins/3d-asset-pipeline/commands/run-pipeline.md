@@ -1,5 +1,5 @@
 ---
-name: run
+name: run-pipeline
 description: Run the full 6-stage 3D asset pipeline (concept to mesh to rig to animate to import to review) with approval gates between stages and an automatic in-engine review loop. Default review loop is ON; use --no-review to skip.
 argument-hint: "<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo]"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
@@ -66,7 +66,7 @@ If any line contains `[FAIL]`, abort.
 Print:
 
 ```text
-Pre-flight checks failed. Run /3d-pipeline:doctor before running the full pipeline.
+Pre-flight checks failed. Run /3d-pipeline:check-pipeline before running the full pipeline.
 ```
 
 Do not initialize or modify the manifest after a failed doctor run.
@@ -185,7 +185,7 @@ After the script exits, read `pipeline.json`.
 
 Report mesh status, vendor, prediction id or task id, GLB path, FBX path when present, and error when failed.
 
-If mesh failed, stop and suggest `/3d-pipeline:status <slug>`.
+If mesh failed, stop and suggest `/3d-pipeline:pipeline-info <slug>`.
 
 ## 8. Approval Gate After Mesh
 

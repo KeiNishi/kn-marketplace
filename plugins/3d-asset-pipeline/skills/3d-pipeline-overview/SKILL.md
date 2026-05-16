@@ -47,7 +47,7 @@ Use `_manifest.concept_approved(manifest)` to check approval; mesh preflight scr
 ## Pre-flight Checks
 
 - Run `scripts/doctor.py` before starting paid or long-running stages.
-- Stop when the doctor reports failed checks and ask the user to run `/3d-pipeline:doctor`.
+- Stop when the doctor reports failed checks and ask the user to run `/3d-pipeline:check-pipeline`.
 - Confirm `PIPELINE_DRY_RUN=1` is set in the same shell session when dry-run behavior is expected.
 
 ## Asset Type Detection

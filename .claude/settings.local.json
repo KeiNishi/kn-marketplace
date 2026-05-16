@@ -56,7 +56,10 @@
       "Skill(3d-asset-pipeline:concept)",
       "Skill(3d-asset-pipeline:import)",
       "Skill(3d-asset-pipeline:review)",
-      "Bash(echo \"exitcode=$?\")"
+      "Bash(echo \"exitcode=$?\")",
+      "Bash(findstr /R \"489b 84409\")",
+      "Skill(3d-asset-pipeline:model)",
+      "Bash(Remove-Item \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\init.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\model.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\doctor.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\review.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\status.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\run.md\", \"D:\\\\Projects\\\\kn-marketplace\\\\plugins\\\\3d-asset-pipeline\\\\commands\\\\import.md\")"
     ]
   }
 }
