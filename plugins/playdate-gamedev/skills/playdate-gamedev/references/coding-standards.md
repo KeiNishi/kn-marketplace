@@ -2,6 +2,15 @@
 
 Complete coding conventions for Playdate C development.
 
+## Contents
+
+- [Naming Conventions](#naming-conventions)
+- [File Organization](#file-organization)
+- [Error Handling](#error-handling)
+- [Code Organization](#code-organization)
+- [Comments](#comments)
+- [Best Practices](#best-practices)
+
 ## Naming Conventions
 
 ### Constants

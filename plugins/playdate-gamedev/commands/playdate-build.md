@@ -94,9 +94,9 @@ When the user runs `/playdate-build` or when you need to build a Playdate projec
 
 5. **Run simulator** (if `--run` specified and build succeeded):
 
-   **Windows**:
-   ```bash
-   "%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/<GameName>.pdx
+   **Windows (PowerShell)**:
+   ```powershell
+   & "$env:PLAYDATE_SDK_PATH/bin/PlaydateSimulator.exe" build/<GameName>.pdx
    ```
 
    **Linux/macOS**:
@@ -131,7 +131,7 @@ Error: PLAYDATE_SDK_PATH not set
 
 **Windows (PowerShell - temporary)**:
 ```powershell
-$env:PLAYDATE_SDK_PATH = "C:\Users\<Username>\Documents\PlaydateSDK"
+$env:PLAYDATE_SDK_PATH = "C:/Users/<Username>/Documents/PlaydateSDK"
 ```
 
 **Linux/macOS**:
@@ -195,5 +195,5 @@ On failed build:
 - The `build/` directory contains all build artifacts and can be safely deleted for a clean build
 - The `.pdx` bundle is what runs on the device/simulator
 - Device builds produce ARM binaries, simulator builds produce native (x64) binaries
-- On Windows, the Playdate SDK typically installs to `C:\Users\<Username>\Documents\PlaydateSDK`
+- On Windows, the Playdate SDK typically installs to `C:/Users/<Username>/Documents/PlaydateSDK`
 - Optionally add `<SDK_PATH>/bin` to PATH for easy access to `pdc`, `pdutil`, and the simulator

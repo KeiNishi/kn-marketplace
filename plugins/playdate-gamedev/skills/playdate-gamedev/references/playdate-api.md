@@ -2,6 +2,16 @@
 
 Comprehensive API usage patterns for Playdate SDK.
 
+## Contents
+
+- [Graphics](#graphics)
+- [Sprites](#sprites)
+- [Input](#input)
+- [Sound](#sound)
+- [File I/O](#file-io)
+- [System](#system)
+- [Menu System](#menu-system)
+
 ## Graphics
 
 ### Basic Drawing

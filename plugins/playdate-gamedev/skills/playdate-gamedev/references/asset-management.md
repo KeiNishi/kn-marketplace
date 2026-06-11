@@ -2,6 +2,14 @@
 
 Asset handling, formats, and animations for Playdate games.
 
+## Contents
+
+- [Image Assets](#image-assets)
+- [Sprite Sheets / Animations](#sprite-sheets--animations)
+- [Audio Assets](#audio-assets)
+- [Fonts](#fonts)
+- [Asset Loading Strategies](#asset-loading-strategies)
+
 ## Image Assets
 
 ### Supported Formats

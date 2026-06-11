@@ -2,6 +2,21 @@
 
 Detailed project setup templates and configuration for Playdate C development.
 
+## Contents
+
+- [Template Repository](#template-repository)
+- [Directory Structure](#directory-structure)
+- [Directory Descriptions](#directory-descriptions)
+- [pdxinfo Template](#pdxinfo-template)
+- [CMakeLists.txt Template](#cmakeliststxt-template)
+- [Project Initialization](#project-initialization)
+- [main.c Template](#mainc-template)
+- [game.h Template](#gameh-template)
+- [game.c Template](#gamec-template)
+- [types.h Template](#typesh-template)
+- [.gitignore Template](#gitignore-template)
+- [VSCode Tasks Configuration](#vscode-tasks-configuration)
+
 ## Template Repository
 
 **Recommended**: Use the official template repository for new projects.
@@ -384,8 +399,8 @@ The template includes `.vscode/tasks.json` for one-click building.
 ### Run in Simulator
 
 ```bash
-# Windows
-"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/YourGame.pdx
+# Windows (PowerShell)
+& "$env:PLAYDATE_SDK_PATH/bin/PlaydateSimulator.exe" build/YourGame.pdx
 
 # macOS
 open build/YourGame.pdx
