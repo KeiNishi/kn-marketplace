@@ -1,0 +1,1 @@
+Add a test that verifies my player actually jumps: PlayerController is a MonoBehaviour with a Rigidbody, and calling Jump() should make it move upward over the next physics frames.

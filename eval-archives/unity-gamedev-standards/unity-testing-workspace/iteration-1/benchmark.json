@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "skill_name": "unity-testing",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-11T16:39:55Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 247.5,
+        "tokens": 33859,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+          "passed": true,
+          "evidence": "Section 2 shows the exact command: '<UnityBin> -batchmode -projectPath <path> -runTests -testPlatform EditMode -testResults /tmp/unity_test_results_EditMode.xml -logFile -'. The explanation explicitly states 'do not combine with -quit'."
+        },
+        {
+          "text": "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+          "passed": true,
+          "evidence": "Runner script step 2 states: 'Locates Unity: --unity-bin > UNITY_PATH env var > Unity Hub default paths.' Step 3 states: 'Reads ProjectSettings/ProjectVersion.txt to find the exact editor version.' Running locally section shows macOS path '/Applications/Unity/Hub/Editor/2022.3.20f1/Unity.app/Contents/MacOS/Unity'. Linux runner path '/home/runner/Unity/Hub/Editor/2022.3.20f1/Editor/Unity' is shown in the secrets table. Windows Hub path is not explicitly spelled out but the mechanism (env var > Hub default paths based on ProjectVersion.txt) is fully described."
+        },
+        {
+          "text": "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+          "passed": true,
+          "evidence": "The CI workflow explicitly runs both: 'Run EditMode tests' and 'Run PlayMode tests' steps, each calling scripts/run_unity_tests.py with --test-platform EditMode and --test-platform PlayMode respectively."
+        },
+        {
+          "text": "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+          "passed": true,
+          "evidence": "Runner script description: 'Parses the NUnit XML: prints total=N passed=N failed=N skipped=N' and 'Prints each failed test's fullname and failure/message'. The example output shows: 'FAILED: MyGame.Tests.EditMode.HealthTests.TakeDamage_ReducesHealthByAmount / Expected: 70 / But was: 75'."
+        },
+        {
+          "text": "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+          "passed": true,
+          "evidence": "Runner script: 'Exits 1 if any test failed; exits 0 only when all pass.' Example failure output ends with '1 test(s) failed. Fix the failures above and re-run; only proceed when the run is green.' \u2014 explicitly showing the run-read-fix-rerun pattern."
+        },
+        {
+          "text": "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)",
+          "passed": true,
+          "evidence": "Section 2 states: 'If Unity exits but writes no results file (compile errors, license failure, project lock), the script prints a diagnostic and exits 1.' All three failure modes (compile errors, license failure, project lock) are explicitly named."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 106.2,
+        "tokens": 27949,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+          "passed": true,
+          "evidence": "Response states: 'Per the unity-testing skill's decision tree: Pure C# logic (damage formulas, inventory rules, \u2026, plain classes with no UnityEngine lifecycle)? \u2192 EditMode tests.' and 'EditMode tests are the correct choice. They run without entering Play mode and are the fastest possible feedback loop.'"
+        },
+        {
+          "text": "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+          "passed": true,
+          "evidence": "EditModeTests.asmdef is shown with: \"references\": [\"Gameplay\", \"UnityEngine.TestRunner\", \"UnityEditor.TestRunner\"], \"includePlatforms\": [\"Editor\"], and \"precompiledReferences\": [\"nunit.framework.dll\"]. Annotated: 'required for NUnit' and 'references Gameplay so the test file can see DamageCalculator'."
+        },
+        {
+          "text": "Tests use the [Test] attribute, not [UnityTest]",
+          "passed": true,
+          "evidence": "Every test method in DamageCalculatorTests.cs is decorated with [Test]. The response explicitly states: 'all [Test] (synchronous)'. No [UnityTest] attributes appear anywhere in the file."
+        },
+        {
+          "text": "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+          "passed": true,
+          "evidence": "Tests use explicit // Arrange, // Act, // Assert comments and follow the naming pattern, e.g.: 'public void Calculate_ReturnsCorrectDamage_WhenAttackExceedsDefense()', 'public void Calculate_ReturnsZero_WhenDefenseExceedsAttack()', 'public void Calculate_ScalesDamageByCriticalMultiplier_WhenCriticalHit()'. All test bodies have clearly separated Arrange/Act/Assert sections."
+        },
+        {
+          "text": "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+          "passed": true,
+          "evidence": "Multiple uses throughout, e.g.: 'Assert.That(result, Is.EqualTo(30f).Within(0.001f))' and 'Assert.That(() => DamageCalculator.Calculate(-1f, 0f, 1f), Throws.TypeOf<System.ArgumentOutOfRangeException>())'. All assertions use Assert.That with constraint model."
+        },
+        {
+          "text": "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py",
+          "passed": true,
+          "evidence": "Shows: 'python3 scripts/run_unity_tests.py --project-path /path/to/your-unity-project --test-platform EditMode' and the underlying batchmode command: 'Unity -batchmode -projectPath <path> -runTests -testPlatform EditMode -testResults /tmp/unity_test_results_EditMode.xml -logFile -'. Both the script and the raw batchmode flags are described."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 64.8,
+        "tokens": 21022,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+          "passed": true,
+          "evidence": "Response states: 'anything that requires MonoBehaviour lifecycle or physics frames goes in a PlayMode test written as a [UnityTest] coroutine.' and the decision table shows 'Physics engine (Rigidbody, AddForce): Not active [EditMode] vs Active [PlayMode]'."
+        },
+        {
+          "text": "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+          "passed": true,
+          "evidence": "'[UnityTest] public IEnumerator Jump_MovesPlayerUpward_OverPhysicsFrames()' \u2014 uses [UnityTest], returns IEnumerator, and yields both 'yield return null' (to allow Awake to run) and 'yield return new WaitForFixedUpdate()' twice before the Assert."
+        },
+        {
+          "text": "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+          "passed": true,
+          "evidence": "PlayModeTests.asmdef is created at 'Assets/_Project/Tests/PlayMode/PlayModeTests.asmdef' with no 'includePlatforms' restriction (unlike EditMode which restricts to Editor). It is a separate file from any EditMode asmdef."
+        },
+        {
+          "text": "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+          "passed": true,
+          "evidence": "'Assert.That(go.transform.position.y, Is.GreaterThan(startY), \"PlayerController.Jump() should move the Rigidbody upward.\")' \u2014 uses NUnit constraint syntax Is.GreaterThan on the y-position, exactly matching the example given in the assertion."
+        },
+        {
+          "text": "Destroys spawned GameObjects at the end of the test so tests remain independent",
+          "passed": true,
+          "evidence": "'// Cleanup\nObject.Destroy(go);' appears at the end of the test method body. The response's design notes also explain: 'Keeps tests independent \u2014 the spawned GameObject is removed before the next test runs.'"
+        },
+        {
+          "text": "Mentions running the suite via batchmode with -testPlatform PlayMode",
+          "passed": true,
+          "evidence": "Shows: 'python3 scripts/run_unity_tests.py --project-path /path/to/your/unity/project --test-platform PlayMode' and the underlying command including '-testPlatform PlayMode -testResults /tmp/results-playmode.xml -logFile -'. Both the script and raw batchmode flags are present."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.1667,
+        "passed": 1,
+        "failed": 5,
+        "total": 6,
+        "time_seconds": 87.3,
+        "tokens": 19886,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+          "passed": false,
+          "evidence": "The run-tests-local.sh script uses '-logFile \"${RESULTS_DIR}/editmode/unity.log\"' (writing to a file), not '-logFile -' for stdout streaming. The flags table notes 'Omit or set to - to print to stdout' but does not use this in any actual command. The CI workflow uses 'game-ci/unity-test-runner' which abstracts the raw flags. No explicit warning against combining -quit with -runTests."
+        },
+        {
+          "text": "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+          "passed": false,
+          "evidence": "Response uses UNITY_PATH env var (via 'UNITY=\"${UNITY_PATH:-/opt/unity/Editor/Unity}\"') but does not mention a --unity-bin flag. Prerequisites section says to 'note the exact version string' from ProjectVersion.txt but the script does not auto-locate the binary based on it. No Windows Hub path (C:/Program Files/Unity/...) is shown. macOS Hub path is shown in comments only as an example without the Hub directory structure."
+        },
+        {
+          "text": "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+          "passed": true,
+          "evidence": "The GitHub Actions workflow runs both: 'Run EditMode tests' using 'testMode: EditMode' and 'Run PlayMode tests' using 'testMode: PlayMode'. The local script also runs both platforms sequentially."
+        },
+        {
+          "text": "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+          "passed": false,
+          "evidence": "Response uses 'game-ci/unity-test-runner' which internally parses XML but as a black box. No scripts/run_unity_tests.py is provided. The response does not describe parsing test-run attributes or failed test-case nodes \u2014 it simply says 'game-ci/unity-test-runner reads the NUnit XML produced by -testResults and exits with a non-zero code when any test-case result=\"Failed\" element is present' without user-visible XML parsing logic."
+        },
+        {
+          "text": "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+          "passed": false,
+          "evidence": "Exit code propagation is covered via 'game-ci/unity-test-runner' exiting non-zero. However, the response does not describe a run-read-fix-rerun loop or show what failure output looks like to guide reading failure messages. The 'Result gates' section only lists what must pass, not the iterative fix cycle."
+        },
+        {
+          "text": "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)",
+          "passed": false,
+          "evidence": "The response does not mention the failure mode when no results XML is produced. Compile errors and project lock scenarios are not addressed anywhere in the response."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8333,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 100.4,
+        "tokens": 22525,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+          "passed": true,
+          "evidence": "Response states in the test file's header comment: 'No MonoBehaviour or scene loading required \u2014 pure C# logic.' and the section 'What was produced' describes the class as a pure logic component. The choice of EditMode is consistent throughout with no PlayMode assembly or [UnityTest] used."
+        },
+        {
+          "text": "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+          "passed": true,
+          "evidence": "Project.Gameplay.Tests.asmdef is shown with: \"references\": [\"Project.Gameplay\", \"UnityEngine.TestRunner\", \"UnityEditor.TestRunner\"], \"includePlatforms\": [\"Editor\"], and \"precompiledReferences\": [\"nunit.framework.dll\"]. Annotated: 'restricts to EditMode only' and 'ensures NUnit is linked'."
+        },
+        {
+          "text": "Tests use the [Test] attribute, not [UnityTest]",
+          "passed": true,
+          "evidence": "Every test method uses [Test] or [TestCase]. For example: '[Test] public void Calculate_AttackExceedsDefense_ReturnsPositiveDamage()' and '[TestCase(0f, 0f, 1f, 0f, TestName = \"Boundary_AllZero\")]'. No [UnityTest] attributes appear in the file."
+        },
+        {
+          "text": "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+          "passed": false,
+          "evidence": "Most tests are one-liners with no explicit Arrange/Act/Assert sections (e.g., 'float result = _calc.Calculate(attackPower: 100f, defense: 40f, criticalMultiplier: 1f); Assert.That(result, Is.EqualTo(60f).Within(0.001f));' \u2014 no Arrange step, no comments separating phases). Additionally, names follow the pattern Method_Condition_Result (e.g., 'Calculate_AttackExceedsDefense_ReturnsPositiveDamage') rather than the specified Method_ExpectedBehavior_WhenCondition pattern. Borderline cases like 'Calculate_CriticalMultiplier_ScalesDamage' omit the 'When' clause entirely."
+        },
+        {
+          "text": "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+          "passed": true,
+          "evidence": "Uses constraint syntax throughout: 'Assert.That(result, Is.EqualTo(60f).Within(0.001f))' and 'Assert.That(ex.ParamName, Is.EqualTo(\"attackPower\"))'. Exception tests use Assert.Throws<T> which is also NUnit constraint-compatible."
+        },
+        {
+          "text": "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py",
+          "passed": true,
+          "evidence": "Shows the batchmode command: '/Applications/Unity/Hub/Editor/<UnityVersion>/Unity.app/Contents/MacOS/Unity -batchmode -runTests -testPlatform EditMode -projectPath /tmp/eval-work/dmg-b -testResults /tmp/eval-work/dmg-b/TestResults.xml -logFile /tmp/eval-work/dmg-b/unity.log -quit'. All required flags (-batchmode, -runTests, -testPlatform EditMode, -testResults) are present. No mention of scripts/run_unity_tests.py, but the assertion allows 'or via scripts/run_unity_tests.py' as an alternative."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8333,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 82.9,
+        "tokens": 19509,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+          "passed": true,
+          "evidence": "'Because the test needs to observe real Rigidbody motion across multiple FixedUpdate frames, Play Mode is the only correct choice. An Edit Mode test cannot drive the physics engine and would require mocking the entire Rigidbody \u2014 that would test the mock, not the real behaviour.'"
+        },
+        {
+          "text": "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+          "passed": true,
+          "evidence": "Two [UnityTest] methods: '[UnityTest] public IEnumerator Jump_MovesPlayerUpward_OverNextPhysicsFrames()' yields 'WaitForFixedUpdate' in a loop 5 times before asserting; '[UnityTest] public IEnumerator Jump_GivesRigidbodyPositiveVerticalVelocity()' yields 'WaitForFixedUpdate' once before asserting. [UnitySetUp] also returns IEnumerator and yields WaitForFixedUpdate."
+        },
+        {
+          "text": "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+          "passed": true,
+          "evidence": "'PlayerJumpPlayModeTest.asmdef' at 'Assets/Tests/PlayMode/PlayerJumpPlayModeTest.asmdef' with no 'includePlatforms' restriction \u2014 making it a PlayMode assembly separate from any EditMode asmdef."
+        },
+        {
+          "text": "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+          "passed": false,
+          "evidence": "The response uses 'Assert.Greater(yAfter, yBefore, ...)' and 'Assert.Greater(_rb.linearVelocity.y, 0f, ...)'. Assert.Greater is the NUnit Classic API, not constraint syntax. Constraint syntax would be 'Assert.That(yAfter, Is.GreaterThan(yBefore))'. The assertion specifically requires constraint syntax (Is.GreaterThan) \u2014 the classic API is not equivalent."
+        },
+        {
+          "text": "Destroys spawned GameObjects at the end of the test so tests remain independent",
+          "passed": true,
+          "evidence": "'[TearDown] public void TearDown()' calls 'Object.Destroy(_playerGO)' and also destroys the floor: 'GameObject floor = GameObject.Find(\"Floor\"); if (floor != null) Object.Destroy(floor);'. Cleanup covers all created objects."
+        },
+        {
+          "text": "Mentions running the suite via batchmode with -testPlatform PlayMode",
+          "passed": true,
+          "evidence": "Shows the command: '/path/to/Unity -batchmode -runTests -testPlatform PlayMode -projectPath /path/to/project -testResults TestResults-PlayMode.xml -logFile unity-playmode.log'. All required flags including -testPlatform PlayMode are present."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 139.5,
+        "stddev": 95.794,
+        "min": 64.8,
+        "max": 247.5
+      },
+      "tokens": {
+        "mean": 27610.0,
+        "stddev": 6425.2107,
+        "min": 21022,
+        "max": 33859
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6111,
+        "stddev": 0.3849,
+        "min": 0.1667,
+        "max": 0.8333
+      },
+      "time_seconds": {
+        "mean": 90.2,
+        "stddev": 9.1033,
+        "min": 82.9,
+        "max": 100.4
+      },
+      "tokens": {
+        "mean": 20640.0,
+        "stddev": 1643.3049,
+        "min": 19509,
+        "max": 22525
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.39",
+      "time_seconds": "+49.3",
+      "tokens": "+6970"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)",
+      "passed": true,
+      "evidence": "Variables and parameters are annotated throughout: 'var state_machine: StateMachine = null', 'var current_state: State = null', 'var states: Dictionary = {}', '@export var character: CharacterBody2D', 'var direction: float = Input.get_axis(...)', 'const SPEED: float = 200.0', 'const JUMP_VELOCITY: float = -400.0', 'const GRAVITY: float = 980.0', 'func physics_update(_delta: float) -> void', 'func transition_to(state_name: String) -> void', etc."
+    },
+    {
+      "text": "The implementation uses GDScript (not C# or other languages)",
+      "passed": true,
+      "evidence": "All code blocks are GDScript: 'class_name State', 'extends Node', '@export var character: CharacterBody2D', 'func _ready() -> void:', etc."
+    },
+    {
+      "text": "The state machine references or uses CharacterBody2D",
+      "passed": true,
+      "evidence": "character.gd declares 'extends CharacterBody2D'. States access the character via '@export var character: CharacterBody2D' and call CharacterBody2D methods: 'character.is_on_floor()', 'character.velocity.x', 'character.SPEED'."
+    },
+    {
+      "text": "The code uses signals with proper Godot 4 syntax (signal name or signal name(param: type))",
+      "passed": false,
+      "evidence": "No signal declarations appear anywhere in the response. Neither state_machine.gd nor character.gd declares any 'signal' keyword, and no '.emit()' calls are present. The state machine has no observable signal mechanism at all."
+    },
+    {
+      "text": "State transitions are handled without tight coupling (using signals or delegation)",
+      "passed": true,
+      "evidence": "States do not reference each other directly. All transitions route through 'state_machine.transition_to(\"Jumping\")', 'state_machine.transition_to(\"Idle\")', 'state_machine.transition_to(\"Running\")' \u2014 delegating to the StateMachine node which performs the actual state swap."
+    },
+    {
+      "text": "The code follows Godot 4 patterns (not Godot 3 syntax like yield or connect with string method names)",
+      "passed": true,
+      "evidence": "No 'yield', no bare 'export'/'onready', no string-based connect calls. Uses '@onready', '@export', and 'state_machine.initialize(...)' callable-style calls. Only minor deviation is using plain 'String' instead of 'StringName' for state names (e.g., transition_to(\"Idle\")), but this is not Godot 3 syntax."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.8333
+  }
+}

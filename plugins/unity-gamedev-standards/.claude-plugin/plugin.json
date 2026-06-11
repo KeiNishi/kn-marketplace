@@ -1,9 +1,15 @@
 {
   "name": "unity-gamedev-standards",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Unity 6 game development standards and coding rules - project structure, C# conventions, MonoBehaviour patterns, UniTask async, performance optimization, and MVC character design",
   "author": {
     "name": "KN"
   },
-  "keywords": ["unity", "game-development", "csharp", "monobehaviour", "gamedev"]
+  "keywords": [
+    "unity",
+    "game-development",
+    "csharp",
+    "monobehaviour",
+    "gamedev"
+  ]
 }

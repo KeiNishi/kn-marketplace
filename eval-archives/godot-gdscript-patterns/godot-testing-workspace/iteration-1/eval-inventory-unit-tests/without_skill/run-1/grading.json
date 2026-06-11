@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Tests are written for GdUnit4 (extends GdUnitTestSuite with assert_* fluent assertions), not a generic or invented framework",
+      "passed": true,
+      "evidence": "test_inventory.gd explicitly uses 'extends GdUnitTestSuite' with fluent assertions: 'assert_bool(_inv.add_item(\"sword\")).is_true()', 'assert_int(_inv.count(\"sword\")).is_equal(1)'. (A parallel plain-runner file with an invented framework is also provided, but the GdUnit4 file is present and correct.)"
+    },
+    {
+      "text": "The tests are actually executed headless (godot --headless with GdUnitCmdTool.gd, or scripts/run_godot_tests.py), not just written and handed over",
+      "passed": false,
+      "evidence": "Response states 'Godot is not installed in this environment, so the tests cannot be executed here.' Commands are documented but never run."
+    },
+    {
+      "text": "The Godot executable is located robustly (--godot-bin, GODOT_BIN env var, or godot/godot4 on PATH) rather than assuming 'godot' exists",
+      "passed": false,
+      "evidence": "The run commands use bare 'godot' without any GODOT_BIN env-var resolution or binary discovery logic. The plain runner command is 'godot --headless -s test_inventory_plain.gd' and the GdUnit4 command is 'godot --headless -s addons/gdunit4/bin/GdUnitCmdTool.gd'. No GODOT_BIN or --godot-bin mechanism is introduced."
+    },
+    {
+      "text": "On failure, the code or tests are fixed and the suite is re-run; success is only declared after a green run (exit code 0 / 0 failures in the report)",
+      "passed": false,
+      "evidence": "Tests were never executed, so no fix-and-retry loop occurred. No green run was reported."
+    },
+    {
+      "text": "Test code uses static typing and Godot 4 GDScript syntax",
+      "passed": true,
+      "evidence": "All functions use return type annotations: 'func test_add_single_item() -> void', 'func before_each() -> void', variable declarations use explicit types ('var _inv: Inventory'), and GDScript 4 syntax throughout. No yield or Godot 3 patterns."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  }
+}

@@ -2,6 +2,12 @@
 
 Generic state machine implementation for Godot 4.x with node-based states.
 
+## Contents
+
+- [StateMachine Node](#statemachine-node)
+- [State Base Class](#state-base-class)
+- [Usage Example](#usage-example)
+
 ## StateMachine Node
 
 ```gdscript

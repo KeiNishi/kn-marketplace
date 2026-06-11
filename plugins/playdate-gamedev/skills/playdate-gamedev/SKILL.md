@@ -1,328 +1,113 @@
 ---
 name: playdate-gamedev
-description: This skill should be used when the user asks to "create a Playdate game", "set up a Playdate project", "write C code for Playdate", mentions "Playdate SDK", ".pdx", "pdc compiler", or works with Playdate APIs like sprites, graphics, crank input, or sound. Also triggers on "/playdate" command or questions about Playdate game development patterns and optimization.
+description: This skill should be used when developing games in C for the Panic Playdate handheld. Use when the user asks to "create a Playdate game", "set up a Playdate project", "write C code for Playdate", or mentions Playdate, PlaydateSDK, the Playdate SDK, ".pdx" bundles, "pd_api.h", the "pdc" compiler, PLAYDATE_SDK_PATH, PlaydateAPI calls such as "playdate->graphics" or "pd->system", crank input, or Playdate sprites, sound, asset, and performance questions. Also triggers on "/playdate" commands.
 allowed-tools: Bash(cmake*), Bash(nmake*), Bash(make*), Bash(pdc*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Playdate Game Development Guide
 
-Comprehensive guide for Playdate C language game development. Covers project setup, coding standards, Playdate SDK APIs, asset management, and performance optimization.
+Playdate C game development: project setup, build workflow, coding standards, SDK API patterns, asset management, and performance optimization.
 
 ## Prerequisites
 
-### Required Tools
+- Playdate SDK installed and `PLAYDATE_SDK_PATH` environment variable set
+- CMake on PATH; GNU Arm Embedded Toolchain (`gcc-arm-none-eabi`) for device builds
+- Compiler: GCC or Clang + Make (Linux/macOS), or Visual Studio 2019/2022 with C/C++ tools + NMake (Windows)
 
-**Windows**:
-- Visual Studio 2019 or 2022 with C/C++ tools
-- GNU Arm Embedded Toolchain (`gcc-arm-none-eabi`)
-- CMake (added to PATH)
-
-**Linux/macOS**:
-- GCC or Clang compiler
-- GNU Arm Embedded Toolchain (`gcc-arm-none-eabi`)
-- CMake and Make
-
-### Environment Setup
-
-- Playdate SDK installed
-- Environment variable `PLAYDATE_SDK_PATH` configured
-- Basic C language knowledge
-
-## Project Structure
-
-Use the template repository for new projects:
-
-**Template**: https://github.com/KeiNishi/kn-pd-template-c.git
-
-Run `/playdate-init [project-name]` to create a new project from this template.
-
-Recommended directory layout for Playdate projects:
-
-```
-YourGame/
-├── .vscode/
-│   └── tasks.json             # VSCode build tasks (Ctrl+Shift+B)
-├── source/                    # Source code and resources (bundled into .pdx)
-│   ├── main.c                 # Entry point (eventHandler)
-│   ├── game.c/h               # Game loop (init, update)
-│   ├── types.h                # Common type definitions (fixed-point, Vector2, etc.)
-│   ├── pools/                 # Object pool utilities
-│   │   └── pool.h             # Generic macro-based object pool
-│   ├── utils/                 # Utility libraries (math, rng, spatial grid, etc.)
-│   ├── resources/             # Game assets
-│   │   ├── fonts/             # Custom bitmap fonts
-│   │   ├── images/            # Image assets (PNG/GIF)
-│   │   ├── sounds/            # Audio files (WAV/MP3)
-│   │   └── <custom>/          # Custom asset folders (e.g., player/, enemies/)
-│   └── pdxinfo                # Game metadata
-├── CMakeLists.txt             # Build configuration (CMake)
-├── build-dev-setup.bat        # Windows: Create build-dev directory
-├── build-sim-setup.bat        # Windows: Create build-sim directory
-└── .gitignore                 # Git ignore rules
-```
-
-For detailed templates and initialization commands, see `references/project-structure.md`.
-
-## Coding Standards
-
-### Naming Conventions
-
-```c
-// Constants: SCREAMING_SNAKE_CASE
-#define MAX_ENEMIES 100
-
-// Types: PascalCase
-typedef struct Player {
-    float x, y;
-    int health;
-} Player;
-
-// Functions: snake_case
-void update_player(Player* player, float dt);
-
-// Variables: snake_case
-int enemy_count = 0;
-
-// Global variables: g_ prefix
-static PlaydateAPI* g_pd = NULL;
-```
-
-### File Organization Pattern
-
-**Header files (.h)**: Public API declarations with include guards
-**Implementation files (.c)**: Struct definitions and function implementations
-
-For complete coding standards including error handling patterns, see `references/coding-standards.md`.
-
-## Build Workflow
-
-The template includes pre-configured VSCode tasks for building. Use **Ctrl+Shift+B** (or Cmd+Shift+B on macOS) to access build tasks.
-
-### VSCode Build Tasks (Recommended)
-
-1. Open the project in VSCode
-2. Press **Ctrl+Shift+B**
-3. Select the appropriate task:
-   - **Playdate: Build Simulator** - Build for simulator (default)
-   - **Playdate: Build Device** - Build for Playdate hardware
-   - **Playdate: Clean Build** - Remove build directory and rebuild
-   - **Playdate: Run Simulator** - Build and launch simulator
-
-### Run in Simulator
-
-After building, run the simulator:
+If `PLAYDATE_SDK_PATH` is not set:
 
 ```bash
-# Windows
-"%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/YourGame.pdx
+export PLAYDATE_SDK_PATH=/path/to/PlaydateSDK
+```
 
-# macOS
-open build/YourGame.pdx
+(Windows PowerShell: `$env:PLAYDATE_SDK_PATH = "C:/Users/<Username>/Documents/PlaydateSDK"`, or set it permanently via System Properties > Environment Variables.)
 
-# Linux
+## Quick Start: New Project
+
+1. Clone the template repository:
+
+   ```bash
+   git clone https://github.com/KeiNishi/kn-pd-template-c.git YourGame
+   ```
+
+2. Delete the cloned `.git` directory to start fresh.
+3. Rename the project: in `source/pdxinfo` set `name` and `bundleID` (lowercase reverse-domain), and in `CMakeLists.txt` set `PLAYDATE_GAME_NAME` and `PLAYDATE_GAME_DEVICE`.
+4. Build and run (next section).
+
+In Claude Code, the `/playdate-init` command automates steps 1-3; otherwise perform them manually as above.
+
+**Fallback — if the clone fails or the user prefers no template**: create the minimal project by hand: a `source/` directory containing `main.c`, `game.c`/`game.h`, and `pdxinfo`, plus a root `CMakeLists.txt` that includes `${SDK}/C_API/buildsupport/playdate_game.cmake`. Copy the complete file templates (`CMakeLists.txt`, `pdxinfo`, `main.c`, `game.c/h`, `types.h`, `.vscode/tasks.json`, `.gitignore`) from `references/project-structure.md`.
+
+Layout in one line: everything under `source/` (C code, `resources/` assets, `pdxinfo` metadata) is bundled into the `.pdx`; `CMakeLists.txt` lives at the project root.
+
+## Build and Run
+
+Default (Linux/macOS):
+
+```bash
+mkdir -p build && cd build
+cmake .. && make                                                                  # simulator build
+cmake .. --toolchain="${PLAYDATE_SDK_PATH}/C_API/buildsupport/arm.cmake" && make  # device build
+```
+
+(Windows: run from the "x64 Native Tools Command Prompt for VS 2019/2022", use `cmake .. -G "NMake Makefiles"` and `nmake` instead of `cmake ..` and `make`.)
+
+If the project has `.vscode/tasks.json` (the template does), Ctrl+Shift+B in VSCode offers the tasks "Playdate: Build Simulator", "Build Device", "Clean Build", and "Run Simulator".
+
+Run the simulator on the built `.pdx`:
+
+```bash
 "${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" build/YourGame.pdx
 ```
 
-### Debug Logging
+(macOS: `open build/YourGame.pdx`; Windows PowerShell: `& "$env:PLAYDATE_SDK_PATH/bin/PlaydateSimulator.exe" build/YourGame.pdx`.)
 
-```c
-g_pd->system->logToConsole("Player pos: %.2f, %.2f", player->x, player->y);
-g_pd->system->error("Fatal error occurred");  // Stops execution
-```
+## Reference Routing
 
-## Core API Patterns
+Load the matching file from `references/` on demand:
 
-### Entry Point (main.c)
+- Creating project files, `CMakeLists.txt`, `pdxinfo`, VSCode tasks, full source templates → `references/project-structure.md`
+- Naming conventions, header/file organization, error handling, code style → `references/coding-standards.md`
+- Calling SDK APIs: graphics/drawing, sprites and collision, input (buttons and crank), sound, file I/O, system menu → `references/playdate-api.md`
+- Adding images, audio, or fonts; sprite sheets and animations; loading strategies → `references/asset-management.md`
+- Low FPS, memory pressure, object pooling, profiling, dirty-rect drawing → `references/performance.md`
+- State machines, scene management, timers, data-driven design, custom allocators, lightweight ECS, events, tweens → `references/advanced-patterns.md`
 
-```c
-#include "pd_api.h"
-#include "game.h"
+## Core Rules
 
-PlaydateAPI* g_pd = NULL;
+Apply these in all Playdate C code:
 
-#ifdef _WINDLL
-__declspec(dllexport)
-#endif
-int eventHandler(PlaydateAPI* pd, PDSystemEvent event, uint32_t arg) {
-    (void)arg;
-
-    if (event == kEventInit) {
-        g_pd = pd;
-        pd->display->setRefreshRate(30.0f);
-        game_init();
-        pd->system->setUpdateCallback(game_update, NULL);
-    }
-    return 0;
-}
-```
-
-### Game Loop
-
-```c
-int game_update(void* userdata) {
-    (void)userdata;
-    float dt = 1.0f / 30.0f;
-
-    g_pd->graphics->clear(kColorWhite);
-
-    // Update logic
-    player_update(player, dt);
-
-    // Draw
-    player_draw(player);
-    g_pd->system->drawFPS(0, 0);
-
-    return 1;  // Continue running
-}
-```
-
-### Input Handling
-
-```c
-PDButtons current, pushed, released;
-g_pd->system->getButtonState(&current, &pushed, &released);
-
-if (current & kButtonLeft) { /* Held */ }
-if (pushed & kButtonA) { /* Just pressed */ }
-
-// Crank
-float angle = g_pd->system->getCrankAngle();      // 0-360 degrees
-float change = g_pd->system->getCrankChange();    // degrees/frame
-```
-
-For comprehensive API patterns including graphics, sprites, collision, sound, and file I/O, see `references/playdate-api.md`.
-
-## Memory Management
-
-Always use Playdate's allocator:
-
-```c
-// Allocate
-void* ptr = g_pd->system->realloc(NULL, sizeof(Player));
-
-// Free
-g_pd->system->realloc(ptr, 0);
-```
-
-Avoid stdlib malloc/free when possible.
-
-## Asset Management
-
-### Supported Formats
-
-- **Images**: PNG/GIF (auto-converted to 1-bit)
-- **Audio**: WAV (effects), MP3 (BGM)
-- **Fonts**: Custom bitmap fonts
-
-### Loading Assets
-
-```c
-// Bitmap
-LCDBitmap* bmp = g_pd->graphics->loadBitmap("images/player", NULL);
-
-// Sound effect
-AudioSample* sample = g_pd->sound->sample->load("sounds/jump", NULL);
-
-// BGM
-FilePlayer* player = g_pd->sound->fileplayer->newPlayer();
-g_pd->sound->fileplayer->loadIntoPlayer(player, "sounds/bgm");
-```
-
-For detailed asset management including sprite sheets and animations, see `references/asset-management.md`.
-
-## Performance Optimization
-
-### Key Principles
-
-1. **30fps target** - Balance battery and smoothness
-2. **Minimize screen clears** - Update dirty regions only
-3. **Use sprite system** - Auto-culling and z-ordering
-4. **Object pooling** - Avoid runtime allocation
-5. **Cache calculations** - Avoid per-frame recomputation
-
-### Sprite Optimization
-
-```c
-// Z-ordering
-g_pd->sprite->setZIndex(foreground, 10);
-g_pd->sprite->setZIndex(background, 0);
-
-// Visibility culling
-g_pd->sprite->setVisible(offscreen_sprite, 0);
-```
-
-For advanced optimization including object pools and custom allocators, see `references/performance.md`.
-
-## Best Practices
-
-### Do's
-
-- Use global `PlaydateAPI* g_pd` referenced via extern
-- Always NULL-check pointers before use
-- Free all allocated memory with `realloc(ptr, 0)`
-- Leverage sprite system for automatic rendering and collision
-- Target 30fps for battery efficiency
-- Use `logToConsole()` for debugging
-
-### Don'ts
-
-- Avoid stdlib malloc/free in favor of Playdate API
-- Don't clear entire screen every frame
-- Don't hold large bitmaps in memory unnecessarily
-- Don't use complex collision detection when sprite system suffices
-- Don't abuse global variables - use structs for organization
-- Never skip error handling on resource allocation
-
-## Advanced Patterns
-
-For advanced implementation patterns including:
-- State machines for game flow
-- Object pools for bullets/particles
-- Data-driven design with JSON
-- Custom allocators
-- Lua bindings from C
-
-See `references/advanced-patterns.md`.
+1. One global `PlaydateAPI* g_pd`, assigned in `eventHandler` on `kEventInit`, referenced via `extern` elsewhere.
+2. Allocate through Playdate, not stdlib: `g_pd->system->realloc(NULL, size)` to allocate, `g_pd->system->realloc(ptr, 0)` to free. Avoid `malloc`/`free`.
+3. No dynamic allocation inside the update loop — preallocate at init and use object pools.
+4. Target 30 fps (`pd->display->setRefreshRate(30.0f)`) for battery efficiency.
+5. NULL-check every resource load and allocation; log failures with `g_pd->system->logToConsole()` (use `g_pd->system->error()` only for fatal stops).
+6. Naming: `SCREAMING_SNAKE_CASE` constants, `PascalCase` types, `snake_case` functions and variables, `g_` prefix for globals.
+7. Prefer the sprite system (automatic culling, z-ordering, collision) over manual full-screen redraws; avoid clearing the whole screen every frame.
+8. Free everything allocated: bitmaps, samples, and players via their matching `free*` functions.
 
 ## Troubleshooting
 
-### Common Build Errors
+- "pd_api.h: No such file" or "SDK path not found" → `PLAYDATE_SDK_PATH` is unset or wrong; the directory must contain `C_API/pd_api.h`.
+- "nmake is not recognized" (Windows) → run from the "x64 Native Tools Command Prompt for VS 2019/2022".
+- Undefined reference errors → ensure every `.c` file is listed in `CMakeLists.txt` and declarations match definitions.
+- Build configures but produces no `.pdx` → `CMakeLists.txt` must `include(${SDK}/C_API/buildsupport/playdate_game.cmake)`.
+- Low FPS at runtime → profile with `getCurrentTimeMilliseconds()` and see `references/performance.md`.
 
-```bash
-# "SDK Path not found" - Set environment variable
-# Windows (System Environment Variables or PowerShell)
-$env:PLAYDATE_SDK_PATH = "C:\Users\<Username>\Documents\PlaydateSDK"
+## Verification Checklist
 
-# Linux/macOS
-export PLAYDATE_SDK_PATH=/path/to/PlaydateSDK
+Before declaring a Playdate task complete, confirm:
 
-# "nmake not found" (Windows)
-# Use "x64 Native Tools Command Prompt for VS 2019/2022"
+- [ ] Simulator build succeeds and produces a `.pdx` bundle
+- [ ] Device build succeeds with the `arm.cmake` toolchain
+- [ ] Game runs in the simulator with no errors in the console
+- [ ] All allocation goes through `g_pd->system->realloc` (no stdlib `malloc`/`free`)
+- [ ] No dynamic allocation inside the update loop
+- [ ] Every loaded resource is NULL-checked and eventually freed
+- [ ] `pdxinfo` has correct `name` and a lowercase reverse-domain `bundleID`
 
-# CMakeLists.txt must include
-include(${SDK}/C_API/buildsupport/playdate_game.cmake)
-```
+## External Resources
 
-### Runtime Issues
-
-- **NULL pointer crashes**: Add defensive NULL checks
-- **Memory allocation failures**: Check return values, release unused resources
-- **Low FPS**: Profile with `getCurrentTimeMilliseconds()`, reduce draw calls
-
-## Additional Resources
-
-### Reference Files
-
-Detailed documentation in `references/`:
-- **`project-structure.md`** - Project templates, pdxinfo, CMakeLists.txt
-- **`coding-standards.md`** - Complete coding conventions
-- **`playdate-api.md`** - Comprehensive API patterns
-- **`asset-management.md`** - Asset handling and animations
-- **`performance.md`** - Optimization techniques
-- **`advanced-patterns.md`** - State machines, pools, data-driven design
-
-### External Links
-
-- [Playdate SDK Documentation](https://sdk.play.date/)
-- [Playdate Developer Forum](https://devforum.play.date/)
-- [Inside Playdate](https://sdk.play.date/inside-playdate/)
+- Playdate SDK documentation: https://sdk.play.date/ (C API guide: https://sdk.play.date/inside-playdate-with-c/)
+- Playdate Developer Forum: https://devforum.play.date/
+- SDK examples: `$PLAYDATE_SDK_PATH/C_API/Examples/`

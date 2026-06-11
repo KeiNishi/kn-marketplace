@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+      "passed": true,
+      "evidence": "Response opens Phase 1 by stating: 'Your suggestion to \"add a thicker collider\" is a workaround, not a fix. It treats the symptom (the collider being \"too thin to catch\") rather than the cause.' The fix section is not reached until Phase 4, after reproduction and root-cause analysis are complete."
+    },
+    {
+      "text": "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+      "passed": true,
+      "evidence": "Phase 2 (reproduction) precedes Phase 4 (fix). Step 1 provides a complete `DebugFPSCap.cs` script with a 10 FPS cap and an explicit gate: 'At 10 FPS, walk the player into a thin platform from above. The fall-through should now happen on every attempt on every machine.' The fix code does not appear until Phase 4."
+    },
+    {
+      "text": "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+      "passed": true,
+      "evidence": "Root Cause Analysis section states: 'On a fast machine (high FPS), each frame moves the player a small distance. On a slow machine (low FPS), each frame moves the player a large distance \u2014 sometimes larger than the platform's thickness. The collider literally jumps over the platform between two consecutive frames, so no collision is ever detected.' The frame-rate dependency is explicitly named as the driver."
+    },
+    {
+      "text": "States a specific root cause backed by evidence before changing code",
+      "passed": true,
+      "evidence": "Phase 3 states: 'Root cause: Unity's discrete collision detection skips geometry thinner than the distance the Rigidbody travels in a single physics step. At low FPS the step is larger, making the skip more likely.' Phase 2 Step 2 provides a log gate ('distanceThisStep exceed the platform's collider thickness on the frames where fall-through occurs') as the evidence requirement before proceeding."
+    },
+    {
+      "text": "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+      "passed": true,
+      "evidence": "Fix A: 'Change Collision Detection from Discrete to Continuous (or Continuous Dynamic if the platform also moves)' with code setting `rb.collisionDetectionMode = CollisionDetectionMode.Continuous`. Fix B: Ensures movement is in FixedUpdate, not Update. Explicitly states: 'CCD sweeps the entire path of motion between physics steps... it is never possible for the object to \"skip over\" a collider regardless of frame rate or platform thickness.'"
+    },
+    {
+      "text": "Verifies the fix by re-running the original reproduction at low FPS",
+      "passed": true,
+      "evidence": "Verification Checklist includes: 'Re-run the exact reproduction (10 FPS cap, same thin platform, same fall speed) \u2014 fall-through must not occur' and 'Frame-rate sensitivity re-checked: test at 10 FPS, 60 FPS, and uncapped.'"
+    },
+    {
+      "text": "Does not add delays, clamps, or extra colliders as the resolution",
+      "passed": true,
+      "evidence": "The 'What NOT to Do' table explicitly lists 'Make the collider thicker', 'Add a sleep / frame delay around the jump', and 'Clamp the player's fall speed' as forbidden workarounds with explanations of why each is wrong. None of these appear in the fix."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "metadata": {
+    "skill_name": "godot-testing",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-11T16:39:55Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 216.1,
+        "tokens": 37208,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+          "passed": true,
+          "evidence": "Response clones GdUnit4: 'git clone https://github.com/MikeSchulze/gdUnit4 addons/gdUnit4' and enables it in project.godot: 'enabled=PackedStringArray(\"res://addons/gdUnit4/plugin.cfg\")'. GUT is not mentioned at all."
+        },
+        {
+          "text": "A test/ directory and at least one example GdUnitTestSuite are created",
+          "passed": true,
+          "evidence": "Response creates 'test/inventory_test.gd' extending 'GdUnitTestSuite' with test methods test_add_item() and test_remove_missing_item_fails(). File is scaffolded at '/tmp/eval-work/setup-w/test/inventory_test.gd'."
+        },
+        {
+          "text": "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+          "passed": true,
+          "evidence": "Step 5 shows the exact command: '<godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode' as what the run_godot_tests.py script executes internally."
+        },
+        {
+          "text": "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+          "passed": false,
+          "evidence": "Response explicitly states 'Godot is not installed in the current environment, so the exact commands are documented below with notes on what gates each step.' No actual test run was performed; all steps are documented workflows rather than executed ones."
+        },
+        {
+          "text": "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)",
+          "passed": true,
+          "evidence": "Step 4 addresses all three: 'Linux: package managers (apt/dnf) name it godot4', 'Windows: use the full path, e.g. C:/Godot/Godot_v4.3-stable_win64.exe', and 'export GODOT_BIN=/path/to/Godot_v4.3-stable_linux.x86_64'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 2,
+        "failed": 2,
+        "total": 4,
+        "time_seconds": 63.5,
+        "tokens": 22596,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+          "passed": true,
+          "evidence": "Response shows the exact command: 'godot --headless --path /tmp/eval-work/smoke-w --quit-after 120' with explanation '120 process frames (~2 seconds at 60 FPS). Long enough for _ready to run on the full main scene tree; short enough not to hang.'"
+        },
+        {
+          "text": "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+          "passed": true,
+          "evidence": "Response provides a one-liner that explicitly checks both: '[ $exit_code -eq 0 ]' for exit code, and 'echo \"$output\" | grep -qE \"SCRIPT ERROR|ERROR:|Parse Error\"' for error lines in output. Narrative also explains 'Godot can exit 0 even when a script error occurred, so you must scan output explicitly.'"
+        },
+        {
+          "text": "The verification is actually executed and its result reported, not merely described as a command the user could run",
+          "passed": false,
+          "evidence": "Response explicitly states 'Because Godot is not installed here, the commands below are the exact sequence that would run' \u2014 the workflow is described, not executed. No actual run output or result is reported."
+        },
+        {
+          "text": "If errors appear, the root cause is fixed and the smoke run is repeated until clean",
+          "passed": false,
+          "evidence": "The smoke test was never executed so no error-fix-retry loop could occur. The response describes failure examples and what they mean, but no iteration was demonstrated."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6,
+        "passed": 3,
+        "failed": 2,
+        "total": 5,
+        "time_seconds": 77.7,
+        "tokens": 24733,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Tests are written for GdUnit4 (extends GdUnitTestSuite with assert_* fluent assertions), not a generic or invented framework",
+          "passed": true,
+          "evidence": "The test file declares 'class_name InventoryTest\\nextends GdUnitTestSuite' and every assertion uses fluent GdUnit4 calls: 'assert_int(inv.count(\"sword\")).is_equal(1)', 'assert_bool(inv.remove_item(\"axe\")).is_true()', etc."
+        },
+        {
+          "text": "The tests are actually executed headless (godot --headless with GdUnitCmdTool.gd, or scripts/run_godot_tests.py), not just written and handed over",
+          "passed": false,
+          "evidence": "Response explicitly states '[ ] The full suite was actually executed headless \u2014 blocked: Godot binary not installed' with an unchecked checkbox. The run was never performed; only the commands and expected output are documented."
+        },
+        {
+          "text": "The Godot executable is located robustly (--godot-bin, GODOT_BIN env var, or godot/godot4 on PATH) rather than assuming 'godot' exists",
+          "passed": true,
+          "evidence": "Response instructs 'Set GODOT_BIN once so all commands below work without repetition: export GODOT_BIN=/path/to/godot4' and states 'The script resolves the Godot binary via GODOT_BIN', referencing run_godot_tests.py which honors that env var."
+        },
+        {
+          "text": "On failure, the code or tests are fixed and the suite is re-run; success is only declared after a green run (exit code 0 / 0 failures in the report)",
+          "passed": false,
+          "evidence": "Tests were never executed so no fix-and-retry loop could occur. The gate description ('Proceed only when that output is seen. If any test fails, read the assertion text ... fix the root cause ... and re-run') is purely instructional, not demonstrated execution."
+        },
+        {
+          "text": "Test code uses static typing and Godot 4 GDScript syntax",
+          "passed": true,
+          "evidence": "Every test function is typed '-> void', variables use ':=' inference and explicit types, e.g. 'func test_add_single_item_count_is_one() -> void: var inv := Inventory.new()'. No yield or Godot 3 syntax present."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 5,
+        "total": 5,
+        "time_seconds": 214.7,
+        "tokens": 34536,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+          "passed": false,
+          "evidence": "Response chooses GUT (Godot Unit Test) as the primary framework throughout, not GdUnit4. The guide begins 'wiring GUT (Godot Unit Test) into a fresh Godot 4 project' and never mentions GdUnit4 at all. GUT is not treated as a fallback."
+        },
+        {
+          "text": "A test/ directory and at least one example GdUnitTestSuite are created",
+          "passed": false,
+          "evidence": "Response creates a 'tests/' directory (not 'test/') with files extending 'GutTest', not 'GdUnitTestSuite'. The GdUnit4 test base class is never used."
+        },
+        {
+          "text": "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+          "passed": false,
+          "evidence": "Response shows the GUT command 'godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json', not the GdUnit4 invocation. The GdUnit4 CmdTool path is never referenced."
+        },
+        {
+          "text": "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+          "passed": false,
+          "evidence": "Response explicitly states 'The actual godot binary is not available in this environment, so the commands listed in Steps 2, 5, and 6 cannot be executed here.' No actual test run was performed."
+        },
+        {
+          "text": "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)",
+          "passed": false,
+          "evidence": "Response mentions platform-specific paths and binary names implicitly through CI YAML (e.g., 'mv \"${GODOT_FILENAME}\" /usr/local/bin/godot'), but does not address Windows forward-slash full paths, does not mention 'godot4' as a Linux package name, and does not mention the GODOT_BIN environment variable convention."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.25,
+        "passed": 1,
+        "failed": 3,
+        "total": 4,
+        "time_seconds": 85.2,
+        "tokens": 18865,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+          "passed": false,
+          "evidence": "The smoke_test.sh script uses 'timeout 30 godot --headless --path \"$PROJECT_DIR\"' \u2014 no '--quit-after <frames>' flag is passed to Godot. The bounding mechanism is an external Unix 'timeout' wrapper, not a Godot-native '--quit-after' argument. Additionally, main.gd calls 'get_tree().quit(0)' in _ready() as the actual termination path, not --quit-after. The assertion specifically requires '--quit-after <frames>'."
+        },
+        {
+          "text": "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+          "passed": true,
+          "evidence": "smoke_test.sh checks exit code via '[ \"$EXIT_CODE\" -ne 0 ]' and also greps the log: 'grep -qE \"^\\s*(ERROR:|SCRIPT ERROR:|FATAL:)\" \"$LOG_FILE\"'. Both checks are present and the script fails if either triggers."
+        },
+        {
+          "text": "The verification is actually executed and its result reported, not merely described as a command the user could run",
+          "passed": false,
+          "evidence": "Response shows '$ which godot\\nNOT_FOUND\\n$ which godot4\\nNOT_FOUND' and states 'Godot is not installed in this environment. The scaffold files have been created and are ready; the test can be executed as soon as a Godot 4 binary is available.' No actual smoke run was performed."
+        },
+        {
+          "text": "If errors appear, the root cause is fixed and the smoke run is repeated until clean",
+          "passed": false,
+          "evidence": "The smoke test was never executed, so no error-fix-retry loop could occur. The response provides only static installation guidance."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 108.3,
+        "tokens": 23238,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Tests are written for GdUnit4 (extends GdUnitTestSuite with assert_* fluent assertions), not a generic or invented framework",
+          "passed": true,
+          "evidence": "test_inventory.gd explicitly uses 'extends GdUnitTestSuite' with fluent assertions: 'assert_bool(_inv.add_item(\"sword\")).is_true()', 'assert_int(_inv.count(\"sword\")).is_equal(1)'. (A parallel plain-runner file with an invented framework is also provided, but the GdUnit4 file is present and correct.)"
+        },
+        {
+          "text": "The tests are actually executed headless (godot --headless with GdUnitCmdTool.gd, or scripts/run_godot_tests.py), not just written and handed over",
+          "passed": false,
+          "evidence": "Response states 'Godot is not installed in this environment, so the tests cannot be executed here.' Commands are documented but never run."
+        },
+        {
+          "text": "The Godot executable is located robustly (--godot-bin, GODOT_BIN env var, or godot/godot4 on PATH) rather than assuming 'godot' exists",
+          "passed": false,
+          "evidence": "The run commands use bare 'godot' without any GODOT_BIN env-var resolution or binary discovery logic. The plain runner command is 'godot --headless -s test_inventory_plain.gd' and the GdUnit4 command is 'godot --headless -s addons/gdunit4/bin/GdUnitCmdTool.gd'. No GODOT_BIN or --godot-bin mechanism is introduced."
+        },
+        {
+          "text": "On failure, the code or tests are fixed and the suite is re-run; success is only declared after a green run (exit code 0 / 0 failures in the report)",
+          "passed": false,
+          "evidence": "Tests were never executed, so no fix-and-retry loop occurred. No green run was reported."
+        },
+        {
+          "text": "Test code uses static typing and Godot 4 GDScript syntax",
+          "passed": true,
+          "evidence": "All functions use return type annotations: 'func test_add_single_item() -> void', 'func before_each() -> void', variable declarations use explicit types ('var _inv: Inventory'), and GDScript 4 syntax throughout. No yield or Godot 3 patterns."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.6333,
+        "stddev": 0.1528,
+        "min": 0.5,
+        "max": 0.8
+      },
+      "time_seconds": {
+        "mean": 119.1,
+        "stddev": 84.304,
+        "min": 63.5,
+        "max": 216.1
+      },
+      "tokens": {
+        "mean": 28179.0,
+        "stddev": 7892.0101,
+        "min": 22596,
+        "max": 37208
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.2167,
+        "stddev": 0.2021,
+        "min": 0.0,
+        "max": 0.4
+      },
+      "time_seconds": {
+        "mean": 136.0667,
+        "stddev": 69.071,
+        "min": 85.2,
+        "max": 214.7
+      },
+      "tokens": {
+        "mean": 25546.3333,
+        "stddev": 8086.4926,
+        "min": 18865,
+        "max": 34536
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.42",
+      "time_seconds": "-17.0",
+      "tokens": "+2633"
+    }
+  },
+  "notes": []
+}

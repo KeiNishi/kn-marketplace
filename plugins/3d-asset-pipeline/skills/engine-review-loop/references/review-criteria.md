@@ -1,5 +1,15 @@
 # Review Criteria
 
+## Contents
+
+1. [Scale](#1-scale)
+2. [Orientation](#2-orientation)
+3. [Pivot and Ground Contact](#3-pivot-and-ground-contact)
+4. [Materials](#4-materials)
+5. [Animation](#5-animation)
+6. [Topology Integrity](#6-topology-integrity)
+7. [Match to Description and Concept](#7-match-to-description-and-concept)
+
 Use these criteria for every Stage 6 screenshot review. Inspect the asset in all views before writing a verdict. Prefer visible evidence over assumptions.
 
 ## 1. Scale

@@ -2,6 +2,14 @@
 
 Detailed folder organization and asset naming conventions for Unity projects.
 
+## Contents
+
+- [Folder Structure](#folder-structure)
+- [Asset Naming Conventions](#asset-naming-conventions)
+- [Script Organization](#script-organization)
+- [Assembly Definitions](#assembly-definitions)
+- [Special Folders](#special-folders)
+
 ## Folder Structure
 
 ```

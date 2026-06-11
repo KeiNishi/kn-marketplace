@@ -1,0 +1,383 @@
+{
+  "metadata": {
+    "skill_name": "gamedev-debugging",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-11T16:39:55Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 97.1,
+        "tokens": 20067,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+          "passed": true,
+          "evidence": "Response opens Phase 1 by stating: 'Your suggestion to \"add a thicker collider\" is a workaround, not a fix. It treats the symptom (the collider being \"too thin to catch\") rather than the cause.' The fix section is not reached until Phase 4, after reproduction and root-cause analysis are complete."
+        },
+        {
+          "text": "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+          "passed": true,
+          "evidence": "Phase 2 (reproduction) precedes Phase 4 (fix). Step 1 provides a complete `DebugFPSCap.cs` script with a 10 FPS cap and an explicit gate: 'At 10 FPS, walk the player into a thin platform from above. The fall-through should now happen on every attempt on every machine.' The fix code does not appear until Phase 4."
+        },
+        {
+          "text": "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+          "passed": true,
+          "evidence": "Root Cause Analysis section states: 'On a fast machine (high FPS), each frame moves the player a small distance. On a slow machine (low FPS), each frame moves the player a large distance \u2014 sometimes larger than the platform's thickness. The collider literally jumps over the platform between two consecutive frames, so no collision is ever detected.' The frame-rate dependency is explicitly named as the driver."
+        },
+        {
+          "text": "States a specific root cause backed by evidence before changing code",
+          "passed": true,
+          "evidence": "Phase 3 states: 'Root cause: Unity's discrete collision detection skips geometry thinner than the distance the Rigidbody travels in a single physics step. At low FPS the step is larger, making the skip more likely.' Phase 2 Step 2 provides a log gate ('distanceThisStep exceed the platform's collider thickness on the frames where fall-through occurs') as the evidence requirement before proceeding."
+        },
+        {
+          "text": "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+          "passed": true,
+          "evidence": "Fix A: 'Change Collision Detection from Discrete to Continuous (or Continuous Dynamic if the platform also moves)' with code setting `rb.collisionDetectionMode = CollisionDetectionMode.Continuous`. Fix B: Ensures movement is in FixedUpdate, not Update. Explicitly states: 'CCD sweeps the entire path of motion between physics steps... it is never possible for the object to \"skip over\" a collider regardless of frame rate or platform thickness.'"
+        },
+        {
+          "text": "Verifies the fix by re-running the original reproduction at low FPS",
+          "passed": true,
+          "evidence": "Verification Checklist includes: 'Re-run the exact reproduction (10 FPS cap, same thin platform, same fall speed) \u2014 fall-through must not occur' and 'Frame-rate sensitivity re-checked: test at 10 FPS, 60 FPS, and uncapped.'"
+        },
+        {
+          "text": "Does not add delays, clamps, or extra colliders as the resolution",
+          "passed": true,
+          "evidence": "The 'What NOT to Do' table explicitly lists 'Make the collider thicker', 'Add a sleep / frame delay around the jump', and 'Clamp the player's fall speed' as forbidden workarounds with explanations of why each is wrong. None of these appear in the fix."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5714,
+        "passed": 4,
+        "failed": 3,
+        "total": 7,
+        "time_seconds": 88.2,
+        "tokens": 20875,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects re-sorting on load as a symptom-masking workaround",
+          "passed": true,
+          "evidence": "Response opens: 'This is a textbook workaround: it masks the symptom (wrong slot/count after load) without finding why the data is wrong. Per the debugging discipline, this is forbidden. The re-sort would hide the evidence, make root-cause investigation harder in the future, and leave the real corruption silently in the save file. We do not proceed with it.'"
+        },
+        {
+          "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+          "passed": true,
+          "evidence": "Phase 1 Step 2 constructs an inventory checksum log (pseudocode provided) to detect save/load mismatches, and Step 3 builds a stress loop: 'for (int i = 0; i < 1000; i++) { FillInventoryWithTestItems(); Save(); Load(); AssertInventoryMatchesExpected(); }'. The stated goal is 'make this happen deterministically' before writing any fix."
+        },
+        {
+          "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+          "passed": true,
+          "evidence": "Step 3 specifies: 'Run this with: A fixed random seed for any RNG involved in inventory generation. A fixed timestep / no async (synchronous save and load, blocking).' The stress loop runs 1000 iterations and 'AssertInventoryMatchesExpected()' compares state after each cycle. The checksum compares save vs load checksums explicitly."
+        },
+        {
+          "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+          "passed": true,
+          "evidence": "Phase 2 Bisect step 2: 'Bisect: is this a single item type? Test with only stackable items, then only unique items, then only equipped items. If one category reproduces and another does not, the bug is in the serialization path for that category.' This explicitly tests different data to distinguish data-specific vs logic-wide bugs."
+        },
+        {
+          "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+          "passed": false,
+          "evidence": "Response explicitly states it is 'Blocked at Phase 1 \u2014 Reproduction Not Yet Achieved'. Phase 3 presents hypotheses (dictionary iteration order, async mutation race, unserialized field, off-by-one) with disproof tests, but explicitly states no root cause has been confirmed: 'What I actually have: A bug report with symptom description. No save file, no stack trace, no log output, no confirmed reproduction steps.' No concrete root cause with evidence is identified."
+        },
+        {
+          "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+          "passed": false,
+          "evidence": "No fix is applied. The response explicitly states: 'Do not write any inventory sorting, clamping, or default-value-filling logic yet. That is the workaround path. The task right now is to catch the bug in the act.' The response is intentionally blocked at the reproduction phase."
+        },
+        {
+          "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+          "passed": false,
+          "evidence": "No verification is done because no fix was written. The response ends at Phase 1 with the reproduction not yet achieved. There is no round-trip verification step."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 65.5,
+        "tokens": 19844,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Explicitly rejects the 0.5 second wait as a workaround that shrinks but does not close the race window",
+          "passed": true,
+          "evidence": "Opening section states: 'The 0.5-second await/yield is a textbook workaround that shrinks the race window rather than closing it. On a slow machine, a long load, or under future changes, the window will widen again and the crash will return \u2014 likely in a shipped build where it is hardest to diagnose.' The Rationalization Table quote is also cited: 'Delays shrink the race window; they never close it.'"
+        },
+        {
+          "text": "Works to make the 1-in-10 crash reproducible on demand, e.g. by simulating slow loading or stressing scene transitions, before writing a fix",
+          "passed": true,
+          "evidence": "Phase 1 precedes Phase 4 (fix). It provides a `debug_runner.gd` script that loops 50 scene switches, and an `OS.delay_msec(1)` stall to widen the race window. An explicit gate is stated: 'Do not proceed to Phase 2 until you can trigger the crash in \u22645 attempts.' The fix code does not appear until Phase 4."
+        },
+        {
+          "text": "Forms and tests one hypothesis at a time about which object is accessed before initialization/load completes",
+          "passed": true,
+          "evidence": "Phase 2 Bisect section instructs: 'Remove enemies from the scene entirely \u2192 no crash \u2192 enemies are the subject. Leave one enemy in a minimal scene \u2192 crash still fires \u2192 the bug is not enemy-count-dependent, it is ordering-dependent. Replace the spawned enemies with a static Node that has no logic \u2192 crash disappears \u2192 the issue is in enemy initialization (_ready or deferred calls), not in the scene tree itself.' Each step tests one variable at a time."
+        },
+        {
+          "text": "Uses targeted logging of load/ready order or frame numbers to bracket the failure point",
+          "passed": true,
+          "evidence": "Phase 2 provides logging code with frame numbers: '[FRAME %d] scene_load: starting enemy spawn', '[FRAME %d] enemy_ready: node=%s', '[FRAME %d] consumer: about to access enemies'. Instructs: 'On a failing run you will see the consumer frame number appear before all enemy_ready frame numbers. That ordering is the race.'"
+        },
+        {
+          "text": "Identifies the root cause as a missing ordering guarantee (using an object before its load or _ready completes)",
+          "passed": true,
+          "evidence": "Phase 3 states: 'The scene-loading code accesses or iterates the enemy list (or calls methods on enemy nodes) before those nodes have finished initializing \u2014 specifically before their _ready() functions have run \u2014 because change_scene_to_file / add_child defers _ready to the next frame, but the consuming code runs in the same frame as add_child.'"
+        },
+        {
+          "text": "Fixes the ordering explicitly (await the load signal, defer access until ready) rather than retrying or sleeping",
+          "passed": true,
+          "evidence": "Phase 4 provides three options: Option A uses `enemy.ready.connect(_on_enemy_ready.bind(enemy))` (engine signal); Option B uses self-registration inside enemy `_ready()`; Option C uses `call_deferred`. All three are explicit ordering guarantees. The fix section includes: 'call_deferred guarantees the call runs after _ready for that node, because Godot processes deferred calls after the scene-tree notifications flush. This is an ordering guarantee, not a timing guess.'"
+        },
+        {
+          "text": "Verifies by re-running the reproduction repeatedly with the delay removed",
+          "passed": true,
+          "evidence": "Verification Checklist: 'The loop test (50 scene switches) runs without a single crash after the fix' and 'The 0.5 s wait and all debug logging are removed.' Behavior is also checked at both low and high FPS."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5714,
+        "passed": 4,
+        "failed": 3,
+        "total": 7,
+        "time_seconds": 79.1,
+        "tokens": 19078,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+          "passed": true,
+          "evidence": "Response opens by stating: 'why \"thicker collider\" is a workaround, not a fix' and explains that 'the fundamental problem remains: at a high enough falling speed or a severe enough frame spike, tunneling will happen again.' The collider thickness suggestion is rejected at the top before any fix is given."
+        },
+        {
+          "text": "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+          "passed": false,
+          "evidence": "The response goes directly from root cause explanation to the fix (Steps 1-4 are all fix steps). The only mention of simulating low FPS appears at the very end under 'What to Run / Test' (step 5: 'raise Fixed Timestep to 0.05') \u2014 after the full fix code has already been provided. There is no reproduction gate that must be passed before the fix is written."
+        },
+        {
+          "text": "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+          "passed": true,
+          "evidence": "Root Cause section states: 'On a fast machine, the game loop keeps up with the fixed timestep, so \u0394y is small. On a slow machine (or during a frame spike), Unity may run multiple fixed-update steps in a single rendered frame, but each individual step still moves the player by the same \u0394y. If \u0394y > platform thickness, the player's collider is on one side of the platform at frame N and on the other side at frame N+1 \u2014 the physics engine never saw a collision.'"
+        },
+        {
+          "text": "States a specific root cause backed by evidence before changing code",
+          "passed": false,
+          "evidence": "The response asserts the root cause (discrete collision detection) based on the symptom pattern alone with no evidence-gathering step. No log gates, no reproduction artifacts, no confirmation that distanceThisStep exceeds platform thickness are required or shown before the fix is written. The claim is plausible but is not 'backed by evidence' \u2014 it is backed by pattern recognition from the symptom description."
+        },
+        {
+          "text": "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+          "passed": true,
+          "evidence": "Step 1 instructs setting 'Collision Detection from Discrete to Continuous' and explains: 'Continuous mode sweeps a shape along the path of motion between physics steps, so no matter how fast the player is falling or how thin the platform is, the collision is detected correctly.'"
+        },
+        {
+          "text": "Verifies the fix by re-running the original reproduction at low FPS",
+          "passed": true,
+          "evidence": "Under 'What to Run / Test': 'In Edit \u2192 Project Settings \u2192 Time, temporarily raise Fixed Timestep to 0.05 (20 Hz) and confirm the player still lands correctly on thin platforms at max fall speed.'"
+        },
+        {
+          "text": "Does not add delays, clamps, or extra colliders as the resolution",
+          "passed": false,
+          "evidence": "Step 3 is titled 'Cap maximum fall speed' and adds a `FixedUpdate` clamp: 'if (_rb.linearVelocity.y < -maxFallSpeed) _rb.linearVelocity = new Vector2(...)'. This is presented as 'Optional but Recommended' within the fix section. Clamping fall speed is explicitly listed as a workaround to avoid in other responses; here it is offered as part of the resolution."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 103.3,
+        "tokens": 21213,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects re-sorting on load as a symptom-masking workaround",
+          "passed": true,
+          "evidence": "Response opens: 'Do not do it. Re-sorting on load is exactly the kind of workaround that masks the bug rather than fixing it. Players who deliberately place items in specific slots... would see their layout silently scrambled every reload. And the off-by-one stack count would still be there, just hidden inside a tidied-up layout. The root cause must be fixed at the serialisation boundary.'"
+        },
+        {
+          "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+          "passed": true,
+          "evidence": "The 'Why you cannot reproduce it locally' section explains the gap-dependency condition and provides 'How to reproduce locally': '1. Give the player an inventory with at least one gap... 2. For Bug 2: apply any calculation to the stack count that could return a float... 3. Save, quit, reload, and inspect slot positions and stack counts.' The Python script `inventory.py` is itself a runnable round-trip reproduction demonstrating the failure."
+        },
+        {
+          "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+          "passed": true,
+          "evidence": "The Python `run_demo()` function creates a fixed inventory (`make_inventory()` with deterministic slot placement), saves with `save_buggy()`, loads with `load_buggy()`, and compares each slot: 'for i, (orig, rest) in enumerate(zip(original.slots, restored_buggy.slots))'. The script runs assertions: 'assert not slots_equal(original, restored_buggy)' and prints mismatches. The expected output shows exact MISMATCH results per slot."
+        },
+        {
+          "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+          "passed": false,
+          "evidence": "The response identifies root causes directly without running tests with different data sets. The 'Why you cannot reproduce it locally' section explains that Bug 1 requires gaps and Bug 2 requires float arithmetic, but this is stated as analysis of the code rather than as an experimental result from testing different data. No explicit testing of 'different data to distinguish data vs logic bug' is performed."
+        },
+        {
+          "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+          "passed": true,
+          "evidence": "Bug 1: 'Only non-empty slots are written, with no record of which slot index they occupied. On load, items are re-inserted sequentially into slots 0, 1, 2 regardless of gaps.' Bug 2: 'Stack counts become floats somewhere in the game logic... The value 64 becomes 63.9999 in floating-point. When the loader casts with int() (truncation, not rounding), int(63.999) \u2192 63.' Both causes are backed by concrete code and the Python script's output showing exact MISMATCH slots."
+        },
+        {
+          "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+          "passed": true,
+          "evidence": "save_fixed() stores slot index explicitly for every slot and casts count to int at write boundary. load_fixed() places items at entry['slot'] index rather than an insertion cursor. The fix is limited to the serialization boundary: 'Fix both issues at the serialisation boundary \u2014 the save and load functions.' No post-load patching or sorting is added."
+        },
+        {
+          "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+          "passed": true,
+          "evidence": "The Python script runs both buggy and fixed round-trips on the same inventory and prints results: 'FIXED round-trip' shows all slots 'OK'. Assertions verify: 'assert slots_equal(original, restored_fixed), \"Fix demo: expected match\"'. The migration plan section (`load_with_migration`) handles old save files (version 0) so they 'still load correctly' with the new code."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5714,
+        "passed": 4,
+        "failed": 3,
+        "total": 7,
+        "time_seconds": 63.6,
+        "tokens": 17629,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Explicitly rejects the 0.5 second wait as a workaround that shrinks but does not close the race window",
+          "passed": true,
+          "evidence": "Opening states: 'No. The await get_tree().create_timer(0.5).timeout workaround is a classic race-condition band-aid. It passes most of the time because 0.5 s is usually longer than the load, but on a slow device, a large scene, or under memory pressure the crash will return.'"
+        },
+        {
+          "text": "Works to make the 1-in-10 crash reproducible on demand, e.g. by simulating slow loading or stressing scene transitions, before writing a fix",
+          "passed": false,
+          "evidence": "The response goes directly from explaining the crash mechanism to presenting Fix 1, Fix 2, and Fix 3 with full code. There is no reproduction phase before the fixes. The only mention of running the scene-switch multiple times appears under 'What to Verify After the Fix' (step 2: 'Run the scene-switch 50+ times in a row'), which comes after all fix code is presented, not before diagnosis."
+        },
+        {
+          "text": "Forms and tests one hypothesis at a time about which object is accessed before initialization/load completes",
+          "passed": false,
+          "evidence": "No hypothesis formation or bisecting is described. The response asserts the root cause directly from the symptom ('Any code that runs in the same frame right after change_scene_to_file may find: child nodes not yet added to the tree') and immediately proceeds to fixes. No systematic one-hypothesis-at-a-time testing process is shown."
+        },
+        {
+          "text": "Uses targeted logging of load/ready order or frame numbers to bracket the failure point",
+          "passed": false,
+          "evidence": "No logging instrumentation is provided or recommended anywhere in the response. The response does not suggest adding frame-number logs, ready-order logs, or any diagnostic instrumentation to bracket the failure point."
+        },
+        {
+          "text": "Identifies the root cause as a missing ordering guarantee (using an object before its load or _ready completes)",
+          "passed": true,
+          "evidence": "Response states: 'The new scene's root node and all its children go through _enter_tree() \u2192 _ready() in the next processing frame (or later, if the load is deferred). Any code that runs in the same frame right after change_scene_to_file may find: child nodes not yet added to the tree (null when accessed via $NodePath), _ready() not yet called, so exported variables / autoload references inside the new scene are uninitialized.'"
+        },
+        {
+          "text": "Fixes the ordering explicitly (await the load signal, defer access until ready) rather than retrying or sleeping",
+          "passed": true,
+          "evidence": "Fix 1 uses 'await get_tree().tree_changed' which 'fires after the old scene is freed and the new scene's _ready() chain has completed.' Fix 2 uses 'call_deferred' to 'push the work one frame forward'. Fix 3 has the enemy emit a 'ready_for_use' signal from its own _ready(). All three are explicit ordering guarantees, not timers."
+        },
+        {
+          "text": "Verifies by re-running the reproduction repeatedly with the delay removed",
+          "passed": true,
+          "evidence": "Under 'What to Verify After the Fix': 'Remove the await get_tree().create_timer(0.5).timeout line entirely. Run the scene-switch 50+ times in a row (a simple loop in a test script, or use Godot's built-in profiler). Confirm no null-instance errors appear in the Output panel.'"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.8571,
+        "stddev": 0.2475,
+        "min": 0.5714,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 83.6,
+        "stddev": 16.2945,
+        "min": 65.5,
+        "max": 97.1
+      },
+      "tokens": {
+        "mean": 20262.0,
+        "stddev": 542.4564,
+        "min": 19844,
+        "max": 20875
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6666,
+        "stddev": 0.1649,
+        "min": 0.5714,
+        "max": 0.8571
+      },
+      "time_seconds": {
+        "mean": 82.0,
+        "stddev": 20.0082,
+        "min": 63.6,
+        "max": 103.3
+      },
+      "tokens": {
+        "mean": 19306.6667,
+        "stddev": 1802.9089,
+        "min": 17629,
+        "max": 21213
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.19",
+      "time_seconds": "+1.6",
+      "tokens": "+955"
+    }
+  },
+  "notes": []
+}

@@ -20,17 +20,19 @@ Confirm:
 - `stages.engine.engine` is `godot`.
 - `stages.engine.projectPath` points to a project containing `project.godot`.
 - `stages.engine.targetPath` or `stages.engine.scenePath` exists in the Godot project.
-- `plugins/3d-asset-pipeline/godot/addons/3d_pipeline/` is available from `${CLAUDE_PLUGIN_ROOT}`.
+- `godot/addons/3d_pipeline/` exists under the plugin root.
 - The user supplied `--project` or the manifest already provides the project path.
 
 Stop with a user-fixable error when the imported asset is missing, the Godot project is invalid, or Stage 5 has not completed.
 
 ## Iteration Protocol
 
+The review script lives under the plugin root's `scripts/` directory; `<plugin-root>` below is the installed plugin directory (`${CLAUDE_PLUGIN_ROOT}` in Claude Code; in other agents, locate the installed plugin directory first). Keep the working directory in the workspace that contains `3d-pipeline-output/`. On Windows, use `py -3` if `python3` is not available.
+
 For iteration `N`, run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project <godot-project-root> --iter <N> --max-iters 5
+python3 "<plugin-root>/scripts/review_loop.py" <slug> --project <godot-project-root> --iter <N> --max-iters 5
 ```
 
 Pass through user options:
@@ -150,7 +152,7 @@ If `approved` is false and looping is enabled:
 Example:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project <project> --iter 2 --apply-fixes 3d-pipeline-output/<slug>/review/iter-1/fix-instructions.json
+python3 "<plugin-root>/scripts/review_loop.py" <slug> --project <project> --iter 2 --apply-fixes 3d-pipeline-output/<slug>/review/iter-1/fix-instructions.json
 ```
 
 `apply_fixes.gd` stores persistent setup data in `review/setup.json`; `capture.gd` reads it on the next pass.
@@ -170,6 +172,19 @@ When max iterations are reached without approval, record unresolved issues in th
 ## No-Loop Handling
 
 When `--no-loop` is present, capture once, review once, write `verdict.json`, and stop. If fixes are identified, write `fix-instructions.json` for later manual use, but do not run another capture. Record `loopEnabled: false` in the review stage.
+
+## Verification Checklist
+
+Before declaring Stage 6 done, confirm all of the following:
+
+- `review/iter-<N>/verdict.json` exists for every executed iteration and the final one records the true outcome.
+- The final verdict has `approved: true`, or max iterations were reached and unresolved issues are listed.
+- Each non-approved iteration that proposed fixes has a matching `fix-instructions.json`.
+- All five expected PNGs exist for each captured iteration.
+- `stages.review` in `pipeline.json` records `status`, `approved`, `iterations`, `maxIters`, `loopEnabled`, and `history`.
+- No API keys, local secrets, or unrelated project paths appear in verdicts, fix files, or the manifest.
+
+If any item fails, fix it and re-verify before reporting the review result.
 
 ## Reference Files
 

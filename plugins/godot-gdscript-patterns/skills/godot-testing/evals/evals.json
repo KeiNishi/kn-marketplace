@@ -1,0 +1,43 @@
+{
+  "skill_name": "godot-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Here is my Godot 4 inventory class in inventory.gd (extends RefCounted, with add_item, remove_item, and count methods). Write unit tests for it and run them to make sure they pass.",
+      "expected_output": "GdUnit4 test suite(s) extending GdUnitTestSuite under test/, executed headless via the Godot CLI or the bundled runner script, iterating until the suite passes.",
+      "files": [],
+      "expectations": [
+        "Tests are written for GdUnit4 (extends GdUnitTestSuite with assert_* fluent assertions), not a generic or invented framework",
+        "The tests are actually executed headless (godot --headless with GdUnitCmdTool.gd, or scripts/run_godot_tests.py), not just written and handed over",
+        "The Godot executable is located robustly (--godot-bin, GODOT_BIN env var, or godot/godot4 on PATH) rather than assuming 'godot' exists",
+        "On failure, the code or tests are fixed and the suite is re-run; success is only declared after a green run (exit code 0 / 0 failures in the report)",
+        "Test code uses static typing and Godot 4 GDScript syntax"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I have a fresh Godot 4 project with no tests at all. Set up automated testing for it so I can run tests from the command line and in CI.",
+      "expected_output": "GdUnit4 installed into addons/gdUnit4 and enabled, a test/ directory with at least one example test suite, and a working headless CLI command (suitable for CI) demonstrated to pass.",
+      "files": [],
+      "expectations": [
+        "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+        "A test/ directory and at least one example GdUnitTestSuite are created",
+        "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+        "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+        "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Before I push this Godot project, verify that the game still boots and the main scene runs without errors. I don't have the editor open and this machine has no display.",
+      "expected_output": "A headless smoke run of the project (godot --headless --path . --quit-after N), with the exit code checked and the output scanned for script errors before declaring success.",
+      "files": [],
+      "expectations": [
+        "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+        "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+        "The verification is actually executed and its result reported, not merely described as a command the user could run",
+        "If errors appear, the root cause is fixed and the smoke run is repeated until clean"
+      ]
+    }
+  ]
+}

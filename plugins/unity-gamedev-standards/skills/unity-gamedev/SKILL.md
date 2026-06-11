@@ -1,371 +1,117 @@
 ---
-name: unity-gamedev-standards
-description: This skill should be used when the user asks to "create a Unity project", "write C# scripts for Unity", "implement MonoBehaviour", mentions "Unity", ".cs", ".unity", "C#", "MonoBehaviour", "ScriptableObject", "GameObject", or works with Unity APIs, scenes, prefabs, or assets. Also triggers on "/unity" command or questions about Unity game development patterns. For ECS/DOTS, see references/ecs-patterns.md. For testing, see references/testing-standards.md. For editor extensions, see references/editor-extensions.md.
+name: unity-gamedev
+description: This skill should be used when writing or reviewing Unity game code - creating a Unity project, writing C# scripts (.cs), implementing MonoBehaviour or ScriptableObject classes, working with scenes (.unity), prefabs (.prefab), or asset files (.asset), using UniTask async, optimizing Unity performance, or any Unity 6 / Unity 6.3 LTS development task. Triggers on mentions of Unity, C#, MonoBehaviour, ScriptableObject, GameObject, Rigidbody, Animator, prefab, UniTask, ECS/DOTS, camera follow, or object pooling. Also triggers on the /unity-setup command and questions about Unity game development patterns.
 allowed-tools: Bash(dotnet*), Bash(mkdir*), Bash(ls*), Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Unity GameDev Standards
 
-Comprehensive guide for Unity 6.3 LTS+ game development. Covers project structure, coding conventions, MonoBehaviour patterns, performance optimization, and character design patterns.
+Standards for Unity 6.3 LTS+ development. Apply the core rules below to all
+Unity code. Before non-trivial work in an area, load the matching file from
+`references/` (routing table below) - detailed patterns and full code
+examples live there, not here.
 
-## Project Structure
+## Core Rules (always apply)
 
-### Recommended Folder Layout
+### Naming
+
+- Classes, structs, methods, properties, public fields: `PascalCase`;
+  interfaces: `IPascalCase`.
+- Private fields: `_camelCase` (including `[SerializeField]` fields);
+  constants: `SCREAMING_SNAKE_CASE`; parameters and locals: `camelCase`.
+- Event handler methods: `On` + event name (`OnEnemyDied`).
+
+### Inspector
+
+- Every `[SerializeField]` field gets a `[Tooltip]`; bounded numeric values
+  get `[Range]`; group related fields with `[Header]`.
+- The Inspector is the source of truth for component configuration. Never
+  hardcode Inspector-configurable component values (Rigidbody mass, damping,
+  etc.) in `Awake()`/`Start()` - `Awake()` is only for caching references and
+  initializing internal state. When a component value must change, change it
+  in the editor (use Unity MCP tools if available; otherwise instruct the
+  user to change it in the Inspector).
+- Never create `PhysicsMaterial` or similar configuration assets in code -
+  use project assets.
+
+### Lifecycle and timing
+
+- Physics and Rigidbody manipulation in `FixedUpdate()`; input and
+  per-frame logic in `Update()`; camera follow/position code in
+  `LateUpdate()` only - `Update()` causes 1-frame jitter.
+- Enable Rigidbody Interpolation (in the Inspector) on targets followed by a
+  camera.
+- Cache component references in `Awake()` with `GetComponent`; subscribe to
+  events in `OnEnable()` and always unsubscribe in `OnDisable()`.
+- Organize MonoBehaviours with `#region` sections in this order: Inspector
+  Fields, Private Fields, Properties, Events, Unity Lifecycle, Public
+  Methods, Private Methods.
+
+### Performance
+
+- No allocations in `Update` loops: no `FindObjectsOfType`, no string
+  concatenation, no `new` collections per frame. Pre-allocate and reuse
+  lists/StringBuilder; use the non-allocating
+  `FindObjectsByType(..., results)` overloads when a search is unavoidable.
+- Use `UnityEngine.Pool.ObjectPool<T>` for frequently instantiated objects
+  (bullets, effects).
+- Hash Animator parameter names once: `Animator.StringToHash("Speed")`.
+- Prefer `TryGetComponent<T>(out var c)` over `GetComponent<T>() != null`.
+
+### Architecture
+
+- Game configuration data lives in `ScriptableObject` assets
+  (`[CreateAssetMenu]`, `PascalCase` public fields, tooltips).
+- Characters use MVC layering with one-way dependency:
+  Controller (input/AI) -> Model (stats/logic) -> View (animation/effects).
+- Keep MonoBehaviours thin; put game logic in plain C# classes so it can be
+  unit tested (see the unity-testing skill for writing and running tests).
+- Never skip null checks on external/serialized references.
+
+## Routing: which reference to load
+
+| Working on... | Load |
+| --- | --- |
+| Project setup, folder layout, asset naming, assembly definitions | `references/project-structure.md` |
+| C# style details: naming, regions, events, null and string handling | `references/coding-rules.md` |
+| Animation, Update/FixedUpdate/LateUpdate order, Root Motion, Animator modes | `references/animation-timing.md` |
+| Camera follow/orbit/side-scroll, camera jitter, execution order | `references/camera-systems.md` |
+| Component configuration, "value set in code vs Inspector" questions | `references/inspector-workflow.md` |
+| ScriptableObject data containers, event channels, variables, databases | `references/scriptable-objects.md` |
+| GC pressure, pooling, physics/rendering optimization, profiling | `references/performance.md` |
+| Character/player/enemy structure, swapping player vs AI control | `references/character-mvc.md` |
+| async/await, UniTask, cancellation tokens, coroutine interop | `references/async-unitask.md` |
+| ECS/DOTS, Burst, Jobs, authoring and baking | `references/ecs-patterns.md` |
+| EditMode/PlayMode test code patterns | `references/testing-standards.md` (running tests headlessly: unity-testing skill) |
+| Custom inspectors, property drawers, editor windows, menu items | `references/editor-extensions.md` |
+| .gitignore, Git LFS, scene/prefab merge conflicts | `references/git-management.md` |
+
+If several areas apply, load only the files needed for the current step.
+
+## Recommended project layout
+
+Top-level shape (full tree and naming prefixes in
+`references/project-structure.md`):
 
 ```
 Assets/
-├── _Project/                 # Project-specific assets (underscore for top)
-│   ├── Art/
-│   │   ├── Animations/
-│   │   ├── Materials/
-│   │   ├── Models/
-│   │   ├── Sprites/
-│   │   └── UI/
-│   ├── Audio/
-│   │   ├── Music/
-│   │   └── SFX/
-│   ├── Prefabs/
-│   ├── Scenes/
-│   ├── ScriptableObjects/
-│   ├── Scripts/
-│   │   ├── Core/             # Core systems
-│   │   ├── Gameplay/         # Gameplay logic
-│   │   ├── UI/               # UI scripts
-│   │   └── Utilities/        # Utilities
-│   └── Settings/
-├── Plugins/                  # Third-party plugins
-└── Editor/                   # Editor-only scripts
+  _Project/        # project assets: Art/, Audio/, Prefabs/, Scenes/,
+                   # ScriptableObjects/, Scripts/{Core,Gameplay,UI,Utilities}/, Settings/
+  Plugins/         # third-party
+  Editor/          # editor-only scripts
 ```
 
-For detailed structure and asset naming conventions, see `references/project-structure.md`.
-
-## Coding Standards
-
-### Naming Conventions
-
-```csharp
-// Class: PascalCase
-public class PlayerController : MonoBehaviour
-
-// Public fields: PascalCase (Inspector visible)
-public float MoveSpeed = 5f;
-
-// Private fields: _camelCase
-private float _currentHealth;
-private Rigidbody _rigidbody;
-
-// SerializeField: _camelCase (Inspector visible but private)
-[SerializeField] private float _jumpForce = 10f;
-
-// Constants: SCREAMING_SNAKE_CASE
-private const int MAX_HEALTH = 100;
-
-// Properties: PascalCase
-public float CurrentHealth => _currentHealth;
-
-// Methods: PascalCase
-public void TakeDamage(int amount)
-
-// Parameters/locals: camelCase
-private void ProcessInput(float deltaTime)
-{
-    var moveDirection = Vector3.zero;
-}
-```
-
-### Inspector Documentation
-
-All Inspector properties require documentation:
-
-```csharp
-[Tooltip("Movement speed in units per second")]
-[SerializeField] private float _moveSpeed = 5f;
-
-[Tooltip("Jump force applied when jumping")]
-[SerializeField, Range(1f, 20f)] private float _jumpForce = 10f;
-```
-
-For complete coding rules, see `references/coding-rules.md`.
-
-## MonoBehaviour Pattern
-
-```csharp
-public class PlayerController : MonoBehaviour
-{
-    #region Inspector Fields
-
-    [Header("Movement")]
-    [SerializeField] private float _moveSpeed = 5f;
-
-    #endregion
-
-    #region Private Fields
-
-    private Rigidbody _rigidbody;
-    private Vector3 _moveInput;
-
-    #endregion
-
-    #region Events
-
-    public event System.Action<float> OnHealthChanged;
-
-    #endregion
-
-    #region Unity Lifecycle
-
-    private void Awake()
-    {
-        _rigidbody = GetComponent<Rigidbody>();
-    }
-
-    private void OnEnable()
-    {
-        // Subscribe to events
-    }
-
-    private void OnDisable()
-    {
-        // Unsubscribe (prevent memory leaks)
-    }
-
-    private void Update()
-    {
-        HandleInput();
-    }
-
-    private void FixedUpdate()
-    {
-        ApplyMovement();
-    }
-
-    #endregion
-
-    #region Private Methods
-
-    private void HandleInput()
-    {
-        _moveInput.x = Input.GetAxisRaw("Horizontal");
-        _moveInput.z = Input.GetAxisRaw("Vertical");
-    }
-
-    private void ApplyMovement()
-    {
-        var velocity = _moveInput.normalized * _moveSpeed;
-        velocity.y = _rigidbody.linearVelocity.y;
-        _rigidbody.linearVelocity = velocity;
-    }
-
-    #endregion
-}
-```
-
-## Animation Timing
-
-### Update Order (per frame)
-
-```
-1. FixedUpdate()           - Fixed timestep (0~N times)
-2. Physics update          - Internal physics
-3. Animation (Physics)     - If Animator Mode = "Animate Physics"
-4. OnTrigger/OnCollision   - Physics callbacks
-5. Update()                - Once per frame
-6. Animation (Normal)      - If Animator Mode = "Normal"
-7. LateUpdate()            - After Update
-8. Rendering
-```
-
-For detailed animation timing and Root Motion handling, see `references/animation-timing.md`.
-
-## Camera Systems
-
-Camera scripts MUST use `LateUpdate()` for position/rotation updates. Using `Update()` causes visual jitter because the camera reads the target position before physics and other scripts have finished moving it.
-
-```csharp
-// BAD: Jitters - reads position before movement is finalized
-private void Update()
-{
-    transform.position = _target.position + _offset;
-}
-
-// GOOD: Reads final position after all movement is complete
-private void LateUpdate()
-{
-    transform.position = _target.position + _offset;
-}
-```
-
-Key requirements:
-- **LateUpdate() only** for camera position/rotation
-- **Rigidbody Interpolation** must be enabled on followed targets (set in Inspector)
-- **Never use Update()** for camera follow - causes 1-frame jitter
-
-For complete camera patterns (follow, orbit, side-scroll) and physics interaction details, see `references/camera-systems.md`.
-
-## Inspector Workflow
-
-Unity's Inspector is the source of truth for component configuration. Code MUST NOT override Inspector-configurable values in `Awake()`, `Start()`, or any initialization method.
-
-```csharp
-// BAD: Hardcoding Rigidbody values in Awake - overrides Inspector silently
-private void Awake()
-{
-    _rigidbody = GetComponent<Rigidbody>();
-    _rigidbody.mass = 2f;              // VIOLATION - set in Inspector
-    _rigidbody.linearDamping = 0.5f;   // VIOLATION - set in Inspector
-}
-
-// GOOD: Awake is only for caching references and initializing internal state
-private void Awake()
-{
-    _rigidbody = GetComponent<Rigidbody>();
-    _currentHealth = _maxHealth;
-}
-```
-
-When a bug requires changing a component property value, instruct the user to change it in the Inspector or use MCP tools. For the complete rules, see `references/inspector-workflow.md`.
-
-## ScriptableObject
-
-Data containers for game configuration:
-
-```csharp
-[CreateAssetMenu(fileName = "SO_WeaponData", menuName = "Game/Weapon Data")]
-public class WeaponData : ScriptableObject
-{
-    [Header("Basic Info")]
-    public string WeaponName;
-    public Sprite Icon;
-
-    [Header("Combat Stats")]
-    [Range(1, 100)] public int Damage = 10;
-    [Range(0.1f, 3f)] public float AttackSpeed = 1f;
-}
-```
-
-For ScriptableObject patterns, see `references/scriptable-objects.md`.
-
-## Performance Optimization
-
-### GC Allocation Reduction
-
-```csharp
-// BAD: Allocation every frame
-private void Update()
-{
-    var enemies = FindObjectsOfType<Enemy>();  // GC allocation
-}
-
-// GOOD: Cache and reuse
-private List<Enemy> _enemies = new();
-private void Update()
-{
-    _enemies.Clear();
-    FindObjectsByType<Enemy>(FindObjectsSortMode.None, _enemies);
-}
-```
-
-### Object Pooling
-
-```csharp
-using UnityEngine.Pool;
-
-private ObjectPool<Bullet> _pool;
-
-private void Awake()
-{
-    _pool = new ObjectPool<Bullet>(
-        createFunc: () => Instantiate(_bulletPrefab),
-        actionOnGet: b => b.gameObject.SetActive(true),
-        actionOnRelease: b => b.gameObject.SetActive(false),
-        defaultCapacity: 20,
-        maxSize: 100
-    );
-}
-```
-
-For comprehensive performance optimization, see `references/performance.md`.
-
-## Character Design (MVC Pattern)
-
-Separate characters into Controller, Model, and View layers:
-
-```
-Controller → Model → View (one-way dependency)
-```
-
-- **Model**: Stats, data, business logic
-- **Controller**: Input processing, AI control
-- **View**: Animation, effects, UI
-
-This enables:
-- Swapping Player/AI controllers on same Model/View
-- Independent testing of each layer
-- Team parallel development
-
-For complete MVC implementation, see `references/character-mvc.md`.
-
-## Async with UniTask
-
-UniTask provides zero-allocation async/await for Unity:
-
-```csharp
-using Cysharp.Threading.Tasks;
-
-private async UniTask LoadLevelAsync()
-{
-    await UniTask.Delay(TimeSpan.FromSeconds(1f));
-    await UniTask.NextFrame();
-}
-
-// Auto-cancel on destroy
-private async void Start()
-{
-    await FetchDataAsync(this.GetCancellationTokenOnDestroy());
-}
-```
-
-For UniTask installation and patterns, see `references/async-unitask.md`.
-
-## Best Practices
-
-### Do's
-
-- Use `[Tooltip]` on all Inspector properties
-- Use `[Range]` when values have bounds
-- Cache component references in `Awake()`
-- Unsubscribe events in `OnDisable()`
-- Use object pooling for frequent instantiation
-- Hash Animator parameter names: `Animator.StringToHash("Speed")`
-- Use `TryGetComponent<T>()` instead of `GetComponent<T>() != null`
-
-### Don'ts
-
-- Don't use `FindObjectOfType` every frame
-- Don't allocate in Update loops
-- Don't use string concatenation in hot paths
-- Don't skip null checks on external references
-- Don't mix physics in Update (use FixedUpdate)
-- Don't use Update() for camera follow (use LateUpdate)
-- Don't hardcode component property values in Awake()/Start() that should be set via Inspector
-- Don't create PhysicsMaterial or similar assets in code - use project assets
-- Don't forget to unsubscribe from events
-
-## Additional Resources
-
-### Reference Files
-
-Detailed documentation in `references/`:
-- **`project-structure.md`** - Folder layout, asset naming
-- **`coding-rules.md`** - Complete coding conventions
-- **`animation-timing.md`** - Update order, Root Motion
-- **`scriptable-objects.md`** - ScriptableObject patterns
-- **`performance.md`** - Optimization techniques
-- **`character-mvc.md`** - MVC character design
-- **`async-unitask.md`** - UniTask async patterns
-- **`camera-systems.md`** - Camera execution order, follow patterns
-- **`inspector-workflow.md`** - Inspector-driven value configuration rules
-- **`git-management.md`** - .gitignore, Git LFS
-- **`ecs-patterns.md`** - ECS/DOTS patterns
-- **`testing-standards.md`** - Unit/Play Mode testing
-- **`editor-extensions.md`** - Custom editors, drawers
+## Verification checklist
+
+Before declaring Unity code complete, confirm:
+
+- [ ] Naming follows the conventions above (`_camelCase` private fields,
+      `PascalCase` members).
+- [ ] Every `[SerializeField]` has `[Tooltip]`; bounded values have `[Range]`.
+- [ ] Physics code is in `FixedUpdate()`; camera code is in `LateUpdate()`.
+- [ ] No per-frame allocations or `FindObjectsOfType` in `Update` loops.
+- [ ] Component references cached in `Awake()`; every event subscription has
+      a matching unsubscribe in `OnDisable()`.
+- [ ] No Inspector-configurable component values overwritten in code.
+- [ ] New logic that can live in plain C# does, and is covered by tests when
+      the project has a test assembly (unity-testing skill).

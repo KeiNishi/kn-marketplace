@@ -1,0 +1,1 @@
+Players report that after saving and reloading, their inventory is occasionally wrong - items swap slots or a stack count is off by one. I can't reproduce it locally. I'm tempted to just re-sort the inventory on load to hide it.

@@ -2,6 +2,10 @@
 
 Async scene loading with transitions for Godot 4.x.
 
+## Contents
+
+- [SceneManager (Autoload)](#scenemanager-autoload)
+
 ## SceneManager (Autoload)
 
 ```gdscript

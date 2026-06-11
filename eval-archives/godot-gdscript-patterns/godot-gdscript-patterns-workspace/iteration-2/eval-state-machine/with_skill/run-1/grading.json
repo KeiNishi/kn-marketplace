@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The code uses static typing with type annotations (e.g., var speed: float = 200.0)",
+      "passed": true,
+      "evidence": "All variables, parameters, and return types are annotated throughout: '@export var speed: float = 200.0', '@export var jump_velocity: float = -400.0', 'var gravity: float = ProjectSettings.get_setting(...)', 'var current_state: State', 'var states: Dictionary = {}', 'func transition_to(state_name: StringName, msg: Dictionary = {}) -> void', 'func physics_update(delta: float) -> void', etc."
+    },
+    {
+      "text": "The implementation uses GDScript (not C# or other languages)",
+      "passed": true,
+      "evidence": "All code blocks are GDScript: 'class_name State', 'extends Node', 'func enter(_msg: Dictionary = {}) -> void:', '@export var speed: float = 200.0', etc."
+    },
+    {
+      "text": "The state machine references or uses CharacterBody2D",
+      "passed": true,
+      "evidence": "player.gd declares 'class_name Player' and 'extends CharacterBody2D'. States access the player via '@export var player: Player' and call CharacterBody2D methods: 'player.is_on_floor()', 'player.move_and_slide()', 'player.velocity.y'."
+    },
+    {
+      "text": "The code uses signals with proper Godot 4 syntax (signal name or signal name(param: type))",
+      "passed": true,
+      "evidence": "Typed signal declared: 'signal state_changed(from_state: StringName, to_state: StringName)' in both state_machine.gd and player.gd. Emitted with: 'state_changed.emit(previous_state.name, current_state.name)' and connected with callable: 'state_machine.state_changed.connect(_on_state_changed)'."
+    },
+    {
+      "text": "State transitions are handled without tight coupling (using signals or delegation)",
+      "passed": true,
+      "evidence": "States never reference each other directly. All transitions go through 'state_machine.transition_to(&\"Running\")', 'state_machine.transition_to(&\"Jumping\")', 'state_machine.transition_to(&\"Idle\")'. The StateMachine emits 'state_changed' signal so external listeners can react without polling."
+    },
+    {
+      "text": "The code follows Godot 4 patterns (not Godot 3 syntax like yield or connect with string method names)",
+      "passed": true,
+      "evidence": "No 'yield', no 'export' (uses '@export'), no 'onready' (uses '@onready'), no string-based connect. Connect uses callable syntax: 'state_machine.state_changed.connect(_on_state_changed)'. StringName literals used for state names: '&\"Jumping\"', '&\"Running\"', '&\"Idle\"'."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

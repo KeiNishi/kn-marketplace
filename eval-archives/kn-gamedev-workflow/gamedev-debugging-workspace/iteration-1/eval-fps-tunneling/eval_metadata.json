@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "fps-tunneling",
+  "prompt": "In my Unity platformer, the player sometimes falls through thin platforms, but only on slower machines. On my dev PC it almost never happens. Can you fix it? I think adding a thicker collider would work.",
+  "assertions": [
+    "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+    "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+    "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+    "States a specific root cause backed by evidence before changing code",
+    "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+    "Verifies the fix by re-running the original reproduction at low FPS",
+    "Does not add delays, clamps, or extra colliders as the resolution"
+  ]
+}

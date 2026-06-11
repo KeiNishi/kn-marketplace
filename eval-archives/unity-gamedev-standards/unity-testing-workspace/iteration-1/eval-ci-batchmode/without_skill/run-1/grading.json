@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+      "passed": false,
+      "evidence": "The run-tests-local.sh script uses '-logFile \"${RESULTS_DIR}/editmode/unity.log\"' (writing to a file), not '-logFile -' for stdout streaming. The flags table notes 'Omit or set to - to print to stdout' but does not use this in any actual command. The CI workflow uses 'game-ci/unity-test-runner' which abstracts the raw flags. No explicit warning against combining -quit with -runTests."
+    },
+    {
+      "text": "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+      "passed": false,
+      "evidence": "Response uses UNITY_PATH env var (via 'UNITY=\"${UNITY_PATH:-/opt/unity/Editor/Unity}\"') but does not mention a --unity-bin flag. Prerequisites section says to 'note the exact version string' from ProjectVersion.txt but the script does not auto-locate the binary based on it. No Windows Hub path (C:/Program Files/Unity/...) is shown. macOS Hub path is shown in comments only as an example without the Hub directory structure."
+    },
+    {
+      "text": "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+      "passed": true,
+      "evidence": "The GitHub Actions workflow runs both: 'Run EditMode tests' using 'testMode: EditMode' and 'Run PlayMode tests' using 'testMode: PlayMode'. The local script also runs both platforms sequentially."
+    },
+    {
+      "text": "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+      "passed": false,
+      "evidence": "Response uses 'game-ci/unity-test-runner' which internally parses XML but as a black box. No scripts/run_unity_tests.py is provided. The response does not describe parsing test-run attributes or failed test-case nodes \u2014 it simply says 'game-ci/unity-test-runner reads the NUnit XML produced by -testResults and exits with a non-zero code when any test-case result=\"Failed\" element is present' without user-visible XML parsing logic."
+    },
+    {
+      "text": "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+      "passed": false,
+      "evidence": "Exit code propagation is covered via 'game-ci/unity-test-runner' exiting non-zero. However, the response does not describe a run-read-fix-rerun loop or show what failure output looks like to guide reading failure messages. The 'Result gates' section only lists what must pass, not the iterative fix cycle."
+    },
+    {
+      "text": "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)",
+      "passed": false,
+      "evidence": "The response does not mention the failure mode when no results XML is produced. Compile errors and project lock scenarios are not addressed anywhere in the response."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 5,
+    "total": 6,
+    "pass_rate": 0.1667
+  }
+}

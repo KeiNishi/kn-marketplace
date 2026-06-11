@@ -2,6 +2,16 @@
 
 Performance optimization techniques for Playdate games.
 
+## Contents
+
+- [Memory Management](#memory-management)
+- [Drawing Optimization](#drawing-optimization)
+- [FPS Management](#fps-management)
+- [Object Pooling](#object-pooling)
+- [Profiling](#profiling)
+- [Common Bottlenecks](#common-bottlenecks)
+- [Optimization Checklist](#optimization-checklist)
+
 ## Memory Management
 
 ### Playdate Allocator

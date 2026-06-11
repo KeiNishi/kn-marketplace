@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+      "passed": true,
+      "evidence": "Response states: 'anything that requires MonoBehaviour lifecycle or physics frames goes in a PlayMode test written as a [UnityTest] coroutine.' and the decision table shows 'Physics engine (Rigidbody, AddForce): Not active [EditMode] vs Active [PlayMode]'."
+    },
+    {
+      "text": "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+      "passed": true,
+      "evidence": "'[UnityTest] public IEnumerator Jump_MovesPlayerUpward_OverPhysicsFrames()' \u2014 uses [UnityTest], returns IEnumerator, and yields both 'yield return null' (to allow Awake to run) and 'yield return new WaitForFixedUpdate()' twice before the Assert."
+    },
+    {
+      "text": "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+      "passed": true,
+      "evidence": "PlayModeTests.asmdef is created at 'Assets/_Project/Tests/PlayMode/PlayModeTests.asmdef' with no 'includePlatforms' restriction (unlike EditMode which restricts to Editor). It is a separate file from any EditMode asmdef."
+    },
+    {
+      "text": "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+      "passed": true,
+      "evidence": "'Assert.That(go.transform.position.y, Is.GreaterThan(startY), \"PlayerController.Jump() should move the Rigidbody upward.\")' \u2014 uses NUnit constraint syntax Is.GreaterThan on the y-position, exactly matching the example given in the assertion."
+    },
+    {
+      "text": "Destroys spawned GameObjects at the end of the test so tests remain independent",
+      "passed": true,
+      "evidence": "'// Cleanup\nObject.Destroy(go);' appears at the end of the test method body. The response's design notes also explain: 'Keeps tests independent \u2014 the spawned GameObject is removed before the next test runs.'"
+    },
+    {
+      "text": "Mentions running the suite via batchmode with -testPlatform PlayMode",
+      "passed": true,
+      "evidence": "Shows: 'python3 scripts/run_unity_tests.py --project-path /path/to/your/unity/project --test-platform PlayMode' and the underlying command including '-testPlatform PlayMode -testResults /tmp/results-playmode.xml -logFile -'. Both the script and raw batchmode flags are present."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "inventory-unit-tests",
+  "prompt": "Here is my Godot 4 inventory class in inventory.gd (extends RefCounted, with add_item, remove_item, and count methods). Write unit tests for it and run them to make sure they pass.",
+  "assertions": [
+    "Tests are written for GdUnit4 (extends GdUnitTestSuite with assert_* fluent assertions), not a generic or invented framework",
+    "The tests are actually executed headless (godot --headless with GdUnitCmdTool.gd, or scripts/run_godot_tests.py), not just written and handed over",
+    "The Godot executable is located robustly (--godot-bin, GODOT_BIN env var, or godot/godot4 on PATH) rather than assuming 'godot' exists",
+    "On failure, the code or tests are fixed and the suite is re-run; success is only declared after a green run (exit code 0 / 0 failures in the report)",
+    "Test code uses static typing and Godot 4 GDScript syntax"
+  ]
+}

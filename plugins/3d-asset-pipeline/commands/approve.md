@@ -21,10 +21,10 @@ Record the human approval (or rejection) of Stage 1 concept art so Stage 2 mesh 
 
 1. Read `3d-pipeline-output/<slug>/pipeline.json` and confirm `stages.concept.status` is `done`.
 2. Display `concept/canonical.png` (and the four angle PNGs if helpful) so the user can verify the asset before approving.
-3. Run:
+3. Run (on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> [--reject] [--canonical <angle>]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> [--reject] [--canonical <angle>]
 ```
 
 4. Print the concept stage block from the manifest (`status`, `canonicalAngle`, `approved`, `approvedAt`, `approvedBy`).

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+      "passed": true,
+      "evidence": "Response states in the test file's header comment: 'No MonoBehaviour or scene loading required \u2014 pure C# logic.' and the section 'What was produced' describes the class as a pure logic component. The choice of EditMode is consistent throughout with no PlayMode assembly or [UnityTest] used."
+    },
+    {
+      "text": "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+      "passed": true,
+      "evidence": "Project.Gameplay.Tests.asmdef is shown with: \"references\": [\"Project.Gameplay\", \"UnityEngine.TestRunner\", \"UnityEditor.TestRunner\"], \"includePlatforms\": [\"Editor\"], and \"precompiledReferences\": [\"nunit.framework.dll\"]. Annotated: 'restricts to EditMode only' and 'ensures NUnit is linked'."
+    },
+    {
+      "text": "Tests use the [Test] attribute, not [UnityTest]",
+      "passed": true,
+      "evidence": "Every test method uses [Test] or [TestCase]. For example: '[Test] public void Calculate_AttackExceedsDefense_ReturnsPositiveDamage()' and '[TestCase(0f, 0f, 1f, 0f, TestName = \"Boundary_AllZero\")]'. No [UnityTest] attributes appear in the file."
+    },
+    {
+      "text": "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+      "passed": false,
+      "evidence": "Most tests are one-liners with no explicit Arrange/Act/Assert sections (e.g., 'float result = _calc.Calculate(attackPower: 100f, defense: 40f, criticalMultiplier: 1f); Assert.That(result, Is.EqualTo(60f).Within(0.001f));' \u2014 no Arrange step, no comments separating phases). Additionally, names follow the pattern Method_Condition_Result (e.g., 'Calculate_AttackExceedsDefense_ReturnsPositiveDamage') rather than the specified Method_ExpectedBehavior_WhenCondition pattern. Borderline cases like 'Calculate_CriticalMultiplier_ScalesDamage' omit the 'When' clause entirely."
+    },
+    {
+      "text": "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+      "passed": true,
+      "evidence": "Uses constraint syntax throughout: 'Assert.That(result, Is.EqualTo(60f).Within(0.001f))' and 'Assert.That(ex.ParamName, Is.EqualTo(\"attackPower\"))'. Exception tests use Assert.Throws<T> which is also NUnit constraint-compatible."
+    },
+    {
+      "text": "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py",
+      "passed": true,
+      "evidence": "Shows the batchmode command: '/Applications/Unity/Hub/Editor/<UnityVersion>/Unity.app/Contents/MacOS/Unity -batchmode -runTests -testPlatform EditMode -projectPath /tmp/eval-work/dmg-b -testResults /tmp/eval-work/dmg-b/TestResults.xml -logFile /tmp/eval-work/dmg-b/unity.log -quit'. All required flags (-batchmode, -runTests, -testPlatform EditMode, -testResults) are present. No mention of scripts/run_unity_tests.py, but the assertion allows 'or via scripts/run_unity_tests.py' as an alternative."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.8333
+  }
+}

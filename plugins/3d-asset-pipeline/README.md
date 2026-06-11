@@ -13,7 +13,7 @@ The planned pipeline has six stages:
 5. Import into a Godot 4 project.
 6. In-engine review loop with screenshots, issue detection, fixes, and re-capture.
 
-The v0.1.0 target is Godot-first.
+The current version targets Godot only.
 
 Unity 6 and Unreal 5 support are planned for later versions.
 
@@ -262,7 +262,7 @@ Planned later work includes:
 - Unity 6 support.
 - Unreal 5 support.
 
-Unity 6 and Unreal 5 are not included in v0.1.0.
+Unity 6 and Unreal 5 are not included in the current version.
 
 ## Troubleshooting
 

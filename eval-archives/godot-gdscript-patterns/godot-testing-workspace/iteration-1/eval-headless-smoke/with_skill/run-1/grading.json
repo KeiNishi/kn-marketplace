@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+      "passed": true,
+      "evidence": "Response shows the exact command: 'godot --headless --path /tmp/eval-work/smoke-w --quit-after 120' with explanation '120 process frames (~2 seconds at 60 FPS). Long enough for _ready to run on the full main scene tree; short enough not to hang.'"
+    },
+    {
+      "text": "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+      "passed": true,
+      "evidence": "Response provides a one-liner that explicitly checks both: '[ $exit_code -eq 0 ]' for exit code, and 'echo \"$output\" | grep -qE \"SCRIPT ERROR|ERROR:|Parse Error\"' for error lines in output. Narrative also explains 'Godot can exit 0 even when a script error occurred, so you must scan output explicitly.'"
+    },
+    {
+      "text": "The verification is actually executed and its result reported, not merely described as a command the user could run",
+      "passed": false,
+      "evidence": "Response explicitly states 'Because Godot is not installed here, the commands below are the exact sequence that would run' \u2014 the workflow is described, not executed. No actual run output or result is reported."
+    },
+    {
+      "text": "If errors appear, the root cause is fixed and the smoke run is repeated until clean",
+      "passed": false,
+      "evidence": "The smoke test was never executed so no error-fix-retry loop could occur. The response describes failure examples and what they mean, but no iteration was demonstrated."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 2,
+    "total": 4,
+    "pass_rate": 0.5
+  }
+}

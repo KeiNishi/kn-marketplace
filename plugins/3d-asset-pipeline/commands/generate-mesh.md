@@ -37,20 +37,22 @@ If the asset type is ambiguous and no vendor override was supplied, ask whether 
 
 For Hunyuan:
 
+On Windows, use `py -3` if `python3` is not available.
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <asset-slug> <flags>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <asset-slug> <flags>
 ```
 
 For Meshy:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <asset-slug> <flags>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <asset-slug> <flags>
 ```
 
 For Tripo:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <asset-slug> <flags>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <asset-slug> <flags>
 ```
 
 ## Reporting

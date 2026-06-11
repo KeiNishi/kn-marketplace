@@ -2,6 +2,20 @@
 
 Zero-allocation async/await for Unity using UniTask.
 
+## Contents
+
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+- [Cancellation](#cancellation)
+- [Parallel Execution](#parallel-execution)
+- [Timeout](#timeout)
+- [Thread Switching](#thread-switching)
+- [WaitUntil / WaitWhile](#waituntil--waitwhile)
+- [Coroutine Interop](#coroutine-interop)
+- [UniTaskVoid vs UniTask](#unitaskvoid-vs-unitask)
+- [Common Patterns](#common-patterns)
+- [Best Practices](#best-practices)
+
 ## Installation
 
 ### Via Package Manager

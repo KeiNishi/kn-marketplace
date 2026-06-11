@@ -62,6 +62,8 @@ When the user runs `/playdate-init [project-name]`:
    git clone https://github.com/KeiNishi/kn-pd-template-c.git ProjectName
    ```
 
+   **If the clone fails** (no network, git unavailable) or the user prefers not to use the template, create the minimal project structure manually using the file templates in the playdate-gamedev skill's `references/project-structure.md` (CMakeLists.txt, pdxinfo, main.c, game.c/h, .vscode/tasks.json), then continue from step 4.
+
 3. **Remove .git directory to start fresh**:
    ```bash
    # If cloned into current directory
@@ -71,6 +73,7 @@ When the user runs `/playdate-init [project-name]`:
    cd ProjectName
    rm -rf .git
    ```
+   (Windows PowerShell: `Remove-Item -Recurse -Force .git`)
 
 4. **Update project name in files**:
 
@@ -107,7 +110,7 @@ When the user runs `/playdate-init [project-name]`:
    4. The .pdx bundle will be created in the build directory
 
    To run in simulator:
-   - Windows: "%PLAYDATE_SDK_PATH%\bin\PlaydateSimulator.exe" build/ProjectName.pdx
+   - Windows: & "$env:PLAYDATE_SDK_PATH/bin/PlaydateSimulator.exe" build/ProjectName.pdx
    - macOS/Linux: "${PLAYDATE_SDK_PATH}/bin/PlaydateSimulator" build/ProjectName.pdx
    ```
 

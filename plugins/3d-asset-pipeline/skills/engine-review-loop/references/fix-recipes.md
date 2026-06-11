@@ -1,5 +1,18 @@
 # Fix Recipes
 
+## Contents
+
+- [fix-instructions.json Schema](#fix-instructionsjson-schema)
+- [Recipe: Too Small](#recipe-too-small)
+- [Recipe: Too Large](#recipe-too-large)
+- [Recipe: Wrong Facing Direction](#recipe-wrong-facing-direction)
+- [Recipe: Floating or Sinking](#recipe-floating-or-sinking)
+- [Recipe: Magenta or Missing Materials](#recipe-magenta-or-missing-materials)
+- [Recipe: No Visible Animation](#recipe-no-visible-animation)
+- [Recipe: Deformed Animation](#recipe-deformed-animation)
+- [Recipe: Import Options](#recipe-import-options)
+- [verdict.json Schema](#verdictjson-schema)
+
 Stage 6 fixes are stored in `fix-instructions.json` next to the screenshots for the current iteration.
 
 ## fix-instructions.json Schema

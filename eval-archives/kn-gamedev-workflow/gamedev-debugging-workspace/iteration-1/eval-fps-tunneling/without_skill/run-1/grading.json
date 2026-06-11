@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+      "passed": true,
+      "evidence": "Response opens by stating: 'why \"thicker collider\" is a workaround, not a fix' and explains that 'the fundamental problem remains: at a high enough falling speed or a severe enough frame spike, tunneling will happen again.' The collider thickness suggestion is rejected at the top before any fix is given."
+    },
+    {
+      "text": "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+      "passed": false,
+      "evidence": "The response goes directly from root cause explanation to the fix (Steps 1-4 are all fix steps). The only mention of simulating low FPS appears at the very end under 'What to Run / Test' (step 5: 'raise Fixed Timestep to 0.05') \u2014 after the full fix code has already been provided. There is no reproduction gate that must be passed before the fix is written."
+    },
+    {
+      "text": "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+      "passed": true,
+      "evidence": "Root Cause section states: 'On a fast machine, the game loop keeps up with the fixed timestep, so \u0394y is small. On a slow machine (or during a frame spike), Unity may run multiple fixed-update steps in a single rendered frame, but each individual step still moves the player by the same \u0394y. If \u0394y > platform thickness, the player's collider is on one side of the platform at frame N and on the other side at frame N+1 \u2014 the physics engine never saw a collision.'"
+    },
+    {
+      "text": "States a specific root cause backed by evidence before changing code",
+      "passed": false,
+      "evidence": "The response asserts the root cause (discrete collision detection) based on the symptom pattern alone with no evidence-gathering step. No log gates, no reproduction artifacts, no confirmation that distanceThisStep exceeds platform thickness are required or shown before the fix is written. The claim is plausible but is not 'backed by evidence' \u2014 it is backed by pattern recognition from the symptom description."
+    },
+    {
+      "text": "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+      "passed": true,
+      "evidence": "Step 1 instructs setting 'Collision Detection from Discrete to Continuous' and explains: 'Continuous mode sweeps a shape along the path of motion between physics steps, so no matter how fast the player is falling or how thin the platform is, the collision is detected correctly.'"
+    },
+    {
+      "text": "Verifies the fix by re-running the original reproduction at low FPS",
+      "passed": true,
+      "evidence": "Under 'What to Run / Test': 'In Edit \u2192 Project Settings \u2192 Time, temporarily raise Fixed Timestep to 0.05 (20 Hz) and confirm the player still lands correctly on thin platforms at max fall speed.'"
+    },
+    {
+      "text": "Does not add delays, clamps, or extra colliders as the resolution",
+      "passed": false,
+      "evidence": "Step 3 is titled 'Cap maximum fall speed' and adds a `FixedUpdate` clamp: 'if (_rb.linearVelocity.y < -maxFallSpeed) _rb.linearVelocity = new Vector2(...)'. This is presented as 'Optional but Recommended' within the fix section. Clamping fall speed is explicitly listed as a workaround to avoid in other responses; here it is offered as part of the resolution."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.5714
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "architecture-refactor",
+  "prompt": "In my Godot 4 game, the Enemy scene's script calls get_parent().get_parent().get_node(\"UI/HealthBar\").update_value() whenever the player hits it, and my item definitions are Nodes with exported fields kept under a hidden ItemDatabase node in the main scene. Can you clean this architecture up?",
+  "assertions": [
+    "The upward get_parent()/get_node string-path call chain is removed and replaced with a signal the enemy emits (optionally relayed via an event-bus autoload), following signals up / calls down",
+    "Item definitions are converted from Node subtrees to classes extending Resource saved as .tres files, separating data from scene-tree behavior",
+    "The refactored code is fully statically typed (variables, parameters, return types)",
+    "Cross-scene references use @export variables, signals, or groups rather than hardcoded node paths",
+    "The explanation states why the original design is fragile (scene rearrangement breaks string paths; Nodes carry scene-tree cost for pure data)"
+  ]
+}

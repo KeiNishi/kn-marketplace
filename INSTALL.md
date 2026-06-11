@@ -106,6 +106,50 @@ ln -s ~/Documents/kn-marketplace .claude/marketplace
 
 ---
 
+## 方法4: OpenAI Codex CLI で使用する
+
+このマーケットプレイスのスキルは Claude Code と OpenAI Codex の両方で動作するよう設計されています。Codex にはプラグイン機構がなく、スキルディレクトリ（`~/.agents/skills` または旧 `~/.codex/skills`）から `SKILL.md` を読み込みます。
+
+### インストールスクリプトを実行
+
+```bash
+# リポジトリのクローン後、リポジトリ直下で実行
+python3 tools/install-codex-skills.py
+```
+
+**Windowsの場合（python3が無い環境）:**
+```powershell
+py -3 tools\install-codex-skills.py
+```
+
+### 主なオプション
+
+```bash
+# インストール先を指定
+python3 tools/install-codex-skills.py --dest ~/.codex/skills
+
+# 特定プラグインのみインストール
+python3 tools/install-codex-skills.py --plugins unity-gamedev-standards godot-gdscript-patterns
+
+# 実行内容の事前確認（コピーしない）
+python3 tools/install-codex-skills.py --dry-run
+
+# 既存インストールを上書き（更新時）
+python3 tools/install-codex-skills.py --force
+
+# スキルを直下にフラット配置（再帰探索しない旧Codex向け）
+python3 tools/install-codex-skills.py --flatten
+```
+
+### 注意事項
+
+- コピー方式（symlink不使用）のため、Windowsでも管理者権限・開発者モード不要で動作します
+- マーケットプレイス更新後は `--force` を付けて再実行してください
+- 新しいスキルを認識させるには Codex セッションの再起動が必要です
+- Claude Code 専用コンポーネント（`commands/`, `agents/`, `hooks/`）は Codex では動作しないためコピーされません。スキル本文はこれらに依存しない設計になっています
+
+---
+
 ## 推奨される構造
 
 各プロジェクトで以下のような構造を作ることをお勧めします：

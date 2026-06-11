@@ -1,0 +1,57 @@
+[
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/kn-gamedev-workflow/skills/gamedev-debugging/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/kn-gamedev-workflow/gamedev-debugging-workspace/iteration-1/eval-fps-tunneling",
+    "prompt": "In my Unity platformer, the player sometimes falls through thin platforms, but only on slower machines. On my dev PC it almost never happens. Can you fix it? I think adding a thicker collider would work."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/kn-gamedev-workflow/skills/gamedev-debugging/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/kn-gamedev-workflow/gamedev-debugging-workspace/iteration-1/eval-scene-load-race",
+    "prompt": "My Godot game randomly crashes with a null instance error right after switching scenes, maybe one time in ten. It never crashes if I add a 0.5 second wait before using the spawned enemies. Should I just keep the wait?"
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/kn-gamedev-workflow/skills/gamedev-debugging/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/kn-gamedev-workflow/gamedev-debugging-workspace/iteration-1/eval-save-load-drift",
+    "prompt": "Players report that after saving and reloading, their inventory is occasionally wrong - items swap slots or a stack count is off by one. I can't reproduce it locally. I'm tempted to just re-sort the inventory on load to hide it."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-testing-workspace/iteration-1/eval-inventory-unit-tests",
+    "prompt": "Here is my Godot 4 inventory class in inventory.gd (extends RefCounted, with add_item, remove_item, and count methods). Write unit tests for it and run them to make sure they pass."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-testing-workspace/iteration-1/eval-fresh-project-setup",
+    "prompt": "I have a fresh Godot 4 project with no tests at all. Set up automated testing for it so I can run tests from the command line and in CI."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-testing-workspace/iteration-1/eval-headless-smoke",
+    "prompt": "Before I push this Godot project, verify that the game still boots and the main scene runs without errors. I don't have the editor open and this machine has no display."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/unity-gamedev-standards/skills/unity-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/unity-gamedev-standards/unity-testing-workspace/iteration-1/eval-damage-editmode",
+    "prompt": "I have a plain C# DamageCalculator class in my Unity project (Assets/_Project/Scripts/Gameplay/DamageCalculator.cs, inside the Gameplay asmdef) that computes damage from attack power, defense, and a critical multiplier. Write tests for it."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/unity-gamedev-standards/skills/unity-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/unity-gamedev-standards/unity-testing-workspace/iteration-1/eval-player-jump-playmode",
+    "prompt": "Add a test that verifies my player actually jumps: PlayerController is a MonoBehaviour with a Rigidbody, and calling Jump() should make it move upward over the next physics frames."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/unity-gamedev-standards/skills/unity-testing/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/unity-gamedev-standards/unity-testing-workspace/iteration-1/eval-ci-batchmode",
+    "prompt": "Set up an automated test run for my Unity project in CI so the build fails when any test fails. We cannot open the Unity editor on the CI machine."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-gdscript-patterns/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-gdscript-patterns-workspace/iteration-2/eval-state-machine",
+    "prompt": "Implement a state machine for a Godot 4 character that can switch between Idle, Running, and Jumping states. The character uses CharacterBody2D and needs to detect state transitions based on velocity and input."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-gdscript-patterns/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-gdscript-patterns-workspace/iteration-2/eval-architecture-refactor",
+    "prompt": "In my Godot 4 game, the Enemy scene's script calls get_parent().get_parent().get_node(\"UI/HealthBar\").update_value() whenever the player hits it, and my item definitions are Nodes with exported fields kept under a hidden ItemDatabase node in the main scene. Can you clean this architecture up?"
+  }
+]

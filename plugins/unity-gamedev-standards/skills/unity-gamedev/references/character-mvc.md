@@ -2,6 +2,18 @@
 
 Model-View-Controller separation for robust character systems.
 
+## Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Model Layer](#model-layer)
+- [Controller Layer](#controller-layer)
+- [View Layer](#view-layer)
+- [Bootstrap/Initializer](#bootstrapinitializer)
+- [AI Controller (Alternative)](#ai-controller-alternative)
+- [Benefits](#benefits)
+- [Prefab Structure](#prefab-structure)
+- [Extension: State Machine](#extension-state-machine)
+
 ## Architecture Overview
 
 ```

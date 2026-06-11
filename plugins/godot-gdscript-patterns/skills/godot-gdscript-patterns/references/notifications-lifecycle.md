@@ -2,6 +2,15 @@
 
 Node lifecycle order, virtual method callbacks, and notification handling in Godot 4.x.
 
+## Contents
+
+- [Node Lifecycle Order](#node-lifecycle-order)
+- [Virtual Method Callbacks](#virtual-method-callbacks)
+- [Process Methods](#process-methods)
+- [Input Methods](#input-methods)
+- [Custom Notifications](#custom-notifications)
+- [Best Practices](#best-practices)
+
 ## Node Lifecycle Order
 
 ```

@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Rejects re-sorting on load as a symptom-masking workaround",
+      "passed": true,
+      "evidence": "Response opens: 'Do not do it. Re-sorting on load is exactly the kind of workaround that masks the bug rather than fixing it. Players who deliberately place items in specific slots... would see their layout silently scrambled every reload. And the off-by-one stack count would still be there, just hidden inside a tidied-up layout. The root cause must be fixed at the serialisation boundary.'"
+    },
+    {
+      "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+      "passed": true,
+      "evidence": "The 'Why you cannot reproduce it locally' section explains the gap-dependency condition and provides 'How to reproduce locally': '1. Give the player an inventory with at least one gap... 2. For Bug 2: apply any calculation to the stack count that could return a float... 3. Save, quit, reload, and inspect slot positions and stack counts.' The Python script `inventory.py` is itself a runnable round-trip reproduction demonstrating the failure."
+    },
+    {
+      "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+      "passed": true,
+      "evidence": "The Python `run_demo()` function creates a fixed inventory (`make_inventory()` with deterministic slot placement), saves with `save_buggy()`, loads with `load_buggy()`, and compares each slot: 'for i, (orig, rest) in enumerate(zip(original.slots, restored_buggy.slots))'. The script runs assertions: 'assert not slots_equal(original, restored_buggy)' and prints mismatches. The expected output shows exact MISMATCH results per slot."
+    },
+    {
+      "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+      "passed": false,
+      "evidence": "The response identifies root causes directly without running tests with different data sets. The 'Why you cannot reproduce it locally' section explains that Bug 1 requires gaps and Bug 2 requires float arithmetic, but this is stated as analysis of the code rather than as an experimental result from testing different data. No explicit testing of 'different data to distinguish data vs logic bug' is performed."
+    },
+    {
+      "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+      "passed": true,
+      "evidence": "Bug 1: 'Only non-empty slots are written, with no record of which slot index they occupied. On load, items are re-inserted sequentially into slots 0, 1, 2 regardless of gaps.' Bug 2: 'Stack counts become floats somewhere in the game logic... The value 64 becomes 63.9999 in floating-point. When the loader casts with int() (truncation, not rounding), int(63.999) \u2192 63.' Both causes are backed by concrete code and the Python script's output showing exact MISMATCH slots."
+    },
+    {
+      "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+      "passed": true,
+      "evidence": "save_fixed() stores slot index explicitly for every slot and casts count to int at write boundary. load_fixed() places items at entry['slot'] index rather than an insertion cursor. The fix is limited to the serialization boundary: 'Fix both issues at the serialisation boundary \u2014 the save and load functions.' No post-load patching or sorting is added."
+    },
+    {
+      "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+      "passed": true,
+      "evidence": "The Python script runs both buggy and fixed round-trips on the same inventory and prints results: 'FIXED round-trip' shows all slots 'OK'. Assertions verify: 'assert slots_equal(original, restored_fixed), \"Fix demo: expected match\"'. The migration plan section (`load_with_migration`) handles old save files (version 0) so they 'still load correctly' with the new code."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 1,
+    "total": 7,
+    "pass_rate": 0.8571
+  }
+}

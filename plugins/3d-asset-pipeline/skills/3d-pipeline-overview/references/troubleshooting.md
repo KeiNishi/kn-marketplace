@@ -1,5 +1,17 @@
 # 3D Asset Pipeline Troubleshooting Guide
 
+## Contents
+
+- [Stage 1: concept_openai.py](#stage-1-concept_openaipy)
+- [Stage 2: Hunyuan Replicate mesh_hunyuan.py](#stage-2-hunyuan-replicate-mesh_hunyuanpy)
+- [Stage 2: Meshy mesh_meshy.py](#stage-2-meshy-mesh_meshypy)
+- [Stages 3-4: Rig and Animate](#stages-3-4-rig-and-animate)
+- [Stage 5: Godot Import](#stage-5-godot-import)
+- [Stage 6: Review Loop](#stage-6-review-loop)
+- [Hooks](#hooks)
+- [General](#general)
+- [Recovering From a Failed Stage](#recovering-from-a-failed-stage)
+
 Use this guide when a stage fails, stalls, produces incomplete files, or needs manual recovery.
 
 ## Stage 1: concept_openai.py

@@ -2,6 +2,16 @@
 
 Complete C# coding conventions for Unity development.
 
+## Contents
+
+- [Naming Conventions](#naming-conventions)
+- [Inspector Documentation](#inspector-documentation)
+- [Code Organization](#code-organization)
+- [Events](#events)
+- [Null Handling](#null-handling)
+- [String Handling](#string-handling)
+- [Best Practices](#best-practices)
+
 ## Naming Conventions
 
 ### Classes and Structs

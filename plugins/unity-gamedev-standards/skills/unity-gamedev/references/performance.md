@@ -2,6 +2,18 @@
 
 Comprehensive performance optimization techniques for Unity games.
 
+## Contents
+
+- [GC Allocation Reduction](#gc-allocation-reduction)
+- [Component Caching](#component-caching)
+- [Object Pooling](#object-pooling)
+- [Update Optimization](#update-optimization)
+- [Physics Optimization](#physics-optimization)
+- [Rendering Optimization](#rendering-optimization)
+- [Memory Management](#memory-management)
+- [Profiling](#profiling)
+- [Checklist](#checklist)
+
 ## GC Allocation Reduction
 
 ### Avoid Allocations in Update

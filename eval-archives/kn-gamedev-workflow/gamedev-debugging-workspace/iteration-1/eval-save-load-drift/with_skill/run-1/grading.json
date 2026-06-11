@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Rejects re-sorting on load as a symptom-masking workaround",
+      "passed": true,
+      "evidence": "Response opens: 'This is a textbook workaround: it masks the symptom (wrong slot/count after load) without finding why the data is wrong. Per the debugging discipline, this is forbidden. The re-sort would hide the evidence, make root-cause investigation harder in the future, and leave the real corruption silently in the save file. We do not proceed with it.'"
+    },
+    {
+      "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+      "passed": true,
+      "evidence": "Phase 1 Step 2 constructs an inventory checksum log (pseudocode provided) to detect save/load mismatches, and Step 3 builds a stress loop: 'for (int i = 0; i < 1000; i++) { FillInventoryWithTestItems(); Save(); Load(); AssertInventoryMatchesExpected(); }'. The stated goal is 'make this happen deterministically' before writing any fix."
+    },
+    {
+      "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+      "passed": true,
+      "evidence": "Step 3 specifies: 'Run this with: A fixed random seed for any RNG involved in inventory generation. A fixed timestep / no async (synchronous save and load, blocking).' The stress loop runs 1000 iterations and 'AssertInventoryMatchesExpected()' compares state after each cycle. The checksum compares save vs load checksums explicitly."
+    },
+    {
+      "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+      "passed": true,
+      "evidence": "Phase 2 Bisect step 2: 'Bisect: is this a single item type? Test with only stackable items, then only unique items, then only equipped items. If one category reproduces and another does not, the bug is in the serialization path for that category.' This explicitly tests different data to distinguish data-specific vs logic-wide bugs."
+    },
+    {
+      "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+      "passed": false,
+      "evidence": "Response explicitly states it is 'Blocked at Phase 1 \u2014 Reproduction Not Yet Achieved'. Phase 3 presents hypotheses (dictionary iteration order, async mutation race, unserialized field, off-by-one) with disproof tests, but explicitly states no root cause has been confirmed: 'What I actually have: A bug report with symptom description. No save file, no stack trace, no log output, no confirmed reproduction steps.' No concrete root cause with evidence is identified."
+    },
+    {
+      "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+      "passed": false,
+      "evidence": "No fix is applied. The response explicitly states: 'Do not write any inventory sorting, clamping, or default-value-filling logic yet. That is the workaround path. The task right now is to catch the bug in the act.' The response is intentionally blocked at the reproduction phase."
+    },
+    {
+      "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+      "passed": false,
+      "evidence": "No verification is done because no fix was written. The response ends at Phase 1 with the reproduction not yet achieved. There is no round-trip verification step."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.5714
+  }
+}

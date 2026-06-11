@@ -57,28 +57,30 @@ Run Stage 3 and Stage 4 of the 3D asset pipeline after mesh generation is comple
 
 ## Script Commands
 
-Run Stage 3 from the plugin root:
+The scripts live under the plugin root's `scripts/` directory; `<plugin-root>` below is the installed plugin directory (`${CLAUDE_PLUGIN_ROOT}` in Claude Code; in other agents, locate the installed plugin directory first). Keep the working directory in the workspace that contains `3d-pipeline-output/`. On Windows, use `py -3` if `python3` is not available.
+
+Run Stage 3:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <slug>
+python3 "<plugin-root>/scripts/rig_meshy.py" <slug>
 ```
 
 Pass a template override when needed:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <slug> --template quadruped
+python3 "<plugin-root>/scripts/rig_meshy.py" <slug> --template quadruped
 ```
 
-Run Stage 4 from the plugin root:
+Run Stage 4:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <slug>
+python3 "<plugin-root>/scripts/animate_meshy.py" <slug>
 ```
 
 Pass explicit clip names when the default library is not enough:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <slug> --clips idle,walk,run,attack
+python3 "<plugin-root>/scripts/animate_meshy.py" <slug> --clips idle,walk,run,attack
 ```
 
 Use `--base <dir>` for a custom output base in automated tests or non-standard workspaces.
@@ -115,6 +117,18 @@ Use `--base <dir>` for a custom output base in automated tests or non-standard w
 - Store all output file paths relative to the asset output folder.
 - Do not modify plugin or marketplace version fields.
 - Do not commit generated outputs from `3d-pipeline-output/`.
+
+## Verification Checklist
+
+Before declaring Stage 3 or Stage 4 done, confirm all of the following:
+
+- Rig: `stages.rig.status` is `done` (or `skipped` for props), `stages.rig.files.fbx` exists under `rigged/`, and `template`, `taskId`, and `uploadedFrom` are recorded.
+- Animate: `stages.animate.status` is `done` (or `skipped` for props), every requested clip has an FBX under `animated/`, and `clips` plus `takeMap` are recorded.
+- All recorded file paths are relative to the asset output folder and resolve on disk.
+- `completedAt` is set on the finished stage, and `dryRun: true` is recorded for dry-run output.
+- No credential values appear anywhere in the manifest.
+
+If any item fails, fix it and re-verify before moving to engine import.
 
 ## Reference Index
 

@@ -1,0 +1,14 @@
+{
+  "eval_id": 2,
+  "eval_name": "scene-load-race",
+  "prompt": "My Godot game randomly crashes with a null instance error right after switching scenes, maybe one time in ten. It never crashes if I add a 0.5 second wait before using the spawned enemies. Should I just keep the wait?",
+  "assertions": [
+    "Explicitly rejects the 0.5 second wait as a workaround that shrinks but does not close the race window",
+    "Works to make the 1-in-10 crash reproducible on demand, e.g. by simulating slow loading or stressing scene transitions, before writing a fix",
+    "Forms and tests one hypothesis at a time about which object is accessed before initialization/load completes",
+    "Uses targeted logging of load/ready order or frame numbers to bracket the failure point",
+    "Identifies the root cause as a missing ordering guarantee (using an object before its load or _ready completes)",
+    "Fixes the ordering explicitly (await the load signal, defer access until ready) rather than retrying or sleeping",
+    "Verifies by re-running the reproduction repeatedly with the delay removed"
+  ]
+}

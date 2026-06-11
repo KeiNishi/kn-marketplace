@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Explicitly rejects the 0.5 second wait as a workaround that shrinks but does not close the race window",
+      "passed": true,
+      "evidence": "Opening section states: 'The 0.5-second await/yield is a textbook workaround that shrinks the race window rather than closing it. On a slow machine, a long load, or under future changes, the window will widen again and the crash will return \u2014 likely in a shipped build where it is hardest to diagnose.' The Rationalization Table quote is also cited: 'Delays shrink the race window; they never close it.'"
+    },
+    {
+      "text": "Works to make the 1-in-10 crash reproducible on demand, e.g. by simulating slow loading or stressing scene transitions, before writing a fix",
+      "passed": true,
+      "evidence": "Phase 1 precedes Phase 4 (fix). It provides a `debug_runner.gd` script that loops 50 scene switches, and an `OS.delay_msec(1)` stall to widen the race window. An explicit gate is stated: 'Do not proceed to Phase 2 until you can trigger the crash in \u22645 attempts.' The fix code does not appear until Phase 4."
+    },
+    {
+      "text": "Forms and tests one hypothesis at a time about which object is accessed before initialization/load completes",
+      "passed": true,
+      "evidence": "Phase 2 Bisect section instructs: 'Remove enemies from the scene entirely \u2192 no crash \u2192 enemies are the subject. Leave one enemy in a minimal scene \u2192 crash still fires \u2192 the bug is not enemy-count-dependent, it is ordering-dependent. Replace the spawned enemies with a static Node that has no logic \u2192 crash disappears \u2192 the issue is in enemy initialization (_ready or deferred calls), not in the scene tree itself.' Each step tests one variable at a time."
+    },
+    {
+      "text": "Uses targeted logging of load/ready order or frame numbers to bracket the failure point",
+      "passed": true,
+      "evidence": "Phase 2 provides logging code with frame numbers: '[FRAME %d] scene_load: starting enemy spawn', '[FRAME %d] enemy_ready: node=%s', '[FRAME %d] consumer: about to access enemies'. Instructs: 'On a failing run you will see the consumer frame number appear before all enemy_ready frame numbers. That ordering is the race.'"
+    },
+    {
+      "text": "Identifies the root cause as a missing ordering guarantee (using an object before its load or _ready completes)",
+      "passed": true,
+      "evidence": "Phase 3 states: 'The scene-loading code accesses or iterates the enemy list (or calls methods on enemy nodes) before those nodes have finished initializing \u2014 specifically before their _ready() functions have run \u2014 because change_scene_to_file / add_child defers _ready to the next frame, but the consuming code runs in the same frame as add_child.'"
+    },
+    {
+      "text": "Fixes the ordering explicitly (await the load signal, defer access until ready) rather than retrying or sleeping",
+      "passed": true,
+      "evidence": "Phase 4 provides three options: Option A uses `enemy.ready.connect(_on_enemy_ready.bind(enemy))` (engine signal); Option B uses self-registration inside enemy `_ready()`; Option C uses `call_deferred`. All three are explicit ordering guarantees. The fix section includes: 'call_deferred guarantees the call runs after _ready for that node, because Godot processes deferred calls after the scene-tree notifications flush. This is an ordering guarantee, not a timing guess.'"
+    },
+    {
+      "text": "Verifies by re-running the reproduction repeatedly with the delay removed",
+      "passed": true,
+      "evidence": "Verification Checklist: 'The loop test (50 scene switches) runs without a single crash after the fix' and 'The 0.5 s wait and all debug logging are removed.' Behavior is also checked at both low and high FPS."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

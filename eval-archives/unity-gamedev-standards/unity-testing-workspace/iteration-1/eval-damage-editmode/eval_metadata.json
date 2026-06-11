@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "damage-editmode",
+  "prompt": "I have a plain C# DamageCalculator class in my Unity project (Assets/_Project/Scripts/Gameplay/DamageCalculator.cs, inside the Gameplay asmdef) that computes damage from attack power, defense, and a critical multiplier. Write tests for it.",
+  "assertions": [
+    "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+    "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+    "Tests use the [Test] attribute, not [UnityTest]",
+    "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+    "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+    "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+      "passed": true,
+      "evidence": "Section 2 shows the exact command: '<UnityBin> -batchmode -projectPath <path> -runTests -testPlatform EditMode -testResults /tmp/unity_test_results_EditMode.xml -logFile -'. The explanation explicitly states 'do not combine with -quit'."
+    },
+    {
+      "text": "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+      "passed": true,
+      "evidence": "Runner script step 2 states: 'Locates Unity: --unity-bin > UNITY_PATH env var > Unity Hub default paths.' Step 3 states: 'Reads ProjectSettings/ProjectVersion.txt to find the exact editor version.' Running locally section shows macOS path '/Applications/Unity/Hub/Editor/2022.3.20f1/Unity.app/Contents/MacOS/Unity'. Linux runner path '/home/runner/Unity/Hub/Editor/2022.3.20f1/Editor/Unity' is shown in the secrets table. Windows Hub path is not explicitly spelled out but the mechanism (env var > Hub default paths based on ProjectVersion.txt) is fully described."
+    },
+    {
+      "text": "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+      "passed": true,
+      "evidence": "The CI workflow explicitly runs both: 'Run EditMode tests' and 'Run PlayMode tests' steps, each calling scripts/run_unity_tests.py with --test-platform EditMode and --test-platform PlayMode respectively."
+    },
+    {
+      "text": "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+      "passed": true,
+      "evidence": "Runner script description: 'Parses the NUnit XML: prints total=N passed=N failed=N skipped=N' and 'Prints each failed test's fullname and failure/message'. The example output shows: 'FAILED: MyGame.Tests.EditMode.HealthTests.TakeDamage_ReducesHealthByAmount / Expected: 70 / But was: 75'."
+    },
+    {
+      "text": "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+      "passed": true,
+      "evidence": "Runner script: 'Exits 1 if any test failed; exits 0 only when all pass.' Example failure output ends with '1 test(s) failed. Fix the failures above and re-run; only proceed when the run is green.' \u2014 explicitly showing the run-read-fix-rerun pattern."
+    },
+    {
+      "text": "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)",
+      "passed": true,
+      "evidence": "Section 2 states: 'If Unity exits but writes no results file (compile errors, license failure, project lock), the script prints a diagnostic and exits 1.' All three failure modes (compile errors, license failure, project lock) are explicitly named."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

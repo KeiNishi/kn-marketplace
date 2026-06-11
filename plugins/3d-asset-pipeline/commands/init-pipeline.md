@@ -19,10 +19,11 @@ Create `3d-pipeline-output/<slug>/pipeline.json` for a new asset.
 
 1. Parse the asset name, description, and type. Default type is `humanoid` when omitted.
 2. Create a slug with the same rules as `scripts/_common.py`.
-3. Initialize the manifest through `scripts/_manifest.py` from Python:
+3. Initialize the manifest through `scripts/_manifest.py` from Python
+   (on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python -c "import sys; sys.path.insert(0, r'${CLAUDE_PLUGIN_ROOT}'); from scripts import _common, _manifest; name='<asset-name>'; slug=_common.slugify(name); _manifest.init(slug, name, '<description>', '<asset-type>'); print(slug)"
+python3 -c "import sys; sys.path.insert(0, r'${CLAUDE_PLUGIN_ROOT}'); from scripts import _common, _manifest; name='<asset-name>'; slug=_common.slugify(name); _manifest.init(slug, name, '<description>', '<asset-type>'); print(slug)"
 ```
 
 4. Tell the user the slug and the manifest path.

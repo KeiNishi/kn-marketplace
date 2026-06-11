@@ -1,10 +1,21 @@
 # KN Marketplace for Claude Code
 
-ClaudeCode用の個人Pluginマーケットプレイスです。
+ClaudeCode用の個人Pluginマーケットプレイスです。全スキルは **Claude Code と OpenAI Codex の両方**、および **Windows / macOS / Linux** で動作するよう設計されています。
 
 ## 🚀 クイックスタート
 
 新規プロジェクトでこのMarketplaceを使いたい場合は、[INSTALL.md](INSTALL.md)を参照してください。
+
+- **Claude Code**: `/plugin marketplace add github:KeiNishi/kn-marketplace`
+- **OpenAI Codex**: `python3 tools/install-codex-skills.py`（詳細はINSTALL.md 方法4）
+
+## 📐 スキル執筆標準
+
+スキル・プラグインの作成/編集は [docs/SKILL-AUTHORING.md](docs/SKILL-AUTHORING.md) の標準に従ってください（クロスエージェント互換・Windows互換・progressive disclosure・評価必須などのルールを規定）。
+
+## 📊 評価成果物
+
+各スキルの with/without ベンチマーク実行ログは `eval-archives/`（リポジトリ直下）に保管しています。プラグイン配布物には含まれません。
 
 ## ディレクトリ構造
 

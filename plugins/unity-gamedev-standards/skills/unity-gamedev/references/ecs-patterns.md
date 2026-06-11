@@ -2,6 +2,18 @@
 
 Unity 6 DOTS (Data-Oriented Technology Stack) patterns and best practices.
 
+## Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Project Structure](#project-structure)
+- [Component Patterns](#component-patterns)
+- [System Patterns](#system-patterns)
+- [Burst Compiler](#burst-compiler)
+- [Jobs System](#jobs-system)
+- [Authoring and Baking](#authoring-and-baking)
+- [Managed World Access](#managed-world-access)
+- [Best Practices](#best-practices)
+
 ## Architecture Overview
 
 ```
