@@ -2,6 +2,15 @@
 
 Execution order rules and patterns for Unity camera scripts.
 
+## Contents
+
+- [CRITICAL: Camera Follow MUST Use LateUpdate](#critical-camera-follow-must-use-lateupdate)
+- [Rigidbody Interpolation Requirement](#rigidbody-interpolation-requirement)
+- [Common Camera Patterns](#common-camera-patterns)
+- [Camera + Physics Interaction](#camera--physics-interaction)
+- [Script Execution Order](#script-execution-order)
+- [Common Mistakes](#common-mistakes)
+
 ## CRITICAL: Camera Follow MUST Use LateUpdate
 
 ### Why LateUpdate Is Required

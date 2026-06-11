@@ -1,0 +1,47 @@
+{
+  "skill_name": "unity-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a plain C# DamageCalculator class in my Unity project (Assets/_Project/Scripts/Gameplay/DamageCalculator.cs, inside the Gameplay asmdef) that computes damage from attack power, defense, and a critical multiplier. Write tests for it.",
+      "expected_output": "EditMode NUnit tests in a test assembly: an EditMode test asmdef (Editor-only, referencing the Gameplay assembly and nunit.framework.dll), [Test] methods using Arrange-Act-Assert with NUnit constraint syntax and descriptive names, plus instructions to run them headlessly in batchmode.",
+      "files": [],
+      "expectations": [
+        "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+        "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+        "Tests use the [Test] attribute, not [UnityTest]",
+        "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+        "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+        "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a test that verifies my player actually jumps: PlayerController is a MonoBehaviour with a Rigidbody, and calling Jump() should make it move upward over the next physics frames.",
+      "expected_output": "A PlayMode [UnityTest] coroutine test that creates the player, calls Jump(), yields physics frames (WaitForFixedUpdate / yield return null), asserts upward movement with NUnit constraints, and cleans up spawned objects.",
+      "files": [],
+      "expectations": [
+        "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+        "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+        "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+        "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+        "Destroys spawned GameObjects at the end of the test so tests remain independent",
+        "Mentions running the suite via batchmode with -testPlatform PlayMode"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Set up an automated test run for my Unity project in CI so the build fails when any test fails. We cannot open the Unity editor on the CI machine.",
+      "expected_output": "A batchmode CLI test step: locating the Unity executable (matching ProjectSettings/ProjectVersion.txt, default Hub paths per OS or UNITY_PATH/--unity-bin), invoking Unity with -batchmode -runTests -testPlatform -testResults -logFile -, parsing the NUnit XML, and failing the job on any failed test-case, iterating until green.",
+      "files": [],
+      "expectations": [
+        "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+        "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+        "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+        "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+        "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+        "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)"
+      ]
+    }
+  ]
+}

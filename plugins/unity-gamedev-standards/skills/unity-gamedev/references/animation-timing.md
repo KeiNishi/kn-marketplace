@@ -2,6 +2,16 @@
 
 Understanding Unity's execution order for proper animation and physics integration.
 
+## Contents
+
+- [Unity Update Order (Per Frame)](#unity-update-order-per-frame)
+- [FixedUpdate Timing](#fixedupdate-timing)
+- [Animator Update Modes](#animator-update-modes)
+- [Animator Parameter Hashing](#animator-parameter-hashing)
+- [Root Motion](#root-motion)
+- [LateUpdate Use Cases](#lateupdate-use-cases)
+- [Common Mistakes](#common-mistakes)
+
 ## Unity Update Order (Per Frame)
 
 ```

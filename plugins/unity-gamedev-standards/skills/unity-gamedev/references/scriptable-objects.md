@@ -2,6 +2,20 @@
 
 Using ScriptableObjects for data-driven game design.
 
+## Contents
+
+- [What Are ScriptableObjects](#what-are-scriptableobjects)
+- [Basic Data Container](#basic-data-container)
+- [Using ScriptableObjects](#using-scriptableobjects)
+- [Configuration Pattern](#configuration-pattern)
+- [Runtime Data Pattern](#runtime-data-pattern)
+- [Event Channel Pattern](#event-channel-pattern)
+- [Event with Data](#event-with-data)
+- [Variable Pattern](#variable-pattern)
+- [Database Pattern](#database-pattern)
+- [Best Practices](#best-practices)
+- [Naming Convention](#naming-convention)
+
 ## What Are ScriptableObjects
 
 ScriptableObjects are data containers that:

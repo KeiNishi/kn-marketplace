@@ -2,6 +2,18 @@
 
 Git configuration and best practices for Unity projects.
 
+## Contents
+
+- [.gitignore](#gitignore)
+- [Git LFS Configuration](#git-lfs-configuration)
+- [Unity Project Settings](#unity-project-settings)
+- [Branch Strategy](#branch-strategy)
+- [Commit Messages](#commit-messages)
+- [Merge Conflicts](#merge-conflicts)
+- [Best Practices](#best-practices)
+- [Pre-Commit Checklist](#pre-commit-checklist)
+- [Repository Setup Commands](#repository-setup-commands)
+
 ## .gitignore
 
 Standard Unity .gitignore:

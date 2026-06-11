@@ -2,6 +2,15 @@
 
 Rules for respecting Unity's Inspector-driven configuration. Code must NOT override values that belong in the Inspector or asset files.
 
+## Contents
+
+- [CRITICAL: Never Hardcode Inspector-Configurable Values in Code](#critical-never-hardcode-inspector-configurable-values-in-code)
+- [What Awake() Is For](#what-awake-is-for)
+- [Correct Approach for Value Configuration](#correct-approach-for-value-configuration)
+- [Assets That Must Be Project Assets](#assets-that-must-be-project-assets)
+- [Exception: Runtime-Only Dynamic Values](#exception-runtime-only-dynamic-values)
+- [AI Agent Guidelines](#ai-agent-guidelines)
+
 ## CRITICAL: Never Hardcode Inspector-Configurable Values in Code
 
 ### The Rule
