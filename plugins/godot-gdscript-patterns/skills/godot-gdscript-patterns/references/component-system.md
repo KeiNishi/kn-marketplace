@@ -2,6 +2,12 @@
 
 Reusable game components for health, hitbox, and hurtbox in Godot 4.x.
 
+## Contents
+
+- [HealthComponent](#healthcomponent)
+- [HitboxComponent](#hitboxcomponent)
+- [HurtboxComponent](#hurtboxcomponent)
+
 ## HealthComponent
 
 ```gdscript

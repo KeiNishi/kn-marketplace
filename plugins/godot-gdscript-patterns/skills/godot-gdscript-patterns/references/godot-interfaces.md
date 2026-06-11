@@ -2,6 +2,14 @@
 
 Duck typing, node references, and type-safe access patterns in Godot 4.x. Godot uses composition and duck typing instead of traditional interfaces.
 
+## Contents
+
+- [Acquiring Node References](#acquiring-node-references)
+- [Duck Typing](#duck-typing)
+- [Type-Safe Access](#type-safe-access)
+- [Callable Pattern](#callable-pattern)
+- [Best Practices](#best-practices)
+
 ## Acquiring Node References
 
 ### Direct References

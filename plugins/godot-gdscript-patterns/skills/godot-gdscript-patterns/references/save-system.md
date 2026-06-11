@@ -2,6 +2,11 @@
 
 Encrypted save/load system with saveable node component for Godot 4.x.
 
+## Contents
+
+- [SaveManager (Autoload)](#savemanager-autoload)
+- [Saveable Component](#saveable-component)
+
 ## SaveManager (Autoload)
 
 ```gdscript

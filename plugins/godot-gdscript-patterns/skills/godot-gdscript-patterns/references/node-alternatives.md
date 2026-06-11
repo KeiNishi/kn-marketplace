@@ -2,6 +2,15 @@
 
 When and how to avoid using nodes for everything in Godot 4.x. Use lightweight base classes for data and logic that don't need the scene tree.
 
+## Contents
+
+- [Class Hierarchy](#class-hierarchy)
+- [When to Use Each Base Class](#when-to-use-each-base-class)
+- [RefCounted for Game Logic](#refcounted-for-game-logic)
+- [Object for Ultra-Lightweight Data](#object-for-ultra-lightweight-data)
+- [Resource vs RefCounted](#resource-vs-refcounted)
+- [Anti-Patterns](#anti-patterns)
+
 ## Class Hierarchy
 
 ```

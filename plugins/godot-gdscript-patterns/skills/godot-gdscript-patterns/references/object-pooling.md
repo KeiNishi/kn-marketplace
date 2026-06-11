@@ -2,6 +2,11 @@
 
 Efficient object reuse to avoid runtime allocation in Godot 4.x.
 
+## Contents
+
+- [ObjectPool](#objectpool)
+- [PooledBullet Example](#pooledbullet-example)
+
 ## ObjectPool
 
 ```gdscript
