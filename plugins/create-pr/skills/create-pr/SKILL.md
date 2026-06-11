@@ -8,6 +8,8 @@ allowed-tools: Bash(git status*), Bash(git diff*), Bash(git log*), Bash(git push
 
 Creates GitHub PRs with conventional commit-style titles for consistent, readable PR history.
 
+This workflow uses the `gh` CLI, which works identically on Windows, macOS, and Linux. If `gh` is unavailable, do not fail: push the branch and give the user the compare URL instead (see step 4).
+
 ## PR Title Format
 
 ```
@@ -83,6 +85,12 @@ Use scopes to indicate the area of the codebase affected:
    )"
    ```
 
+   **Fallback if `gh` is unavailable**: push the branch (step 3), then give the user the compare URL so they can open the PR in the browser, along with the prepared title and body:
+   ```
+   https://github.com/<owner>/<repo>/compare/<base-branch>...<branch>?expand=1
+   ```
+   Derive `<owner>/<repo>` from `git remote get-url origin`.
+
 ## PR Body Guidelines
 
 ### Summary Section
@@ -139,3 +147,14 @@ Key validation rules:
 - Exclamation mark for breaking changes goes before the colon
 - Summary must start with a capital letter
 - Summary must not end with a period
+
+## Verification Checklist
+
+Confirm ALL of the following before declaring the PR created:
+
+- [ ] Branch is pushed to the remote (`git push -u origin HEAD` succeeded)
+- [ ] PR title matches the validation regex above
+- [ ] PR body contains all sections: Summary, Related Issues, Checklist
+- [ ] PR URL is returned to the user (or the compare URL plus prepared title/body in the `gh`-unavailable fallback)
+
+If any item fails, fix it and re-verify before reporting success.
