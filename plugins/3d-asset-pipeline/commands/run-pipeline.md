@@ -55,8 +55,10 @@ Print the resolved asset name, slug, description, type, vendor, review setting, 
 
 Run:
 
+On Windows, use `py -3` if `python3` is not available.
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py"
 ```
 
 Capture output.
@@ -107,7 +109,7 @@ Abort unless the user explicitly approves.
 Run Python to call `_manifest.init`:
 
 ```bash
-python -c "import sys; sys.path.insert(0, r'${CLAUDE_PLUGIN_ROOT}'); from scripts import _common, _manifest; name=r'<asset-name>'; description=r'<description>'; asset_type=r'<asset-type>'; slug=_common.slugify(name); manifest=_manifest.init(slug, name, description, asset_type); print(slug); print(_manifest.manifest_path(slug))"
+python3 -c "import sys; sys.path.insert(0, r'${CLAUDE_PLUGIN_ROOT}'); from scripts import _common, _manifest; name=r'<asset-name>'; description=r'<description>'; asset_type=r'<asset-type>'; slug=_common.slugify(name); manifest=_manifest.init(slug, name, description, asset_type); print(slug); print(_manifest.manifest_path(slug))"
 ```
 
 If the manifest already exists, stop and report the existing `pipeline.json`.
@@ -125,7 +127,7 @@ Read `pipeline.json` and confirm all six stages exist.
 Run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --defer-canonical
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --defer-canonical
 ```
 
 Read the four PNGs multimodally:
@@ -144,7 +146,7 @@ Valid answers: `front`, `three-quarter`, `side`, `back`.
 Run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>
 ```
 
 Read `concept/canonical.png` multimodally and compare it with the description.
@@ -162,7 +164,7 @@ If the user chooses `stop`, report the slug and concept folder, then end. The us
 If the user chooses `yes`, record the approval so the mesh preflight passes:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve
 ```
 
 The mesh scripts refuse to run while `stages.concept.approved` is not `true`. The gate is enforced inside the mesh preflight, so a stopped run can always resume by approving from a separate session.
@@ -172,9 +174,9 @@ The mesh scripts refuse to run while `stages.concept.approved` is not `true`. Th
 Run exactly one vendor script:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <slug>
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <slug>
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <slug>
 ```
 
 Select the command that matches the resolved vendor.
@@ -206,7 +208,7 @@ Log that prop rig and animate stages are expected to stay `skipped`.
 For `humanoid` and `quadruped`, run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <slug>
 ```
 
 Read `pipeline.json`.
@@ -216,7 +218,7 @@ If rigging failed, stop and report `stages.rig.error` and `stages.rig.task_id` w
 Then run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <slug>
 ```
 
 Read `pipeline.json`.
@@ -228,7 +230,7 @@ If animation failed, stop and report `stages.animate.error`.
 Run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/import_godot.py" <slug> --project "<engine-project>" --scene
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/import_godot.py" <slug> --project "<engine-project>" --scene
 ```
 
 Read `pipeline.json`.
@@ -246,13 +248,13 @@ Otherwise iterate from `1` to `max-iters`.
 For iteration `1`, run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project "<engine-project>" --iter 1 --max-iters <max-iters>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project "<engine-project>" --iter 1 --max-iters <max-iters>
 ```
 
 For iteration `N > 1`, run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project "<engine-project>" --iter <N> --max-iters <max-iters> --apply-fixes "3d-pipeline-output/<slug>/review/iter-<N-1>/fix-instructions.json"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <slug> --project "<engine-project>" --iter <N> --max-iters <max-iters> --apply-fixes "3d-pipeline-output/<slug>/review/iter-<N-1>/fix-instructions.json"
 ```
 
 After each capture, read all PNGs in `review/iter-<N>/` multimodally.

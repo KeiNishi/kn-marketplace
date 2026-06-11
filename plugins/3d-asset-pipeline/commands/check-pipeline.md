@@ -17,10 +17,10 @@ Run the deterministic health checker for the plugin.
 
 Pass all command arguments through to the script.
 
-Run:
+Run (on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" $ARGUMENTS
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py" $ARGUMENTS
 ```
 
 Capture the exit code and output.

@@ -46,8 +46,10 @@ Confirm:
 
 Run status when useful:
 
+On Windows, use `py -3` if `python3` is not available.
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --status
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --status
 ```
 
 If the status says the review is already approved, report the approved iteration and stop.
@@ -57,7 +59,7 @@ If the status says the review is already approved, report the approved iteration
 Run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --project <godot-project-root> --iter 1 --max-iters <N>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --project <godot-project-root> --iter 1 --max-iters <N>
 ```
 
 Add `--godot <path>` and `--base <dir>` when provided.
@@ -101,7 +103,7 @@ Use the schema from `skills/engine-review-loop/references/fix-recipes.md`.
 If `approved` is false, looping is enabled, and `N < max-iters`, run the next iteration with the prior fix file:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --project <godot-project-root> --iter <N+1> --max-iters <max> --apply-fixes 3d-pipeline-output/<asset-slug>/review/iter-<N>/fix-instructions.json
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_loop.py" <asset-slug> --project <godot-project-root> --iter <N+1> --max-iters <max> --apply-fixes 3d-pipeline-output/<asset-slug>/review/iter-<N>/fix-instructions.json
 ```
 
 Read the new screenshots, compare against the previous verdict, and write the next verdict.

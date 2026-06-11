@@ -47,18 +47,18 @@ Run Stage 2 of the 3D asset pipeline: convert the canonical concept image and as
 
 ## Script Commands
 
-Run the vendor-specific script from the plugin root:
+Run the vendor-specific script for the resolved vendor. The scripts live under the plugin root's `scripts/` directory; `<plugin-root>` below is the installed plugin directory (`${CLAUDE_PLUGIN_ROOT}` in Claude Code; in other agents, locate the installed plugin directory first). Keep the working directory in the workspace that contains `3d-pipeline-output/`. On Windows, use `py -3` if `python3` is not available.
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <slug> --mode rapid
+python3 "<plugin-root>/scripts/mesh_hunyuan.py" <slug> --mode rapid
 ```
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <slug> --target-polys 20000
+python3 "<plugin-root>/scripts/mesh_meshy.py" <slug> --target-polys 20000
 ```
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <slug>
+python3 "<plugin-root>/scripts/mesh_tripo.py" <slug>
 ```
 
 Pass through supported shared flags:
@@ -114,6 +114,19 @@ Pass through supported shared flags:
 - If a quadruped result has broken limbs or poor topology, try Tripo and compare the GLB in Godot or Blender.
 - If a vendor times out, rerun the same script only after checking whether a task id exists in the manifest.
 - If dry-run output is needed, set `PIPELINE_DRY_RUN=1` and rerun the same command.
+
+## Verification Checklist
+
+Before declaring Stage 2 done, confirm all of the following:
+
+- `stages.mesh.status` is `done` in `pipeline.json`.
+- `stages.mesh.vendor` records the vendor actually used.
+- `stages.mesh.files.glb` is set and the file exists under `3d-pipeline-output/<slug>/mesh/`.
+- `stages.mesh.files.fbx` exists on disk when the manifest records it (Meshy, sometimes Tripo).
+- `stages.mesh.completedAt` is set, and `dryRun: true` is recorded for dry-run output.
+- No credential values appear anywhere in the manifest.
+
+If any item fails, fix it and re-verify before moving to rigging or import.
 
 ## Reference Index
 

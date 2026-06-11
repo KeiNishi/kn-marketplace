@@ -38,8 +38,10 @@ If `assetType` is `prop` or `stages.animate.status` is `skipped`, report that an
 
 Run:
 
+On Windows, use `py -3` if `python3` is not available.
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <asset-slug> [--clips idle,walk,run,attack]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <asset-slug> [--clips idle,walk,run,attack]
 ```
 
 ## Reporting

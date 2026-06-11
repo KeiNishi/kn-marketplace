@@ -42,10 +42,10 @@ Confirm:
 
 ## Script Invocation
 
-Run:
+Run (on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/import_godot.py" <asset-slug> --project <godot-project-root> [--source-stage animated|mesh|rigged] [--scene]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/import_godot.py" <asset-slug> --project <godot-project-root> [--source-stage animated|mesh|rigged] [--scene]
 ```
 
 Use `--base <dir>` only for automated tests or non-standard output locations.

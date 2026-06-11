@@ -25,10 +25,10 @@ Use these for animals and four-legged creatures. The set focuses on locomotion b
 
 ## Custom Clips
 
-Pass explicit clips with:
+Pass explicit clips with (`<plugin-root>` is the installed plugin directory; on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/animate_meshy.py" <slug> --clips idle,walk,run,attack
+python3 "<plugin-root>/scripts/animate_meshy.py" <slug> --clips idle,walk,run,attack
 ```
 
 Keep clip names simple and lowercase when possible. Avoid spaces in clip names because the script uses clip names in output filenames.

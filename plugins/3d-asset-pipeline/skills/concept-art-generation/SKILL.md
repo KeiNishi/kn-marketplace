@@ -1,6 +1,6 @@
 ---
 name: concept-art-generation
-description: Use this skill when generating Stage 1 concept art for the 3d-asset-pipeline, writing multi-angle prompts, selecting a canonical concept image, or updating the concept stage in pipeline.json.
+description: This skill should be used when the user asks to "generate concept art", "create concept images", "pick the canonical concept", or runs Stage 1 of the 3d-asset-pipeline. It covers writing multi-angle prompts, selecting a canonical concept image, driving the concept approval gate, recovering from moderation blocks, and updating the concept stage in pipeline.json. Also triggers on "/3d-pipeline:concept" and "/3d-pipeline:approve" commands.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -16,11 +16,13 @@ Generate a consistent four-view concept set for a 3D game asset, then choose one
 
 ## Workflow
 
+Script paths below are relative to the plugin root (`${CLAUDE_PLUGIN_ROOT}` in Claude Code; in other agents, locate the installed plugin directory first and prefix script paths with it). Run them with `python3` from the workspace that contains `3d-pipeline-output/` (on Windows, use `py -3` if `python3` is not available).
+
 1. Read the manifest and summarize the asset description.
 2. Build one shared style anchor, then append the angle clause for each view.
-3. Run `scripts/concept_openai.py <slug> --defer-canonical` when the user should choose the canonical view.
+3. Run `python3 scripts/concept_openai.py <slug> --defer-canonical` when the user should choose the canonical view.
 4. Present the four generated paths and ask which view should be canonical.
-5. Run `scripts/concept_openai.py <slug> --select-canonical <angle>`.
+5. Run `python3 scripts/concept_openai.py <slug> --select-canonical <angle>`.
 6. Verify `stages.concept.status` is `done`.
 7. Drive the approval gate (see below) before mesh generation can proceed.
 
@@ -32,10 +34,10 @@ After the canonical is selected:
 
 1. Display the four angle PNGs and `concept/canonical.png` to the user multimodally.
 2. Compare against `pipeline.json.description`.
-3. Use `AskUserQuestion` with options: **Approve**, **Change canonical**, **Re-roll with new description**, **Stop**.
-4. On approve, run `scripts/approve_concept.py <slug> --approve`.
-5. On change canonical, run `scripts/concept_openai.py <slug> --select-canonical <angle>` then approve.
-6. On re-roll, run `scripts/concept_openai.py <slug> --description "<new text>"` and loop back to step 1.
+3. Ask the user to choose one of: **Approve**, **Change canonical**, **Re-roll with new description**, **Stop** (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply).
+4. On approve, run `python3 scripts/approve_concept.py <slug> --approve`.
+5. On change canonical, run `python3 scripts/concept_openai.py <slug> --select-canonical <angle>` then approve.
+6. On re-roll, run `python3 scripts/concept_openai.py <slug> --description "<new text>"` and loop back to step 1.
 7. On stop, end and remind the user that `/3d-pipeline:approve <slug>` can be run later to unblock mesh.
 
 ## Moderation Recovery

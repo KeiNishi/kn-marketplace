@@ -35,10 +35,10 @@ If `assetType` is `prop` or `stages.rig.status` is `skipped`, report that riggin
 
 ## Script Invocation
 
-Run:
+Run (on Windows, use `py -3` if `python3` is not available):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <asset-slug> [--template humanoid|quadruped]
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/rig_meshy.py" <asset-slug> [--template humanoid|quadruped]
 ```
 
 ## Reporting

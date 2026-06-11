@@ -20,14 +20,16 @@ Generate concept images for an asset that already has `3d-pipeline-output/<slug>
 1. Read `pipeline.json` for the slug and confirm the asset name, description, and asset type.
 2. Run:
 
+On Windows, use `py -3` if `python3` is not available.
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> <args>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> <args>
 ```
 
 3. If `--defer-canonical` is used, inspect the generated PNG paths in `concept/`, ask the user which view should be canonical, then run:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>
 ```
 
 4. Confirm that `stages.concept.status` is `done` and that `concept/canonical.png` exists.
@@ -37,7 +39,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonic
 If the script exits with `failureKind: "moderation_blocked"` in the concept stage record, OpenAI's safety system rejected the prompt. Surface a friendly retry message to the user. Do not auto-soften the description; ask the user for a new description with less violent or sensitive language, then re-run the concept stage with that description:
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new description>"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new description>"
 ```
 
 `--description` overwrites the manifest description and resets the concept stage to `pending` before regenerating.
@@ -59,9 +61,9 @@ After the concept stage reaches `status: done`, the mesh stage will refuse to ru
    - **Re-roll with new description** — supply softer or different prompt language and regenerate.
    - **Stop** — leave the concept un-approved; mesh remains blocked until `/3d-pipeline:approve <slug>` is run later.
 4. Map answers to:
-   - Approve → `python "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve`
-   - Change canonical → `python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>` then approve
-   - Re-roll → `python "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new text>"` then loop back to step 1
+   - Approve → `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve`
+   - Change canonical → `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --select-canonical <angle>` then approve
+   - Re-roll → `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "<new text>"` then loop back to step 1
    - Stop → end the command and print the location of `concept/`
 
 The approval gate is enforced mechanically — `mesh_hunyuan.py`, `mesh_meshy.py`, and `mesh_tripo.py` all refuse to run when `stages.concept.approved` is not `true`.

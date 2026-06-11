@@ -1,12 +1,16 @@
 ---
 name: 3d-pipeline-overview
-description: Use this skill for routing the 3d-asset-pipeline stages, reading or updating pipeline.json, checking stage prerequisites, or deciding which stage command to run next.
+description: This skill should be used when the user asks to "run the 3D pipeline", "check pipeline status", "resume an asset", or mentions pipeline.json, 3d-pipeline-output, or stage routing for the 3d-asset-pipeline. It coordinates the six stages (concept, mesh, rig, animate, engine import, review), reads and updates pipeline.json, checks stage prerequisites, and decides which stage to run next. Also triggers on "/3d-pipeline:run-pipeline" and "/3d-pipeline:pipeline-info" commands.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Overview
 
 This skill coordinates the Godot-first 3D asset pipeline. Use it to inspect `pipeline.json`, choose the next stage, and keep stage data synchronized.
+
+## Locating the Plugin
+
+All `scripts/...` paths in this skill are relative to the plugin root. In Claude Code the plugin root is `${CLAUDE_PLUGIN_ROOT}`; in other agents, locate the installed plugin directory first and prefix script paths with it. Run scripts with `python3` from the workspace that contains `3d-pipeline-output/` (on Windows, use `py -3` if `python3` is not available).
 
 ## Stage Order
 
@@ -46,7 +50,7 @@ Use `_manifest.concept_approved(manifest)` to check approval; mesh preflight scr
 
 ## Pre-flight Checks
 
-- Run `scripts/doctor.py` before starting paid or long-running stages.
+- Run `python3 scripts/doctor.py` (path relative to the plugin root) before starting paid or long-running stages.
 - Stop when the doctor reports failed checks and ask the user to run `/3d-pipeline:check-pipeline`.
 - Confirm `PIPELINE_DRY_RUN=1` is set in the same shell session when dry-run behavior is expected.
 
@@ -83,6 +87,6 @@ Use `_manifest.concept_approved(manifest)` to check approval; mesh preflight scr
 
 ## Security Reminder
 
-- Read API keys only from `~/.claude/3d-pipeline/.env`.
+- Read API keys only from `~/.claude/3d-pipeline/.env` (`%USERPROFILE%\.claude\3d-pipeline\.env` on Windows).
 - Never store API keys, credential paths, or secret values in the repository or manifest.
 - Leave plugin and marketplace version fields unchanged unless a task explicitly asks for version updates.

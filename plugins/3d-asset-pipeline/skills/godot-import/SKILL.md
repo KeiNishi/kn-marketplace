@@ -1,6 +1,6 @@
 ---
 name: godot-import
-description: This skill should be used when the user asks to "import to Godot", "drop the asset into Godot", or as stage 5 of the 3D pipeline. Copies the final asset into a Godot 4 project's assets/characters/<slug>/ folder and emits the .import config (and optionally a wrapper .tscn). Also triggers on "/3d-pipeline:godot-import" command. Godot 4 only in v0.1.0; Unity 6 and Unreal 5 are future work.
+description: This skill should be used when the user asks to "import to Godot", "drop the asset into Godot", or as stage 5 of the 3D pipeline. Copies the final asset into a Godot 4 project's assets/characters/<slug>/ folder and emits the .import config (and optionally a wrapper .tscn). Also triggers on "/3d-pipeline:godot-import" command. Godot 4 only today; Unity and Unreal are future work.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -27,6 +27,14 @@ Run Stage 5 of the 3D asset pipeline after mesh generation, rigging, and animati
 - Stop with a user-fixable error when the project root is missing or not a Godot project.
 - Do not create project files outside an existing Godot project root.
 - Run all path checks before copying source assets into the project.
+
+## Script Command
+
+Run Stage 5 with the import script under the plugin root's `scripts/` directory; `<plugin-root>` below is the installed plugin directory (`${CLAUDE_PLUGIN_ROOT}` in Claude Code; in other agents, locate the installed plugin directory first). Keep the working directory in the workspace that contains `3d-pipeline-output/`. On Windows, use `py -3` if `python3` is not available.
+
+```bash
+python3 "<plugin-root>/scripts/import_godot.py" <slug> --project <godot-project-root> [--source-stage animated|mesh|rigged] [--scene]
+```
 
 ## Target Path Convention
 
