@@ -1,0 +1,50 @@
+{
+  "skill_name": "gamedev-debugging",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "In my Unity platformer, the player sometimes falls through thin platforms, but only on slower machines. On my dev PC it almost never happens. Can you fix it? I think adding a thicker collider would work.",
+      "expected_output": "A systematic investigation that first makes the bug deterministic (forcing low FPS / fixed timestep), identifies frame-dependent collision (tunneling) as the root cause with evidence, and proposes a root-cause fix (continuous/swept collision or moving movement into fixed timestep) rather than the suggested collider workaround.",
+      "files": [],
+      "expectations": [
+        "Does NOT immediately apply the user's suggested workaround (thicker collider) without diagnosis",
+        "Attempts to reproduce the bug deterministically before proposing any fix, e.g. by forcing low frame rate, fixing the timestep, or frame-stepping",
+        "Identifies the frame-rate dependency as the key clue and connects it to per-frame collision checks / tunneling or update-loop misuse",
+        "States a specific root cause backed by evidence before changing code",
+        "Proposes a fix that addresses the root cause (continuous collision detection, fixed-timestep physics movement) rather than masking it",
+        "Verifies the fix by re-running the original reproduction at low FPS",
+        "Does not add delays, clamps, or extra colliders as the resolution"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My Godot game randomly crashes with a null instance error right after switching scenes, maybe one time in ten. It never crashes if I add a 0.5 second wait before using the spawned enemies. Should I just keep the wait?",
+      "expected_output": "A refusal to accept the delay as a fix, followed by a disciplined async-race investigation: making the crash reproducible (simulating slow loading), isolating which object is used before its load/ready completes, and fixing the ordering guarantee (await/signal on load completion or ready) instead of the timed wait.",
+      "files": [],
+      "expectations": [
+        "Explicitly rejects the 0.5 second wait as a workaround that shrinks but does not close the race window",
+        "Works to make the 1-in-10 crash reproducible on demand, e.g. by simulating slow loading or stressing scene transitions, before writing a fix",
+        "Forms and tests one hypothesis at a time about which object is accessed before initialization/load completes",
+        "Uses targeted logging of load/ready order or frame numbers to bracket the failure point",
+        "Identifies the root cause as a missing ordering guarantee (using an object before its load or _ready completes)",
+        "Fixes the ordering explicitly (await the load signal, defer access until ready) rather than retrying or sleeping",
+        "Verifies by re-running the reproduction repeatedly with the delay removed"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Players report that after saving and reloading, their inventory is occasionally wrong - items swap slots or a stack count is off by one. I can't reproduce it locally. I'm tempted to just re-sort the inventory on load to hide it.",
+      "expected_output": "A determinism-focused investigation: refusing the cosmetic re-sort, building a reliable reproduction (round-trip save/load with fixed seed and a captured failing save file), diffing serialized state to distinguish data bugs from logic bugs, and fixing the underlying serialization nondeterminism (e.g. unordered collection iteration or an unserialized field).",
+      "files": [],
+      "expectations": [
+        "Rejects re-sorting on load as a symptom-masking workaround",
+        "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+        "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+        "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+        "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+        "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+        "Verifies by round-tripping the previously failing save and checking old save files still load correctly"
+      ]
+    }
+  ]
+}

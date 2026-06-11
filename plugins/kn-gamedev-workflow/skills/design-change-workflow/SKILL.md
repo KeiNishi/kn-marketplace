@@ -52,7 +52,7 @@ Present findings to the user:
 
 ### Step 2: Clarify Changes
 
-Ask targeted questions about the changes using `AskUserQuestion`. Follow the same style as design-workflow Phase 2 (Clarification).
+Ask the user targeted questions about the changes (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply). Follow the same style as design-workflow Phase 2 (Clarification).
 
 **For New Additions — Game Design Questions:**
 - How does this feature interact with existing mechanics?
@@ -106,7 +106,7 @@ Present current progress context from TaskProgress.md:
 - Remaining tasks in the current plan
 - Already-completed phases that might be affected
 
-Ask the user about implementation timing using `AskUserQuestion`:
+Ask the user about implementation timing (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply):
 
 **For New Additions:**
 1. **After current plan** - Add as a new phase at the end of the Phase Summary. All existing tasks complete first.
@@ -254,19 +254,21 @@ Update the Status line if the total phase count changed.
 
 ### Step 5: Design Review
 
-Invoke the `design-review` subagent to validate the updated documents:
+Validate the updated documents. If the environment supports subagents, launch the `design-review` agent:
 
 ```
 Use the design-review agent to review all documents in docs_for_ai/. Start with GameDesignOverview.md and ImplementationPlanOverview.md to discover file manifests, then review all detail files listed in the manifests.
 ```
 
+If subagents are not supported, perform the same review directly in the conversation: re-read the overviews and all detail files listed in the manifests, and check completeness, clarity, consistency between overviews and detail files, and file integrity (every manifest entry exists on disk, back-links point to the correct overview, no orphan detail files). Conclude with APPROVED or NEEDS_REVISION.
+
 This step is **mandatory** and cannot be skipped.
 
 - If **APPROVED**: Workflow complete. Inform the user that documents are updated and reviewed.
 - If **NEEDS_REVISION**:
-  1. Present the questions/issues to the user using `AskUserQuestion`
+  1. Present the questions/issues to the user (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply)
   2. Update the documents based on user responses
-  3. Re-invoke design-review agent
+  3. Re-run the design review
   4. Repeat until **APPROVED**
 
 ## Workflow Steps (Legacy Format)
@@ -276,7 +278,7 @@ If legacy format is detected (`GameDesign.md` / `ImplementationPlan.md`):
 1. Follow the same 5-step workflow, but operate on the two monolithic files instead
 2. Read `docs_for_ai/GameDesign.md`, `docs_for_ai/ImplementationPlan.md`, and `docs_for_ai/TaskProgress.md` (if exists)
 3. Update the appropriate sections within the single files
-4. For design review, invoke the agent which will auto-detect the legacy format
+4. For design review, run Step 5 as described above; the review auto-detects the legacy format
 
 ## Technology Stack Skills Integration
 
@@ -296,7 +298,7 @@ When updating implementation documents, you **MUST** use the appropriate technol
 
 ## Document Reference
 
-This workflow updates documents that follow the templates defined in the design-workflow skill:
+This workflow updates documents that follow the templates defined in the design-workflow skill. All `../design-workflow/` and `../implementation-workflow/` paths in this document are relative to this skill's own directory: sibling skills live next to this skill's folder in the installed plugin's `skills/` directory, so locate that directory first if your agent does not resolve skill-relative paths automatically.
 - **GameDesignOverview.md** structure: see `../design-workflow/references/gamedesign-overview-template.md`
 - **Game Design Detail** structure: see `../design-workflow/references/gamedesign-detail-template.md`
 - **ImplementationPlanOverview.md** structure: see `../design-workflow/references/implementation-overview-template.md`

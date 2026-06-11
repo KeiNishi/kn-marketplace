@@ -149,3 +149,15 @@ Typical flow:
 2. Developer/AI implements tasks from implementation detail files
 3. implementation-workflow records progress after each task
 4. Any AI can resume work by reading overview files + relevant detail files
+
+## Verification Checklist
+
+Before declaring a progress-recording task done, verify ALL of the following:
+
+- [ ] `docs_for_ai/TaskProgress.md` exists and follows `references/taskprogress-template.md`
+- [ ] The new entry is at the TOP of the Log section, dated `[YYYY-MM-DD]`
+- [ ] The task name references the matching Phase/Task in the implementation detail file (or ImplementationPlan.md for legacy)
+- [ ] The Files list matches the files actually changed, as relative paths
+- [ ] The entry is 3-5 lines; Done is at most 2 sentences; Decision/Issue omitted unless significant
+- [ ] The Status line is updated (current phase, next task, updated date)
+- [ ] The corresponding task checkbox in the implementation detail file reflects completion, if the plan uses checkboxes

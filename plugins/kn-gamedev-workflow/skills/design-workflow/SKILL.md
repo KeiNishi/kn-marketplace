@@ -51,7 +51,7 @@ Ask targeted questions to clarify:
 - Which systems are independent vs. tightly coupled?
 - Are there any cross-cutting concerns? (e.g., save system, audio, UI)
 
-Use `AskUserQuestion` tool to present questions clearly. Continue until both game design and implementation priorities are fully defined.
+Present the questions clearly to the user (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply). Continue until both game design and implementation priorities are fully defined.
 
 ### Phase 3: Create Documentation
 
@@ -133,23 +133,25 @@ Place in `docs_for_ai/implementation/NN_SystemName_Implementation.md`.
 
 ### Phase 4: Design Review
 
-Invoke the `design-review` subagent to review all created documents:
+Review all created documents. If the environment supports subagents, launch the `design-review` agent:
 
 ```
 Use the design-review agent to review all documents in docs_for_ai/. Start with GameDesignOverview.md and ImplementationPlanOverview.md to discover file manifests, then review all detail files listed in the manifests.
 ```
 
-The design-review agent will return one of:
+If subagents are not supported, perform the same review directly in the conversation: re-read every document (overviews first, then each detail file listed in the manifests), and check completeness, clarity, consistency between overviews and detail files, and file integrity (every manifest entry exists on disk, back-links point to the correct overview, no orphan detail files).
+
+The review must conclude with one of:
 - **APPROVED** - Documents are complete and ready
 - **NEEDS_REVISION** - Questions or issues that need user clarification
 
 ### Phase 5: Iteration
 
-If design-review returns NEEDS_REVISION:
+If the design review returns NEEDS_REVISION:
 
-1. Present the questions/issues to the user using `AskUserQuestion`
+1. Present the questions/issues to the user (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply)
 2. Update the documents based on user responses
-3. Re-invoke design-review agent
+3. Re-run the design review (Phase 4)
 4. Repeat until APPROVED
 
 ## Document Guidelines
@@ -243,3 +245,18 @@ This workflow is designed to work alongside platform-specific plugins:
 ## Backward Compatibility
 
 If the user has an existing project with legacy single-file format (`GameDesign.md` / `ImplementationPlan.md` instead of the modular structure), detect and work with that format. Offer migration to the modular format if the documents are growing large.
+
+## Verification Checklist
+
+Before declaring the design phase complete, verify ALL of the following:
+
+- [ ] `docs_for_ai/` exists with `game_design/` and `implementation/` subdirectories (modular format)
+- [ ] `GameDesignOverview.md` and `ImplementationPlanOverview.md` exist and each contains a File Manifest
+- [ ] Every file listed in a manifest exists on disk, and every detail file on disk is listed in a manifest (no orphans)
+- [ ] Every detail file starts with a back-link to its overview and ends with a Dependencies section
+- [ ] Numbered prefixes (`01_`, `02_`, ...) are consistent and not duplicated
+- [ ] All documents are written in English, with variable values marked `[EXAMPLE: value]`
+- [ ] The Phase Summary in `ImplementationPlanOverview.md` references the correct detail files
+- [ ] The design review (Phase 4) returned APPROVED
+
+If any item fails, fix it and re-run the design review before finishing.
