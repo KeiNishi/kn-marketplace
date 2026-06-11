@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+      "passed": true,
+      "evidence": "Response clones GdUnit4: 'git clone https://github.com/MikeSchulze/gdUnit4 addons/gdUnit4' and enables it in project.godot: 'enabled=PackedStringArray(\"res://addons/gdUnit4/plugin.cfg\")'. GUT is not mentioned at all."
+    },
+    {
+      "text": "A test/ directory and at least one example GdUnitTestSuite are created",
+      "passed": true,
+      "evidence": "Response creates 'test/inventory_test.gd' extending 'GdUnitTestSuite' with test methods test_add_item() and test_remove_missing_item_fails(). File is scaffolded at '/tmp/eval-work/setup-w/test/inventory_test.gd'."
+    },
+    {
+      "text": "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+      "passed": true,
+      "evidence": "Step 5 shows the exact command: '<godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode' as what the run_godot_tests.py script executes internally."
+    },
+    {
+      "text": "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+      "passed": false,
+      "evidence": "Response explicitly states 'Godot is not installed in the current environment, so the exact commands are documented below with notes on what gates each step.' No actual test run was performed; all steps are documented workflows rather than executed ones."
+    },
+    {
+      "text": "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)",
+      "passed": true,
+      "evidence": "Step 4 addresses all three: 'Linux: package managers (apt/dnf) name it godot4', 'Windows: use the full path, e.g. C:/Godot/Godot_v4.3-stable_win64.exe', and 'export GODOT_BIN=/path/to/Godot_v4.3-stable_linux.x86_64'."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

@@ -17,6 +17,8 @@ You may not change a line of game code as a "fix" until you can:
 
 If you cannot reproduce it, your job is to make it reproducible — that IS the debugging task. A fix applied to an unreproduced bug is a guess wearing a fix's clothing.
 
+**Single-response completeness**: the Iron Law gates *applying* a fix, not *preparing* one. When you cannot interactively wait for the user (or for a run result) before answering, deliver the whole pipeline in one response: the reproduction harness, the ranked hypotheses with the disproof test for each, AND the root-cause fix you will apply for the leading hypothesis once the harness confirms it — plus the round-trip verification that must pass afterward. Never end the response at "reproduce first" with nothing staged behind it.
+
 ## Phase 1: Reproduce
 
 Goal: make the bug happen deterministically, every time.

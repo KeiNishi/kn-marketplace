@@ -1,0 +1,11 @@
+{
+  "eval_id": 3,
+  "eval_name": "headless-smoke",
+  "prompt": "Before I push this Godot project, verify that the game still boots and the main scene runs without errors. I don't have the editor open and this machine has no display.",
+  "assertions": [
+    "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+    "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+    "The verification is actually executed and its result reported, not merely described as a command the user could run",
+    "If errors appear, the root cause is fixed and the smoke run is repeated until clean"
+  ]
+}

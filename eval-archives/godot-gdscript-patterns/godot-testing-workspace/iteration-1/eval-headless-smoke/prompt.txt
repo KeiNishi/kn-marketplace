@@ -1,0 +1,1 @@
+Before I push this Godot project, verify that the game still boots and the main scene runs without errors. I don't have the editor open and this machine has no display.

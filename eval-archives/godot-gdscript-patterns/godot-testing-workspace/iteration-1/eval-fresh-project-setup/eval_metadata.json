@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "fresh-project-setup",
+  "prompt": "I have a fresh Godot 4 project with no tests at all. Set up automated testing for it so I can run tests from the command line and in CI.",
+  "assertions": [
+    "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+    "A test/ directory and at least one example GdUnitTestSuite are created",
+    "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+    "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+    "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)"
+  ]
+}

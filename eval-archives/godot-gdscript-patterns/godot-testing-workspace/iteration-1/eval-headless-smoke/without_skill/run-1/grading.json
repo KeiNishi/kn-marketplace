@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "The game is run headless with --headless and a bounded run such as --quit-after <frames>, so the command terminates on its own",
+      "passed": false,
+      "evidence": "The smoke_test.sh script uses 'timeout 30 godot --headless --path \"$PROJECT_DIR\"' \u2014 no '--quit-after <frames>' flag is passed to Godot. The bounding mechanism is an external Unix 'timeout' wrapper, not a Godot-native '--quit-after' argument. Additionally, main.gd calls 'get_tree().quit(0)' in _ready() as the actual termination path, not --quit-after. The assertion specifically requires '--quit-after <frames>'."
+    },
+    {
+      "text": "Both the process exit code and the captured output are checked, including scanning for SCRIPT ERROR / ERROR: / Parse Error lines rather than trusting exit code 0 alone",
+      "passed": true,
+      "evidence": "smoke_test.sh checks exit code via '[ \"$EXIT_CODE\" -ne 0 ]' and also greps the log: 'grep -qE \"^\\s*(ERROR:|SCRIPT ERROR:|FATAL:)\" \"$LOG_FILE\"'. Both checks are present and the script fails if either triggers."
+    },
+    {
+      "text": "The verification is actually executed and its result reported, not merely described as a command the user could run",
+      "passed": false,
+      "evidence": "Response shows '$ which godot\\nNOT_FOUND\\n$ which godot4\\nNOT_FOUND' and states 'Godot is not installed in this environment. The scaffold files have been created and are ready; the test can be executed as soon as a Godot 4 binary is available.' No actual smoke run was performed."
+    },
+    {
+      "text": "If errors appear, the root cause is fixed and the smoke run is repeated until clean",
+      "passed": false,
+      "evidence": "The smoke test was never executed, so no error-fix-retry loop could occur. The response provides only static installation guidance."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 3,
+    "total": 4,
+    "pass_rate": 0.25
+  }
+}

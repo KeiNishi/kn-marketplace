@@ -1,0 +1,1 @@
+Implement a state machine for a Godot 4 character that can switch between Idle, Running, and Jumping states. The character uses CharacterBody2D and needs to detect state transitions based on velocity and input.

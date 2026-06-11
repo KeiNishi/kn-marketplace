@@ -1,0 +1,1 @@
+In my Unity platformer, the player sometimes falls through thin platforms, but only on slower machines. On my dev PC it almost never happens. Can you fix it? I think adding a thicker collider would work.

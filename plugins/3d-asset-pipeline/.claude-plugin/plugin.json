@@ -1,6 +1,6 @@
 {
   "name": "3d-asset-pipeline",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Godot-first 6-stage 3D asset pipeline from concept art to mesh, rig, animation, import, and in-engine review loop using cloud APIs: gpt-image-2, Hunyuan 3D 3.1 via Replicate, and Meshy v5.",
   "author": {
     "name": "KN"

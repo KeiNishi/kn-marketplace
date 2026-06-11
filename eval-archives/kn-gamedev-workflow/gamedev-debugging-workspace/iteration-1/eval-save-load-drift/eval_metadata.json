@@ -1,0 +1,14 @@
+{
+  "eval_id": 3,
+  "eval_name": "save-load-drift",
+  "prompt": "Players report that after saving and reloading, their inventory is occasionally wrong - items swap slots or a stack count is off by one. I can't reproduce it locally. I'm tempted to just re-sort the inventory on load to hide it.",
+  "assertions": [
+    "Rejects re-sorting on load as a symptom-masking workaround",
+    "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+    "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+    "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+    "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+    "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+    "Verifies by round-tripping the previously failing save and checking old save files still load correctly"
+  ]
+}

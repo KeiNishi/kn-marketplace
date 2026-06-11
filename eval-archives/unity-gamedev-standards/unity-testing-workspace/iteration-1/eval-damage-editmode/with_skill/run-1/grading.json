@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Chooses EditMode tests (not PlayMode) because DamageCalculator is pure C# logic with no Unity lifecycle",
+      "passed": true,
+      "evidence": "Response states: 'Per the unity-testing skill's decision tree: Pure C# logic (damage formulas, inventory rules, \u2026, plain classes with no UnityEngine lifecycle)? \u2192 EditMode tests.' and 'EditMode tests are the correct choice. They run without entering Play mode and are the fastest possible feedback loop.'"
+    },
+    {
+      "text": "Creates or describes a test assembly definition (.asmdef) that references the production Gameplay assembly and nunit.framework.dll, with includePlatforms set to Editor",
+      "passed": true,
+      "evidence": "EditModeTests.asmdef is shown with: \"references\": [\"Gameplay\", \"UnityEngine.TestRunner\", \"UnityEditor.TestRunner\"], \"includePlatforms\": [\"Editor\"], and \"precompiledReferences\": [\"nunit.framework.dll\"]. Annotated: 'required for NUnit' and 'references Gameplay so the test file can see DamageCalculator'."
+    },
+    {
+      "text": "Tests use the [Test] attribute, not [UnityTest]",
+      "passed": true,
+      "evidence": "Every test method in DamageCalculatorTests.cs is decorated with [Test]. The response explicitly states: 'all [Test] (synchronous)'. No [UnityTest] attributes appear anywhere in the file."
+    },
+    {
+      "text": "Tests follow Arrange-Act-Assert structure with descriptive names like Method_ExpectedBehavior_WhenCondition",
+      "passed": true,
+      "evidence": "Tests use explicit // Arrange, // Act, // Assert comments and follow the naming pattern, e.g.: 'public void Calculate_ReturnsCorrectDamage_WhenAttackExceedsDefense()', 'public void Calculate_ReturnsZero_WhenDefenseExceedsAttack()', 'public void Calculate_ScalesDamageByCriticalMultiplier_WhenCriticalHit()'. All test bodies have clearly separated Arrange/Act/Assert sections."
+    },
+    {
+      "text": "Assertions use NUnit constraint syntax such as Assert.That(x, Is.EqualTo(y))",
+      "passed": true,
+      "evidence": "Multiple uses throughout, e.g.: 'Assert.That(result, Is.EqualTo(30f).Within(0.001f))' and 'Assert.That(() => DamageCalculator.Calculate(-1f, 0f, 1f), Throws.TypeOf<System.ArgumentOutOfRangeException>())'. All assertions use Assert.That with constraint model."
+    },
+    {
+      "text": "Explains how to run the tests from the command line with Unity -batchmode -runTests -testPlatform EditMode -testResults, or via scripts/run_unity_tests.py",
+      "passed": true,
+      "evidence": "Shows: 'python3 scripts/run_unity_tests.py --project-path /path/to/your-unity-project --test-platform EditMode' and the underlying batchmode command: 'Unity -batchmode -projectPath <path> -runTests -testPlatform EditMode -testResults /tmp/unity_test_results_EditMode.xml -logFile -'. Both the script and the raw batchmode flags are described."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

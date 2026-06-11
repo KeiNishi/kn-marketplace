@@ -1,0 +1,13 @@
+{
+  "eval_id": 3,
+  "eval_name": "ci-batchmode",
+  "prompt": "Set up an automated test run for my Unity project in CI so the build fails when any test fails. We cannot open the Unity editor on the CI machine.",
+  "assertions": [
+    "Uses Unity batchmode CLI: -batchmode -projectPath -runTests -testPlatform -testResults with -logFile - for streamed logs, and does not add -quit alongside -runTests",
+    "Explains locating the Unity executable: --unity-bin or UNITY_PATH first, then default Hub install paths (C:/Program Files/Unity/Hub/Editor/<version>/Editor/Unity.exe on Windows with forward slashes, /Applications/Unity/Hub/Editor/... on macOS), matching the version in ProjectSettings/ProjectVersion.txt",
+    "Runs or recommends running both EditMode and PlayMode platforms, or justifies the chosen platform",
+    "Parses the NUnit results XML (test-run attributes and failed test-case nodes) to decide pass/fail instead of relying only on the process exit code, e.g., via scripts/run_unity_tests.py",
+    "CI step exits non-zero when any test fails, and the workflow is: run, read failure messages, fix, re-run until green",
+    "Notes the failure mode when no results file is produced (compile errors or another editor instance holding the project lock)"
+  ]
+}

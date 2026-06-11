@@ -1,0 +1,1 @@
+My Godot game randomly crashes with a null instance error right after switching scenes, maybe one time in ten. It never crashes if I add a 0.5 second wait before using the spawned enemies. Should I just keep the wait?

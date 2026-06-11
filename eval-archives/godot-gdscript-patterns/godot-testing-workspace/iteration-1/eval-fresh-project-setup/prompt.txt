@@ -1,0 +1,1 @@
+I have a fresh Godot 4 project with no tests at all. Set up automated testing for it so I can run tests from the command line and in CI.

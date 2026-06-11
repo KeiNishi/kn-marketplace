@@ -1,0 +1,1 @@
+Here is my Godot 4 inventory class in inventory.gd (extends RefCounted, with add_item, remove_item, and count methods). Write unit tests for it and run them to make sure they pass.

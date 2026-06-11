@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The upward get_parent()/get_node string-path call chain is removed and replaced with a signal the enemy emits (optionally relayed via an event-bus autoload), following signals up / calls down",
+      "passed": true,
+      "evidence": "enemy.gd declares 'signal damaged(amount: int)' and emits it: 'damaged.emit(current)'. main_scene.gd connects it downward: 'enemy.damaged.connect(health_bar.update_value)'. No get_parent() or upward traversal remains."
+    },
+    {
+      "text": "Item definitions are converted from Node subtrees to classes extending Resource saved as .tres files, separating data from scene-tree behavior",
+      "passed": true,
+      "evidence": "'class_name ItemData' and 'extends Resource' with @export fields (id, display_name, description, icon, max_stack, value). Response explicitly instructs: 'Create one .tres file per item in the editor (right-click in FileSystem \u2192 New Resource \u2192 ItemData)' and shows a .tres file example."
+    },
+    {
+      "text": "The refactored code is fully statically typed (variables, parameters, return types)",
+      "passed": false,
+      "evidence": "Most code is typed, but 'var _index: Dictionary = {}' in item_database.gd lacks type parameters (should be Dictionary[StringName, ItemData] for full static typing). This is an untyped Dictionary used as a lookup table for the core database functionality."
+    },
+    {
+      "text": "Cross-scene references use @export variables, signals, or groups rather than hardcoded node paths",
+      "passed": true,
+      "evidence": "The enemy script uses no cross-scene string paths. Within main_scene.gd, '$Enemy' and '$UI/HealthBar' are intra-scene calls-down to owned children, which is correct Godot pattern. Enemy is wired to HealthBar via '@export var enemy: Enemy' and '@export var health_bar: HealthBar' annotated references (even though populated with @onready $-paths, these are typed, within-scene parent-to-child references)."
+    },
+    {
+      "text": "The explanation states why the original design is fragile (scene rearrangement breaks string paths; Nodes carry scene-tree cost for pure data)",
+      "passed": true,
+      "evidence": "Problem 1: 'The moment you move the Enemy into a different scene, or rename UI/HealthBar, or reuse the Enemy scene, the call fails at runtime with no warning at parse time.' Problem 2: 'Nodes carry scene-tree overhead (process callbacks, transforms, parent/child linkage) and cannot be saved or edited cleanly as standalone assets. A hidden Node tree is also invisible to the Inspector and cannot be serialized to .tres files.'"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

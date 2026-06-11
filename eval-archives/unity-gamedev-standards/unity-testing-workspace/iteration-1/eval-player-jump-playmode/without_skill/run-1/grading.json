@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+      "passed": true,
+      "evidence": "'Because the test needs to observe real Rigidbody motion across multiple FixedUpdate frames, Play Mode is the only correct choice. An Edit Mode test cannot drive the physics engine and would require mocking the entire Rigidbody \u2014 that would test the mock, not the real behaviour.'"
+    },
+    {
+      "text": "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+      "passed": true,
+      "evidence": "Two [UnityTest] methods: '[UnityTest] public IEnumerator Jump_MovesPlayerUpward_OverNextPhysicsFrames()' yields 'WaitForFixedUpdate' in a loop 5 times before asserting; '[UnityTest] public IEnumerator Jump_GivesRigidbodyPositiveVerticalVelocity()' yields 'WaitForFixedUpdate' once before asserting. [UnitySetUp] also returns IEnumerator and yields WaitForFixedUpdate."
+    },
+    {
+      "text": "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+      "passed": true,
+      "evidence": "'PlayerJumpPlayModeTest.asmdef' at 'Assets/Tests/PlayMode/PlayerJumpPlayModeTest.asmdef' with no 'includePlatforms' restriction \u2014 making it a PlayMode assembly separate from any EditMode asmdef."
+    },
+    {
+      "text": "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+      "passed": false,
+      "evidence": "The response uses 'Assert.Greater(yAfter, yBefore, ...)' and 'Assert.Greater(_rb.linearVelocity.y, 0f, ...)'. Assert.Greater is the NUnit Classic API, not constraint syntax. Constraint syntax would be 'Assert.That(yAfter, Is.GreaterThan(yBefore))'. The assertion specifically requires constraint syntax (Is.GreaterThan) \u2014 the classic API is not equivalent."
+    },
+    {
+      "text": "Destroys spawned GameObjects at the end of the test so tests remain independent",
+      "passed": true,
+      "evidence": "'[TearDown] public void TearDown()' calls 'Object.Destroy(_playerGO)' and also destroys the floor: 'GameObject floor = GameObject.Find(\"Floor\"); if (floor != null) Object.Destroy(floor);'. Cleanup covers all created objects."
+    },
+    {
+      "text": "Mentions running the suite via batchmode with -testPlatform PlayMode",
+      "passed": true,
+      "evidence": "Shows the command: '/path/to/Unity -batchmode -runTests -testPlatform PlayMode -projectPath /path/to/project -testResults TestResults-PlayMode.xml -logFile unity-playmode.log'. All required flags including -testPlatform PlayMode are present."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.8333
+  }
+}

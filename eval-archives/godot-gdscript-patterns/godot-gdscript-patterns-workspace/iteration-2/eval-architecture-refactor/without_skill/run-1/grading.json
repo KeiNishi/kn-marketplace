@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The upward get_parent()/get_node string-path call chain is removed and replaced with a signal the enemy emits (optionally relayed via an event-bus autoload), following signals up / calls down",
+      "passed": true,
+      "evidence": "enemy.gd declares 'signal health_changed(new_health: int, max_health: int)' and emits it: 'health_changed.emit(current_health, max_health)'. The owning scene connects downward: 'enemy.health_changed.connect(health_bar.update_value)'. No get_parent() traversal remains."
+    },
+    {
+      "text": "Item definitions are converted from Node subtrees to classes extending Resource saved as .tres files, separating data from scene-tree behavior",
+      "passed": true,
+      "evidence": "'class_name ItemDefinition' and 'extends Resource' with typed @export fields (id, display_name, description, icon, max_stack, base_value). Response instructs: 'Create individual items in the Godot editor: Resource \u2192 New Resource \u2192 ItemDefinition, fill in the fields, and save each as e.g. res://items/sword.tres'."
+    },
+    {
+      "text": "The refactored code is fully statically typed (variables, parameters, return types)",
+      "passed": false,
+      "evidence": "Two issues: (1) 'var _by_id: Dictionary = {}' in item_database.gd lacks type parameters. (2) 'for item in items:' in item_database.gd's _ready() has no explicit type annotation on 'item' (relies on inference from Array[ItemDefinition]). By strict fully-statically-typed standard both are failures."
+    },
+    {
+      "text": "Cross-scene references use @export variables, signals, or groups rather than hardcoded node paths",
+      "passed": true,
+      "evidence": "The enemy script contains no cross-scene node path lookups. In game.gd, '$Enemy' and '$UI/HealthBar' are intra-scene parent-to-child references (calls down), which is correct Godot architecture. The enemy is accessed via '@onready var enemy: Enemy = $Enemy' \u2014 typed and within the owning scene."
+    },
+    {
+      "text": "The explanation states why the original design is fragile (scene rearrangement breaks string paths; Nodes carry scene-tree cost for pure data)",
+      "passed": true,
+      "evidence": "String-path fragility: 'Rename a node, restructure the tree, or reuse the Enemy in another scene and it breaks silently at runtime.' Node-as-data cost: 'Nodes carry rendering, physics, and signal overhead that item definitions don't need, and the data lives in the scene tree making it hard to serialize, version, or load dynamically.'"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

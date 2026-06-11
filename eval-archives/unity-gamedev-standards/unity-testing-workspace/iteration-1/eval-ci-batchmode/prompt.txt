@@ -1,0 +1,1 @@
+Set up an automated test run for my Unity project in CI so the build fails when any test fails. We cannot open the Unity editor on the CI machine.

@@ -1,0 +1,1 @@
+I have a plain C# DamageCalculator class in my Unity project (Assets/_Project/Scripts/Gameplay/DamageCalculator.cs, inside the Gameplay asmdef) that computes damage from attack power, defense, and a critical multiplier. Write tests for it.

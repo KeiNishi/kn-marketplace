@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "player-jump-playmode",
+  "prompt": "Add a test that verifies my player actually jumps: PlayerController is a MonoBehaviour with a Rigidbody, and calling Jump() should make it move upward over the next physics frames.",
+  "assertions": [
+    "Chooses a PlayMode test because the behavior depends on MonoBehaviour/Rigidbody physics across frames",
+    "Uses [UnityTest] with an IEnumerator return type and yields frames (e.g., WaitForFixedUpdate or yield return null) before asserting",
+    "Places the test in a PlayMode test assembly (.asmdef) separate from EditMode tests",
+    "Asserts the upward movement with NUnit constraint syntax (e.g., Is.GreaterThan on the y position or velocity)",
+    "Destroys spawned GameObjects at the end of the test so tests remain independent",
+    "Mentions running the suite via batchmode with -testPlatform PlayMode"
+  ]
+}

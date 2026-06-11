@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "GdUnit4 is chosen as the default framework (installed via AssetLib or git clone into addons/gdUnit4 and enabled in project settings), with GUT only as a fallback if already present",
+      "passed": false,
+      "evidence": "Response chooses GUT (Godot Unit Test) as the primary framework throughout, not GdUnit4. The guide begins 'wiring GUT (Godot Unit Test) into a fresh Godot 4 project' and never mentions GdUnit4 at all. GUT is not treated as a fallback."
+    },
+    {
+      "text": "A test/ directory and at least one example GdUnitTestSuite are created",
+      "passed": false,
+      "evidence": "Response creates a 'tests/' directory (not 'test/') with files extending 'GutTest', not 'GdUnitTestSuite'. The GdUnit4 test base class is never used."
+    },
+    {
+      "text": "The headless invocation is shown or scripted: <godot> --headless --path <project> -d -s addons/gdUnit4/bin/GdUnitCmdTool.gd -a test -c --ignoreHeadlessMode (or the bundled run_godot_tests.py wrapper)",
+      "passed": false,
+      "evidence": "Response shows the GUT command 'godot --headless -s addons/gut/gut_cmdln.gd -gconfig=.gutconfig.json', not the GdUnit4 invocation. The GdUnit4 CmdTool path is never referenced."
+    },
+    {
+      "text": "The setup is verified by actually running the suite headless and confirming it passes, not just by installing files",
+      "passed": false,
+      "evidence": "Response explicitly states 'The actual godot binary is not available in this environment, so the commands listed in Steps 2, 5, and 6 cannot be executed here.' No actual test run was performed."
+    },
+    {
+      "text": "Cross-platform executable location is addressed (full path with forward slashes on Windows, godot4 naming on Linux, GODOT_BIN convention)",
+      "passed": false,
+      "evidence": "Response mentions platform-specific paths and binary names implicitly through CI YAML (e.g., 'mv \"${GODOT_FILENAME}\" /usr/local/bin/godot'), but does not address Windows forward-slash full paths, does not mention 'godot4' as a Linux package name, and does not mention the GODOT_BIN environment variable convention."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 5,
+    "total": 5,
+    "pass_rate": 0.0
+  }
+}

@@ -1,0 +1,1 @@
+In my Godot 4 game, the Enemy scene's script calls get_parent().get_parent().get_node("UI/HealthBar").update_value() whenever the player hits it, and my item definitions are Nodes with exported fields kept under a hidden ItemDatabase node in the main scene. Can you clean this architecture up?

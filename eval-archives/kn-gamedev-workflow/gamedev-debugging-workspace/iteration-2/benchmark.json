@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "skill_name": "gamedev-debugging",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-11T16:45:57Z",
+    "evals_run": [
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 79.4,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects re-sorting on load as a symptom-masking workaround",
+          "passed": true,
+          "evidence": "Opening paragraph: 'Stop. Re-sorting on load is a textbook workaround \u2014 it would mask the symptom while the serialization defect persists and manifests in other ways.' A dedicated final section 'Why Re-Sorting on Load Is Prohibited' applies the skill's own Iron Law test: 'If you take this fix away, does the problem come back? \u2192 Yes.' The Phase 4 checklist also explicitly checks: 'No Red Flag pattern used: the fix does NOT include re-sorting on load (symptom masking).'"
+        },
+        {
+          "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+          "passed": true,
+          "evidence": "Phase 1 is titled 'Reproduce' and is the first action taken. The response constructs a concrete round-trip harness (repro_harness.gd) that performs 200 save\u2192load cycles and asserts the inventory is identical after each round-trip. It also explicitly handles the case where the harness does not fire: 'collect the actual save file from a player who hit it and replay with that file's inventory as the starting state.'"
+        },
+        {
+          "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+          "passed": true,
+          "evidence": "The harness declares 'const CYCLES := 200' and 'const SEED := 42', calls 'randomize_seed(SEED)', and the _inventories_equal function compares every slot of the saved inventory against the loaded inventory. The _diff_inventories function prints slot-level diffs. The response explicitly states: 'A bug that fires 1-in-20 manually will fire within ~200 automated cycles.'"
+        },
+        {
+          "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+          "passed": true,
+          "evidence": "Phase 2 Isolate section bisects with explicit questions: 'Does it fail with a single-item inventory?', 'Does it fail with only unique (non-stackable) items?', 'Does it fail only with stackable items?', 'Does it fail if you serialize/deserialize to a plain dictionary instead of your save-file format?' Additionally, the harness guidance explicitly distinguishes: 'If it does not fire after 200 cycles, the bug is data-dependent; collect the actual save file from a player who hit it and replay with that file's inventory as the starting state.'"
+        },
+        {
+          "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+          "passed": true,
+          "evidence": "Three ranked hypotheses each identify a concrete serialization root cause with a disproof test: H1 identifies non-deterministic dictionary/array iteration order (slot swaps are 'the canonical fingerprint') with disproof via logging iteration order at save vs. load; H2 identifies an unserialized field with disproof via logging the full JSON blob and checking if the field is missing; H3 identifies float-to-int precision loss with disproof via 'Log typeof(data[\"count\"]) after deserialization \u2014 if it returns TYPE_FLOAT instead of TYPE_INT \u2192 confirmed.'"
+        },
+        {
+          "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+          "passed": true,
+          "evidence": "H1 fix sorts keys before serializing ('slots.sort()') and sorts numerically on deserialize \u2014 changes the serialization/deserialization functions themselves, not the loaded inventory. H2 fix audits the serialization function and adds missing fields explicitly. H3 fix applies 'int(data[\"count\"])' cast at the point of deserialization. None of the fixes patch the loaded inventory after the fact (e.g., no re-sorting of the loaded result). The Phase 4 checklist states: 'Fix targets the root cause (serialization order / missing field / type cast / async gate), not the symptom.'"
+        },
+        {
+          "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+          "passed": true,
+          "evidence": "Phase 4 Fix + Verify Checklist explicitly includes: 'Re-run the 200-cycle harness after the fix \u2014 it must complete with 0 failures' (round-trip verification of previously failing case) and 'Test with an old save file (pre-fix) against the new load code \u2014 backward compat' (backward compatibility check for old saves). The summary table also shows 'Verify: Pending \u2014 200-cycle harness must show 0 failures post-fix.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 103.3,
+        "tokens": 21213,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects re-sorting on load as a symptom-masking workaround",
+          "passed": true,
+          "evidence": "Response opens: 'Do not do it. Re-sorting on load is exactly the kind of workaround that masks the bug rather than fixing it. Players who deliberately place items in specific slots... would see their layout silently scrambled every reload. And the off-by-one stack count would still be there, just hidden inside a tidied-up layout. The root cause must be fixed at the serialisation boundary.'"
+        },
+        {
+          "text": "Treats 'cannot reproduce' as the first task: requests or constructs a failing save file and builds a save/load round-trip reproduction",
+          "passed": true,
+          "evidence": "The 'Why you cannot reproduce it locally' section explains the gap-dependency condition and provides 'How to reproduce locally': '1. Give the player an inventory with at least one gap... 2. For Bug 2: apply any calculation to the stack count that could return a float... 3. Save, quit, reload, and inspect slot positions and stack counts.' The Python script `inventory.py` is itself a runnable round-trip reproduction demonstrating the failure."
+        },
+        {
+          "text": "Makes the reproduction deterministic, e.g. fixed seed and repeated save-load cycles, and compares saved state to loaded state",
+          "passed": true,
+          "evidence": "The Python `run_demo()` function creates a fixed inventory (`make_inventory()` with deterministic slot placement), saves with `save_buggy()`, loads with `load_buggy()`, and compares each slot: 'for i, (orig, rest) in enumerate(zip(original.slots, restored_buggy.slots))'. The script runs assertions: 'assert not slots_equal(original, restored_buggy)' and prints mismatches. The expected output shows exact MISMATCH results per slot."
+        },
+        {
+          "text": "Distinguishes whether it is a data bug (specific save file) or logic bug (all saves) by testing with different data",
+          "passed": false,
+          "evidence": "The response identifies root causes directly without running tests with different data sets. The 'Why you cannot reproduce it locally' section explains that Bug 1 requires gaps and Bug 2 requires float arithmetic, but this is stated as analysis of the code rather than as an experimental result from testing different data. No explicit testing of 'different data to distinguish data vs logic bug' is performed."
+        },
+        {
+          "text": "Identifies a concrete serialization root cause such as unordered dictionary/collection iteration, an unserialized field, or version mismatch, with evidence",
+          "passed": true,
+          "evidence": "Bug 1: 'Only non-empty slots are written, with no record of which slot index they occupied. On load, items are re-inserted sequentially into slots 0, 1, 2 regardless of gaps.' Bug 2: 'Stack counts become floats somewhere in the game logic... The value 64 becomes 63.9999 in floating-point. When the loader casts with int() (truncation, not rounding), int(63.999) \u2192 63.' Both causes are backed by concrete code and the Python script's output showing exact MISMATCH slots."
+        },
+        {
+          "text": "Applies a minimal fix to the serialization logic rather than patching the loaded result",
+          "passed": true,
+          "evidence": "save_fixed() stores slot index explicitly for every slot and casts count to int at write boundary. load_fixed() places items at entry['slot'] index rather than an insertion cursor. The fix is limited to the serialization boundary: 'Fix both issues at the serialisation boundary \u2014 the save and load functions.' No post-load patching or sorting is added."
+        },
+        {
+          "text": "Verifies by round-tripping the previously failing save and checking old save files still load correctly",
+          "passed": true,
+          "evidence": "The Python script runs both buggy and fixed round-trips on the same inventory and prints results: 'FIXED round-trip' shows all slots 'OK'. Assertions verify: 'assert slots_equal(original, restored_fixed), \"Fix demo: expected match\"'. The migration plan section (`load_with_migration`) handles old save files (version 0) so they 'still load correctly' with the new code."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 79.4,
+        "stddev": 0.0,
+        "min": 79.4,
+        "max": 79.4
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.8571,
+        "stddev": 0.0,
+        "min": 0.8571,
+        "max": 0.8571
+      },
+      "time_seconds": {
+        "mean": 103.3,
+        "stddev": 0.0,
+        "min": 103.3,
+        "max": 103.3
+      },
+      "tokens": {
+        "mean": 21213.0,
+        "stddev": 0.0,
+        "min": 21213,
+        "max": 21213
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.14",
+      "time_seconds": "-23.9",
+      "tokens": "-21213"
+    }
+  },
+  "notes": []
+}
