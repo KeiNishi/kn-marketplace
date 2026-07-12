@@ -46,7 +46,7 @@ The model and the fork are both MIT licensed. The texture-bake path depends on N
 
 ## Troubleshooting
 
-- **Server won't start when launched from a foreign working directory.** The shipped `.bat` resolves paths relative to `%~dp0`; running it from an unrelated shell working directory breaks that resolution. Start it by double-clicking `run-stableprojectorz.bat` in Explorer, or rely on the plugin's auto-start, which spawns `tools/projectorz-internal.bat` directly with the correct working directory.
+- **Server won't start when launched from an agent or CI shell.** Some hosts (including Claude Code shells) set the `NoDefaultCurrentDirectoryInExePath` environment variable, which stops `cmd.exe` from resolving `.bat` files through the current directory; the fork's launcher chain relies on relative `call` lookups and fails with "'projectorz-internal.bat' is not recognized". Start the server by double-clicking `run-stableprojectorz.bat` in Explorer, or rely on the plugin's auto-start, which invokes `tools/projectorz-internal.bat` by absolute path and removes that variable from the child environment.
 - **First ping can take 30-60s after launch.** The server needs time to load models onto the GPU; do not treat an early unreachable `/ping` as a hard failure during auto-start.
 - **NVIDIA "Sysmem Fallback".** Enable this driver setting as an OOM safety net if a generation runs out of VRAM; it lets the driver spill into system memory instead of failing outright.
 - **`mesh_simplify` valid range is 10-1000** (thousands of faces). Values outside that range are clamped.

@@ -105,6 +105,10 @@ def _spawn_server(home: Path) -> None:
     log_path = home / "api-server-autostart.log"
     env = dict(os.environ)
     env["HF_HOME"] = str(home / "code" / "models")
+    # Some hosts (including Claude Code shells) set NoDefaultCurrentDirectoryInExePath,
+    # which stops cmd.exe from resolving .bat files via the current directory. The
+    # fork's launcher chain relies on relative `call` lookups, so drop it for the child.
+    env.pop("NoDefaultCurrentDirectoryInExePath", None)
 
     creationflags = 0
     if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
@@ -116,7 +120,7 @@ def _spawn_server(home: Path) -> None:
         # creation time, so closing our copy when this `with` block exits does
         # not affect the detached process's ability to keep writing to it.
         subprocess.Popen(
-            ["cmd", "/c", "projectorz-internal.bat"],
+            ["cmd", "/c", str(launcher)],
             cwd=str(tools_dir),
             env=env,
             stdout=log_handle,

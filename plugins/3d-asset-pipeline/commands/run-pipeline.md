@@ -96,9 +96,11 @@ Skip this step when `PIPELINE_DRY_RUN=1` is set in the same shell session.
 
 Otherwise show the estimated spend before paid API calls:
 
-- Humanoid: about $0.50-$2.00.
-- Prop: about $0.20-$0.80.
-- Quadruped: about $0.80-$2.50.
+- Humanoid: about USD 0.50-2.00.
+- Prop: about USD 0.20-0.80.
+- Quadruped: about USD 0.80-2.50.
+
+Keep these amounts written as `USD n.nn`. Never write a dollar sign directly before a digit in this file: `$` followed by a digit collides with positional-argument substitution when this command renders.
 
 When the resolved `--vendor` is `local`, the mesh stage costs USD 0 (it runs on the user's own GPU, no API call). Concept stage cost (OpenAI, Stage 1) is unchanged. Lower the estimate shown to the user by the mesh-vendor share of the range above, and note that the mesh stage itself is free.
 

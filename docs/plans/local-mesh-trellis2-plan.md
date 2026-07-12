@@ -152,13 +152,15 @@ Verified from the fork source (gh api) and the extracted v22 installer at `D:\AI
 - IMPORTANT client caveat: before any generation has run, `/status` reports
   `FAILED` (server default state). The client must poll only after a successful
   submit, and treat pre-submit FAILED as idle, not as an error.
-- Windows launch gotcha (affects plugin auto-start design): invoking the
-  shipped `.bat` from Git Bash/other cwd fails because `%~dp0`-relative `cd`
-  resolution breaks; a wrapper bat with explicit absolute paths
-  (`D:\AI\trellis2-spz\launch-api-server.bat`, created during the spike) works.
-  The plugin's auto-start must set cwd correctly (spawn with cwd=<tools dir> or
-  call the bat via `cmd /c` with an absolute path after verifying resolution)
-  and must not rely on the shipped bat resolving its own location.
+- Windows launch gotcha (root cause identified 2026-07-13, fixed in 0.5.1):
+  the Claude Code shell environment sets `NoDefaultCurrentDirectoryInExePath=1`,
+  which stops cmd.exe from resolving `.bat` files via the current directory.
+  The fork's launcher chain uses relative `call` lookups, so every spawn from
+  this environment failed with "'...bat' is not recognized" (double-click from
+  Explorer works because that variable is absent there). Fix in
+  `_local_backend._spawn_server`: invoke `tools/projectorz-internal.bat` by
+  ABSOLUTE path and pop `NoDefaultCurrentDirectoryInExePath` from the child
+  env so the fork's own nested relative calls resolve.
   Also: the internal bats call `pause` on failure - auto-start must use a
   timeout + `/ping` probe rather than waiting for process exit.
 - Param mapping decided: `--target-polys N` -> `mesh_simplify = round(N/1000)`
