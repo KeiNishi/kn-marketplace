@@ -107,8 +107,14 @@ def _spawn_server(home: Path) -> None:
     env["HF_HOME"] = str(home / "code" / "models")
     # Some hosts (including Claude Code shells) set NoDefaultCurrentDirectoryInExePath,
     # which stops cmd.exe from resolving .bat files via the current directory. The
-    # fork's launcher chain relies on relative `call` lookups, so drop it for the child.
-    env.pop("NoDefaultCurrentDirectoryInExePath", None)
+    # fork's launcher chain relies on relative `call` lookups, so drop it for the
+    # child. On Windows, os.environ upper-cases keys, so remove case-insensitively.
+    for key in list(env):
+        if key.upper() == "NODEFAULTCURRENTDIRECTORYINEXEPATH":
+            del env[key]
+    # Belt and braces: cmd still resolves via PATH even when current-directory
+    # lookup is disabled, so make the tools dir searchable either way.
+    env["PATH"] = str(tools_dir) + os.pathsep + env.get("PATH", "")
 
     creationflags = 0
     if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
