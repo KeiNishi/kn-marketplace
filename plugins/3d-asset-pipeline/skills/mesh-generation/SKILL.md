@@ -1,6 +1,6 @@
 ---
 name: mesh-generation
-description: This skill should be used when the user asks to "generate a 3D mesh", "convert concept to 3D", "text-to-3D", or as stage 2 of the 3D pipeline. Selects between Hunyuan 3D 3.1 (default), Meshy v5 (alt), or Tripo3D (quadruped fallback) based on asset type and user override. Polls vendor APIs and writes outputs to the mesh stage folder. Also triggers on "/3d-pipeline:generate-mesh" command.
+description: This skill should be used when the user asks to "generate a 3D mesh", "convert concept to 3D", "text-to-3D", or as stage 2 of the 3D pipeline. Selects between Hunyuan 3D 3.1 (default), Meshy v5 (alt), Tripo3D (quadruped fallback), or a local TRELLIS.2 server (no API key, USD 0) based on asset type and user override. Polls vendor APIs and writes outputs to the mesh stage folder. Also triggers on "/3d-pipeline:generate-mesh" command.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -30,6 +30,8 @@ Run Stage 2 of the 3D asset pipeline: convert the canonical concept image and as
 - Keep Hunyuan as the first pass for humanoids and props.
 - Prefer Meshy over Tripo when an FBX is immediately required by the next stage.
 - Prefer Tripo as a fallback for difficult four-legged creatures.
+- Use `local` when the user asks for local, offline, or no-API-key generation, or when `REPLICATE_API_TOKEN` is not configured.
+- Local generation runs on the user's own GPU (Windows only; ~8-10GB VRAM measured on an RTX 4070 Ti). It requires the TRELLIS.2-stableprojectorz server installed; see `references/trellis2-local.md`.
 - Do not switch vendors after a partial API run without recording the failed vendor in the manifest.
 
 ## Pre-Flight Checks
@@ -40,6 +42,7 @@ Run Stage 2 of the 3D asset pipeline: convert the canonical concept image and as
 - Require `REPLICATE_API_TOKEN` for Hunyuan.
 - Require `MESHY_API_KEY` for Meshy.
 - Treat `TRIPO_API_KEY` as optional globally, but required when invoking Tripo.
+- For `local`, skip credential checks entirely; instead verify the local server is reachable. The script auto-checks `GET /ping` and can auto-start the server via `TRELLIS2_SPZ_HOME` when it is not running.
 - Never read credentials from the repository.
 - Never print or write credential values to logs, errors, or manifest fields.
 - Confirm that `scripts/fixtures/mesh/dryrun.glb` and `dryrun.fbx` exist for dry-run mode.
@@ -61,6 +64,10 @@ python3 "<plugin-root>/scripts/mesh_meshy.py" <slug> --target-polys 20000
 python3 "<plugin-root>/scripts/mesh_tripo.py" <slug>
 ```
 
+```bash
+python3 "<plugin-root>/scripts/mesh_trellis_local.py" <slug> --mode rapid
+```
+
 Pass through supported shared flags:
 
 - `--base <dir>` for a custom output base.
@@ -70,6 +77,14 @@ Pass through supported shared flags:
 - `--pbr` or `--no-pbr` for material output preference.
 - `--seed N` when the vendor supports deterministic attempts.
 - `--style "..."` for extra style or texture guidance.
+
+Local-only flags for `mesh_trellis_local.py`:
+
+- `--texture-size N` for the baked texture resolution (default 2048).
+- `--url` to override the backend base URL (default `TRELLIS2_SPZ_URL` or `http://127.0.0.1:7960`).
+- `--spz-home` to point at the install directory and enable auto-start (default `TRELLIS2_SPZ_HOME`).
+
+Local rejects `--input text`; it requires the canonical concept image.
 
 ## Pollers And Timeouts
 
@@ -81,6 +96,9 @@ Pass through supported shared flags:
 - Treat `FAILED` as failure for Meshy.
 - Treat `success` as success for Tripo.
 - Treat `failed` as failure for Tripo.
+- The local backend's `/generate_no_preview` call is synchronous: it blocks until generation finishes and returns the final result. The script handles progress logging by polling `/status` from a separate thread while the request is in flight.
+- Measured local generation time on an RTX 4070 Ti: ~107s for `--mode rapid` (resolution 1024), ~294s for `--mode pro` (resolution 1536).
+- The local backend's internal request timeout is 1800s.
 - On timeout, mark the mesh stage as `failed` and preserve a concise error category.
 - Avoid tracebacks for user-fixable problems such as missing concept output or missing credentials.
 
@@ -90,6 +108,7 @@ Pass through supported shared flags:
 - Hunyuan writes `<slug>.glb` only.
 - Meshy writes `<slug>.glb` and `<slug>.fbx`.
 - Tripo writes `<slug>.glb` and may write `<slug>.fbx` on a best-effort basis.
+- Local writes `<slug>.glb` only, with embedded PBR (baseColor and metallicRoughness textures).
 - Store file paths relative to the asset output folder in the manifest.
 - Use `files.glb` as the canonical mesh for Godot import when no rigging is needed.
 - Use `files.fbx` when present and the rigging or animation stage prefers FBX.
@@ -104,6 +123,8 @@ Pass through supported shared flags:
 - On API failure, set `status: failed`, `error`, and `failedAt`.
 - Keep error values short and categorical.
 - Never include API keys, bearer tokens, request headers, or full signed URLs in `error`.
+- Local records `vendor: "local:trellis2-spz"`, plus `backend`, `local: true`, `mode`, `resolution`, and `seed`.
+- Local error categories: `backend_unreachable`, `backend_busy`, `generation_failed`, `local_timeout`.
 - Do not modify plugin or marketplace version fields as part of mesh generation.
 
 ## Recovery
@@ -114,6 +135,9 @@ Pass through supported shared flags:
 - If a quadruped result has broken limbs or poor topology, try Tripo and compare the GLB in Godot or Blender.
 - If a vendor times out, rerun the same script only after checking whether a task id exists in the manifest.
 - If dry-run output is needed, set `PIPELINE_DRY_RUN=1` and rerun the same command.
+- If the local server is not running and no `TRELLIS2_SPZ_HOME` is set, start it manually or set `TRELLIS2_SPZ_HOME` in `~/.claude/3d-pipeline/.env` to enable auto-start, then rerun.
+- If the local server reports busy, wait for the current generation to finish before retrying.
+- If an OOM is suspected on the local backend, enable the NVIDIA "Sysmem Fallback" driver setting and retry with `--mode rapid`.
 
 ## Verification Checklist
 
@@ -133,3 +157,4 @@ If any item fails, fix it and re-verify before moving to rigging or import.
 - `references/hunyuan-3-1-replicate.md` covers the default Hunyuan 3D 3.1 route through Replicate.
 - `references/meshy-fallback.md` covers Meshy v5 image-to-3D fallback behavior and model URL handling.
 - `references/tripo-quadruped.md` covers Tripo3D fallback behavior for quadrupeds and optional credentials.
+- `references/trellis2-local.md` covers the local TRELLIS.2 backend: install, configuration, performance, licensing, and troubleshooting.

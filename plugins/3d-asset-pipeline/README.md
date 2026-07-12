@@ -17,7 +17,7 @@ The current version targets Godot only.
 
 Unity 6 and Unreal 5 support are planned for later versions.
 
-This plugin is designed around cloud APIs instead of local GPU generation.
+This plugin is designed around cloud APIs, with an optional local mesh backend for Stage 2.
 
 The intended vendor stack is:
 
@@ -25,6 +25,7 @@ The intended vendor stack is:
 - Hunyuan 3D 3.1 through Replicate for default mesh generation.
 - Meshy v5 for alternate mesh generation, rigging, and animation.
 - Tripo3D as an optional fallback for selected asset types.
+- Local TRELLIS.2 (`--vendor local`) for mesh generation on your own GPU, no API key needed.
 
 The review loop is intended to compare the imported asset against the source description and concept art.
 
@@ -98,7 +99,7 @@ Expected key providers:
 Required keys for stages 1, 2, 5, and 6:
 
 - `OPENAI_API_KEY`
-- `REPLICATE_API_TOKEN`
+- `REPLICATE_API_TOKEN` — not required when Stage 2 uses the local mesh backend (`--vendor local`); see "Local Mesh Generation" below.
 
 Optional keys:
 
@@ -154,6 +155,35 @@ The concept stage can be run after a manifest is initialized:
 The remaining stage commands are planned for later chunks.
 
 They are documented here so users can understand the intended workflow before the command files are added.
+
+## Local Mesh Generation (No API Key)
+
+Since v0.5.0, Stage 2 can run fully locally with `--vendor local`, using a local TRELLIS.2 server instead of a cloud API. Mesh generation then costs USD 0 and needs no `REPLICATE_API_TOKEN`.
+
+Backend: [IgorAherne/TRELLIS.2-stableprojectorz](https://github.com/IgorAherne/TRELLIS.2-stableprojectorz), a low-VRAM Windows fork of Microsoft TRELLIS.2-4B (MIT). Full PBR output (baseColor + metallicRoughness), image-to-3D from the approved concept image.
+
+Setup:
+
+1. Download `trellis2-stableprojectorz_v22.zip` from the fork's GitHub releases (tag `latest`).
+2. Extract to a short path (example: `D:\AI\trellis2-spz`).
+3. Double-click `run-stableprojectorz\run-stableprojectorz.bat` once. The first run installs dependencies and downloads about 18GB of weights into the install folder (about 40GB total, fully self-contained).
+4. Optionally add to `~/.claude/3d-pipeline/.env`:
+
+```dotenv
+# Optional: local TRELLIS.2 backend (plain config, not secrets)
+TRELLIS2_SPZ_URL=http://127.0.0.1:7960
+TRELLIS2_SPZ_HOME=D:\AI\trellis2-spz   # enables auto-start when the server is down
+```
+
+Then run Stage 2 with:
+
+```text
+/3d-pipeline:generate-mesh <slug> --vendor local
+```
+
+Requirements and measured performance: Windows only; ~8-10GB VRAM. On an RTX 4070 Ti (12GB): rapid (1024) ~107s at 8.2GB peak, pro (1536) ~294s at 9.8GB peak.
+
+Licensing: the model and fork are MIT, but the texture-bake path depends on NVIDIA nvdiffrast (non-commercial source license, unresolved upstream question) and bundled helpers include RMBG-2.0 (CC BY-NC 4.0) and DINOv3 (Meta custom license). This plugin redistributes none of them; assess licensing yourself before commercial use. Details: `skills/mesh-generation/references/trellis2-local.md`.
 
 ## Concept Approval Gate
 
@@ -238,6 +268,8 @@ Measured on 2026-05-10 with a static prop (`throne-of-swords`, `prop` asset type
 | **Total** | | **~USD 0.54** |
 
 A clean prop run without retries is roughly **USD 0.30-0.40** total. The concept retry above was caused by OpenAI moderation rejecting violent prompt language; a single successful concept pass typically costs ~USD 0.19.
+
+With `--vendor local`, the mesh line above drops to USD 0; only the concept stage (OpenAI) still costs money.
 
 ### Estimated cost: humanoid full run
 

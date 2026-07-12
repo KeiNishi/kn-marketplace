@@ -1,7 +1,7 @@
 ---
 name: generate-mesh
-description: Stage 2 of the 3D asset pipeline - generate a textured 3D mesh from the canonical concept image. Defaults to Hunyuan 3D 3.1 via Replicate; supports Meshy v5 alt and Tripo3D fallback.
-argument-hint: "<asset-slug> [--vendor hunyuan|meshy|tripo] [--mode rapid|pro] [--target-polys N] [--no-pbr]"
+description: Stage 2 of the 3D asset pipeline - generate a textured 3D mesh from the canonical concept image. Defaults to Hunyuan 3D 3.1 via Replicate; supports Meshy v5 alt, Tripo3D fallback, and a local TRELLIS.2 backend (no API key).
+argument-hint: "<asset-slug> [--vendor hunyuan|meshy|tripo|local] [--mode rapid|pro] [--target-polys N] [--no-pbr]"
 allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
@@ -14,7 +14,7 @@ Generate the Stage 2 mesh for an existing 3D pipeline manifest.
 Parse `$ARGUMENTS` as:
 
 ```text
-<asset-slug> [--vendor hunyuan|meshy|tripo] [--mode rapid|pro] [--target-polys N] [--no-pbr]
+<asset-slug> [--vendor hunyuan|meshy|tripo|local] [--mode rapid|pro] [--target-polys N] [--no-pbr]
 ```
 
 Require the first token as `<asset-slug>`. If it is missing, show usage and stop.
@@ -55,6 +55,14 @@ For Tripo:
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <asset-slug> <flags>
 ```
 
+For local:
+
+On Windows, use `py -3` if `python3` is not available.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_trellis_local.py" <asset-slug> <flags>
+```
+
 ## Reporting
 
 After the script exits, read `pipeline.json` again and print:
@@ -73,3 +81,7 @@ If the mesh stage is done, ask whether to continue to the rig stage. For props, 
 - Set `PIPELINE_DRY_RUN=1` to copy placeholder mesh files without API calls.
 - Never print credential values.
 - Do not modify plugin or marketplace version fields.
+- `--vendor local` needs no API keys. It uses a local TRELLIS.2 server running on the user's own machine; see the mesh-generation skill's `trellis2-local` reference for setup.
+- Local generation cost is USD 0.
+- Local supports image input only; it refuses `--input text`.
+- Local adds extra flags: `--texture-size N` (default 2048), `--url` (override the backend base URL), `--spz-home` (install directory, enables auto-start).

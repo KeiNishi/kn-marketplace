@@ -1,7 +1,7 @@
 {
   "name": "3d-asset-pipeline",
-  "version": "0.4.0",
-  "description": "Godot-first 6-stage 3D asset pipeline from concept art to mesh, rig, animation, import, and in-engine review loop using cloud APIs: gpt-image-2, Hunyuan 3D 3.1 via Replicate, and Meshy v5.",
+  "version": "0.5.0",
+  "description": "Godot-first 6-stage 3D asset pipeline from concept art to mesh, rig, animation, import, and in-engine review loop. Cloud APIs (gpt-image-2, Hunyuan 3D 3.1 via Replicate, Meshy v5) plus an optional local TRELLIS.2 mesh backend (no API key, runs on your GPU).",
   "author": {
     "name": "KN"
   },
@@ -15,6 +15,8 @@
     "gpt-image",
     "replicate",
     "concept-art",
-    "auto-rig"
+    "auto-rig",
+    "trellis",
+    "local-generation"
   ]
 }

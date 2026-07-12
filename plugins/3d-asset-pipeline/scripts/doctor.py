@@ -1,3 +1,14 @@
+"""3d-asset-pipeline health checker.
+
+Verifies the Python version, required packages, credentials file and keys,
+git availability, and (with --network) reachability of the OpenAI, Replicate,
+and Meshy endpoints. Also checks whether the local TRELLIS.2 mesh backend
+(trellis2-stableprojectorz, `--vendor local`) is reachable; that check is
+informational only, since local mesh generation is optional. When the local
+backend is reachable, a missing `REPLICATE_API_TOKEN` is downgraded from a
+required-key failure to a warning, since Stage 2 can still run locally.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -8,14 +19,17 @@ import sys
 from typing import Any
 
 try:
-    from . import _common, _credentials
+    from . import _common, _credentials, _local_backend
 except ImportError:
     import _common  # type: ignore
     import _credentials  # type: ignore
+    import _local_backend  # type: ignore
 
 
 Check = tuple[str, str, str]
 # Required for stages 1, 2, 5, 6 (concept -> mesh -> import -> review).
+# REPLICATE_API_TOKEN is only truly required when the local TRELLIS.2 backend
+# is not reachable; see check_credentials().
 REQUIRED_KEYS = ("OPENAI_API_KEY", "REPLICATE_API_TOKEN")
 # Optional: enables stages 3 and 4 (auto-rig, auto-animation). Without these,
 # humanoid/quadruped runs must fall back to prop mode (rig and animate skipped).
@@ -56,7 +70,41 @@ def check_packages(checks: list[Check]) -> None:
             _add(checks, f"Package {display}", "ok", "installed")
 
 
-def check_credentials(checks: list[Check]) -> None:
+def check_local_backend(checks: list[Check]) -> bool:
+    """Check the local TRELLIS.2 mesh backend (--vendor local). Never fails.
+
+    Returns True when the backend answered GET /ping, so callers can relax
+    the REPLICATE_API_TOKEN requirement accordingly.
+    """
+    configured = bool(_credentials.optional("TRELLIS2_SPZ_URL")) or bool(
+        _credentials.optional("TRELLIS2_SPZ_HOME")
+    )
+    base_url = _local_backend.resolve_url(None)
+    try:
+        _local_backend.ping(base_url, timeout=3.0)
+    except _local_backend.BackendUnreachable:
+        if configured:
+            _add(
+                checks,
+                "Local mesh backend (TRELLIS.2)",
+                "warn",
+                f"configured but unreachable at {base_url}; start the server "
+                "or check TRELLIS2_SPZ_HOME for auto-start",
+            )
+        else:
+            _add(
+                checks,
+                "Local mesh backend (TRELLIS.2)",
+                "warn",
+                "local mesh vendor not configured; optional",
+            )
+        return False
+
+    _add(checks, "Local mesh backend (TRELLIS.2)", "ok", f"reachable at {base_url}")
+    return True
+
+
+def check_credentials(checks: list[Check], local_backend_reachable: bool) -> None:
     path = _credentials.env_path()
     if path.exists():
         _add(checks, "Credentials file", "ok", str(path))
@@ -67,6 +115,8 @@ def check_credentials(checks: list[Check]) -> None:
     for key in REQUIRED_KEYS:
         if key_status.get(key):
             _add(checks, f"Credential {key}", "ok", "present")
+        elif key == "REPLICATE_API_TOKEN" and local_backend_reachable:
+            _add(checks, f"Credential {key}", "warn", "missing; local mesh vendor available for Stage 2")
         else:
             _add(checks, f"Credential {key}", "fail", "missing")
     for key in OPTIONAL_KEYS:
@@ -131,7 +181,8 @@ def run_checks(include_network: bool) -> list[Check]:
     checks: list[Check] = []
     check_python(checks)
     check_packages(checks)
-    check_credentials(checks)
+    local_backend_reachable = check_local_backend(checks)
+    check_credentials(checks, local_backend_reachable)
     check_git(checks)
     check_public_repo_reminder(checks)
     if include_network:

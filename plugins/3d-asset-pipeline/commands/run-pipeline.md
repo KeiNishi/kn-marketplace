@@ -1,7 +1,7 @@
 ---
 name: run-pipeline
 description: Run the full 6-stage 3D asset pipeline (concept to mesh to rig to animate to import to review) with approval gates between stages and an automatic in-engine review loop. Default review loop is ON; use --no-review to skip.
-argument-hint: "<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo]"
+argument-hint: "<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo|local]"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -18,7 +18,7 @@ Treat every script as the source of deterministic work and `pipeline.json` as th
 Parse `$ARGUMENTS` as:
 
 ```text
-<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo]
+<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo|local]
 ```
 
 Require `asset-name` as the first positional argument.
@@ -43,7 +43,7 @@ Default `--vendor` to `hunyuan` for `humanoid` and `prop`.
 
 For `quadruped`, ask the user which vendor to use unless `--vendor` is present.
 
-Offer `hunyuan`, `meshy`, and `tripo`; recommend `tripo` when quadruped shape recovery is more important than default fidelity.
+Offer `hunyuan`, `meshy`, `tripo`, and `local`; recommend `tripo` when quadruped shape recovery is more important than default fidelity, and recommend `local` when the user wants no API cost or has no `REPLICATE_API_TOKEN`.
 
 Derive the initial slug by lowercasing the asset name and replacing spaces with hyphens.
 
@@ -99,6 +99,8 @@ Otherwise show the estimated spend before paid API calls:
 - Humanoid: about $0.50-$2.00.
 - Prop: about $0.20-$0.80.
 - Quadruped: about $0.80-$2.50.
+
+When the resolved `--vendor` is `local`, the mesh stage costs USD 0 (it runs on the user's own GPU, no API call). Concept stage cost (OpenAI, Stage 1) is unchanged. Lower the estimate shown to the user by the mesh-vendor share of the range above, and note that the mesh stage itself is free.
 
 Use `AskUserQuestion` to confirm paid execution.
 
@@ -177,11 +179,12 @@ Run exactly one vendor script:
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_hunyuan.py" <slug>
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_meshy.py" <slug>
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_tripo.py" <slug>
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/mesh_trellis_local.py" <slug>
 ```
 
 Select the command that matches the resolved vendor.
 
-Tell the user that script logger output shows progress and the stage normally takes 2-5 minutes.
+Tell the user that script logger output shows progress and the stage normally takes 2-5 minutes. For `local`, the stage runs on the user's GPU and normally takes 2-5 minutes as well (measured ~107s rapid, ~294s pro on an RTX 4070 Ti); it blocks the shell until the generation finishes.
 
 After the script exits, read `pipeline.json`.
 

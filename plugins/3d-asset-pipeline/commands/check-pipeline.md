@@ -35,4 +35,6 @@ Then interpret the exit code:
 
 When `--network` is provided, explain that the command also checks reachability for OpenAI, Replicate, and Meshy endpoints.
 
+The checker also reports whether the local TRELLIS.2 mesh backend (`--vendor local`, no API key) is reachable. This check never fails; it is informational, since local mesh generation is optional. When the local backend is reachable, a missing `REPLICATE_API_TOKEN` is reported as `[WARN]` instead of `[FAIL]`, since Stage 2 can still run through the local vendor.
+
 Never print credential values.
