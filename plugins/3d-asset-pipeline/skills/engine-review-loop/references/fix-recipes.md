@@ -110,7 +110,7 @@ Symptoms:
 
 Fix:
 
-Use a note when the current schema cannot express a vertical offset. Prefer rerunning Stage 5 import or wrapper creation if placement is consistently wrong. Do not misuse scale to hide a pivot problem.
+The capture script auto-grounds the asset (merged visual AABB rested on the ground plane, centered on the origin), so pivot-convention sinking should not appear in screenshots. If the asset still floats or sinks, suspect stray geometry inflating the AABB and inspect the imported scene in the Godot editor before blaming placement. Do not misuse scale to hide a pivot problem. IMPORTANT: an asset that looks half-height or "collapsed" in captures may actually be sunk into the floor; verify the real geometry in the editor before routing back to the mesh stage.
 
 Example:
 

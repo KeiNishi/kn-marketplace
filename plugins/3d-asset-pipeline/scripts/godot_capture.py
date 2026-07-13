@@ -50,15 +50,21 @@ def _locate_godot(explicit: str | None) -> str:
     raise FileNotFoundError("Godot executable not found. Pass --godot or set GODOT_EXECUTABLE.")
 
 
-def _copy_addon_if_missing(project: Path) -> None:
+def _sync_addon(project: Path) -> None:
+    """Copy the bundled addon into the project, refreshing files whose content
+    differs so plugin updates propagate to projects that already have a copy."""
     source = _plugin_root() / "godot" / "addons" / "3d_pipeline"
     target = project / "addons" / "3d_pipeline"
-    if target.exists():
-        return
     if not source.is_dir():
         raise FileNotFoundError(f"Bundled Godot addon not found: {source}")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(source, target)
+    for source_file in sorted(source.rglob("*")):
+        if source_file.is_dir():
+            continue
+        target_file = target / source_file.relative_to(source)
+        if target_file.exists() and target_file.read_bytes() == source_file.read_bytes():
+            continue
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_file, target_file)
 
 
 def _review_dir(slug: str, base: Path | None) -> Path:
@@ -210,7 +216,7 @@ def capture(slug: str, args: argparse.Namespace) -> dict[str, Any]:
         _copy_dry_run(output, slug, source)
     else:
         godot = _locate_godot(args.godot)
-        _copy_addon_if_missing(project)
+        _sync_addon(project)
         if args.apply_fixes:
             _run_apply_fixes(godot, project, slug, args.apply_fixes)
         _run_capture(godot, project, slug, source, output)

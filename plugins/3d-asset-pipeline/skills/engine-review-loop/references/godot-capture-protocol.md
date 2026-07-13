@@ -52,6 +52,8 @@ The review scene uses a 3m radius and 1.5m camera height.
 
 All cameras look at the origin. Field of view is 45 degrees. The asset is added under `AssetSlot` at the review scene origin.
 
+After scale and rotation are applied, the capture script auto-grounds the asset: it merges the world-space AABBs of all `VisualInstance3D` nodes, rests the bottom of that box on the ground plane, and centers it horizontally on the origin. Generated meshes with centered pivots (for example TRELLIS.2 output) therefore no longer sink halfway into the floor during capture. The addon copy inside the project is refreshed automatically whenever the bundled addon differs, so capture fixes propagate to existing projects.
+
 ## Reference Cube
 
 `RefCube` is a 1m cube placed beside the asset. Use it for scale evaluation, not as an object to match exactly. Characters, creatures, props, and environment pieces can all be larger or smaller than the cube when the description requires it.

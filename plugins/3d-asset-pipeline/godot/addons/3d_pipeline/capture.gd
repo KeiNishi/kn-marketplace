@@ -128,6 +128,7 @@ func _load_asset() -> bool:
 
 	_slot.add_child(_asset)
 	_apply_setup()
+	_ground_asset()
 	return true
 
 
@@ -149,6 +150,37 @@ func _apply_setup() -> void:
 		if player != null and player.has_animation(animation_name):
 			player.play(animation_name)
 			player.seek(float(_args.get("anim_frame", 0.5)), true)
+
+
+func _ground_asset() -> void:
+	# Generated meshes use arbitrary pivot conventions (TRELLIS.2 centers the
+	# origin, so half the asset sinks below the floor). Rest the merged visual
+	# AABB on the ground plane and center it horizontally so every camera sees
+	# the whole asset regardless of the source pivot.
+	if not (_asset is Node3D):
+		return
+	var node := _asset as Node3D
+	var merged := _merged_aabb(_asset)
+	if merged.size == Vector3.ZERO:
+		return
+	var center := merged.get_center()
+	node.global_position -= Vector3(center.x, merged.position.y, center.z)
+
+
+func _merged_aabb(node: Node) -> AABB:
+	var merged := AABB()
+	var found := false
+	if node is VisualInstance3D:
+		var visual := node as VisualInstance3D
+		merged = visual.global_transform * visual.get_aabb()
+		found = true
+	for child in node.get_children():
+		var child_aabb := _merged_aabb(child)
+		if child_aabb.size == Vector3.ZERO:
+			continue
+		merged = merged.merge(child_aabb) if found else child_aabb
+		found = true
+	return merged if found else AABB()
 
 
 func _apply_material_overrides(node: Node, overrides: Dictionary) -> void:
