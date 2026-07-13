@@ -12,7 +12,7 @@ Generate a consistent four-view concept set for a 3D game asset, then choose one
 
 - `3d-pipeline-output/<slug>/pipeline.json` exists.
 - `pipeline.json` includes `name`, `description`, and `assetType`.
-- `OPENAI_API_KEY` is present in `~/.claude/3d-pipeline/.env`, unless `PIPELINE_DRY_RUN=1`.
+- A working image-generation backend is available, unless `PIPELINE_DRY_RUN=1`: either an active Codex CLI ChatGPT subscription (`codex` backend) or `OPENAI_API_KEY` present in `~/.claude/3d-pipeline/.env` (`openai` backend). See Backend Selection below.
 
 ## Workflow
 
@@ -40,9 +40,22 @@ After the canonical is selected:
 6. On re-roll, run `python3 scripts/concept_openai.py <slug> --description "<new text>"` and loop back to step 1.
 7. On stop, end and remind the user that `/3d-pipeline:approve <slug>` can be run later to unblock mesh.
 
+## Backend Selection
+
+`scripts/concept_openai.py` supports two image-generation backends: `codex` (Codex CLI's built-in `gpt-image-2` tool, covered by a ChatGPT subscription, no API key) and `openai` (the existing Images API, pay-per-use, unchanged behavior). Precedence: `--backend {auto,codex,openai}` > `PIPELINE_CONCEPT_BACKEND` env var > auto detection (codex CLI on `PATH` and an active ChatGPT subscription -> codex, else openai, silently -- identical to prior behavior). Forcing `--backend codex` when the CLI is missing or the subscription is inactive is a user error and fails the stage. `--model` / `PIPELINE_OPENAI_IMAGE_MODEL` only apply to the openai backend. `PIPELINE_DRY_RUN=1` is unaffected -- no backend detection runs, and vendor is always recorded as `openai:<model>`. See `references/codex-backend.md` for full detail.
+
 ## Moderation Recovery
 
 When `_request_image` raises `ModerationBlocked`, the manifest stage records `failureKind: "moderation_blocked"` alongside `error` and `failedAt`. Surface a friendly retry prompt to the user and ask for softer description text. Do not auto-rewrite the prompt. Re-run with `--description "<new text>"`, which resets the stage to `pending` and regenerates.
+
+## Codex Backend Recovery
+
+When the codex backend fails at generation time, there is no automatic fallback to the openai backend -- this is deliberate, to avoid surprise charges. Two failure kinds:
+
+- `failureKind: "codex_usage_limit"` -- the ChatGPT subscription's usage limit is exhausted. Tell the user to wait for the reset time shown in `error`, buy more usage, or re-run with `--backend openai`.
+- `failureKind: "codex_error"` -- any other codex failure (tool error, missing/invalid PNG). Inspect `error` in `pipeline.json`, retry, or re-run with `--backend openai`.
+
+See `references/codex-backend.md` for detection rules, precedence, and manifest fields.
 
 ## Prompt Rules
 
@@ -56,3 +69,4 @@ When `_request_image` raises `ModerationBlocked`, the manifest stage records `fa
 
 - `references/gpt-image-2-prompts.md`
 - `references/multi-angle-spec.md`
+- `references/codex-backend.md`

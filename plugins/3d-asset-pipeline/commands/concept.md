@@ -1,7 +1,7 @@
 ---
 name: concept
 description: Generate Stage 1 multi-angle concept art for an existing 3D asset pipeline manifest.
-argument-hint: "<slug> [--canonical front|three-quarter|side|back] [--defer-canonical] [--model MODEL]"
+argument-hint: "<slug> [--canonical front|three-quarter|side|back] [--defer-canonical] [--backend auto|codex|openai] [--model MODEL]"
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -12,7 +12,7 @@ Generate concept images for an asset that already has `3d-pipeline-output/<slug>
 ## Usage
 
 ```text
-/3d-pipeline:concept <slug> [--canonical front|three-quarter|side|back] [--defer-canonical] [--model MODEL]
+/3d-pipeline:concept <slug> [--canonical front|three-quarter|side|back] [--defer-canonical] [--backend auto|codex|openai] [--model MODEL]
 ```
 
 ## Workflow
@@ -44,6 +44,13 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/concept_openai.py" <slug> --description "
 
 `--description` overwrites the manifest description and resets the concept stage to `pending` before regenerating.
 
+## Codex Backend Failures
+
+If the script exits with `failureKind: "codex_usage_limit"` or `failureKind: "codex_error"` in the concept stage record, the codex image-generation backend was selected and failed at generation time; by design there is no automatic fallback to the pay-per-use openai backend. Map the failure kind to guidance:
+
+- `codex_usage_limit` — the ChatGPT subscription's usage limit is exhausted. Tell the user to wait for the reset time shown in `error`, buy more usage credits, or re-run with `--backend openai`.
+- `codex_error` — a different codex failure (tool error, no or invalid PNG produced). Show the user the `error` text from `pipeline.json`, then retry the same command or re-run with `--backend openai`.
+
 ## Approval Gate
 
 After the concept stage reaches `status: done`, the mesh stage will refuse to run until concept is approved. Drive the approval interactively:
@@ -70,7 +77,8 @@ The approval gate is enforced mechanically — `mesh_hunyuan.py`, `mesh_meshy.py
 
 ## Notes
 
-- The script reads `OPENAI_API_KEY` only from `~/.claude/3d-pipeline/.env`.
-- Set `PIPELINE_DRY_RUN=1` to create placeholder PNGs without network calls or API spend.
-- The planned default model is `gpt-image-2`; pass `--model` or set `PIPELINE_OPENAI_IMAGE_MODEL` if the account should use another GPT Image model.
+- Two backends are available: `codex` (Codex CLI's built-in `gpt-image-2` tool, uses an active ChatGPT subscription, no API key) and `openai` (the Images API, pay-per-use). Precedence: `--backend` > `PIPELINE_CONCEPT_BACKEND` env var (`codex`, `openai`, or `auto`) > auto detection (codex CLI on `PATH` and an active subscription -> codex, else openai).
+- `OPENAI_API_KEY` (read only from `~/.claude/3d-pipeline/.env`) is required only when the `openai` backend is used. It is not needed when the `codex` backend is selected.
+- Set `PIPELINE_DRY_RUN=1` to create placeholder PNGs without network calls or API spend; this is unchanged by the backend feature and always records `vendor: openai:<model>`.
+- The planned default model is `gpt-image-2`; pass `--model` or set `PIPELINE_OPENAI_IMAGE_MODEL` if the account should use another GPT Image model. These only apply to the `openai` backend.
 - Reference image paths may be recorded with `--reference`, but this command uses the Image Generations endpoint for text-to-image output.

@@ -7,6 +7,11 @@ and Meshy endpoints. Also checks whether the local TRELLIS.2 mesh backend
 informational only, since local mesh generation is optional. When the local
 backend is reachable, a missing `REPLICATE_API_TOKEN` is downgraded from a
 required-key failure to a warning, since Stage 2 can still run locally.
+Similarly, checks whether the Codex CLI concept-art backend (Stage 1,
+`concept_openai.py --backend codex`) is usable, i.e. the codex CLI is on
+PATH and logged in with an active ChatGPT subscription; when it is, a
+missing `OPENAI_API_KEY` is downgraded from a required-key failure to a
+warning, since Stage 1 can still run via the Codex CLI.
 """
 
 from __future__ import annotations
@@ -19,8 +24,9 @@ import sys
 from typing import Any
 
 try:
-    from . import _common, _credentials, _local_backend
+    from . import _codex_backend, _common, _credentials, _local_backend
 except ImportError:
+    import _codex_backend  # type: ignore
     import _common  # type: ignore
     import _credentials  # type: ignore
     import _local_backend  # type: ignore
@@ -104,7 +110,44 @@ def check_local_backend(checks: list[Check]) -> bool:
     return True
 
 
-def check_credentials(checks: list[Check], local_backend_reachable: bool) -> None:
+def check_codex_backend(checks: list[Check]) -> bool:
+    """Check the Codex CLI concept-art backend (Stage 1, `--backend codex`). Never fails.
+
+    Returns True when the codex CLI is present and logged in with an active
+    ChatGPT subscription, so callers can relax the OPENAI_API_KEY requirement
+    accordingly. Also reports which backend `resolve_backend(None)` (i.e.
+    "auto", honoring PIPELINE_CONCEPT_BACKEND) would actually pick, since that
+    is the decision concept_openai.py makes by default.
+    """
+    codex_path = _codex_backend.find_codex()
+    if codex_path is None:
+        _add(checks, "Codex CLI concept backend", "warn", "codex CLI not found on PATH; optional")
+        usable = False
+    else:
+        active, detail = _codex_backend.subscription_status()
+        if active:
+            _add(checks, "Codex CLI concept backend", "ok", f"{codex_path}; {detail}")
+            usable = True
+        else:
+            _add(
+                checks,
+                "Codex CLI concept backend",
+                "warn",
+                f"found at {codex_path} but no active ChatGPT subscription: {detail}",
+            )
+            usable = False
+
+    try:
+        decision, decision_detail = _codex_backend.resolve_backend(None)
+    except ValueError as exc:
+        _add(checks, "Concept backend auto-selection", "warn", f"PIPELINE_CONCEPT_BACKEND misconfigured: {exc}")
+    else:
+        _add(checks, "Concept backend auto-selection", "ok", f"would pick '{decision}' ({decision_detail})")
+
+    return usable
+
+
+def check_credentials(checks: list[Check], local_backend_reachable: bool, codex_backend_usable: bool) -> None:
     path = _credentials.env_path()
     if path.exists():
         _add(checks, "Credentials file", "ok", str(path))
@@ -117,6 +160,8 @@ def check_credentials(checks: list[Check], local_backend_reachable: bool) -> Non
             _add(checks, f"Credential {key}", "ok", "present")
         elif key == "REPLICATE_API_TOKEN" and local_backend_reachable:
             _add(checks, f"Credential {key}", "warn", "missing; local mesh vendor available for Stage 2")
+        elif key == "OPENAI_API_KEY" and codex_backend_usable:
+            _add(checks, f"Credential {key}", "warn", "missing; Codex subscription backend available for Stage 1")
         else:
             _add(checks, f"Credential {key}", "fail", "missing")
     for key in OPTIONAL_KEYS:
@@ -182,7 +227,8 @@ def run_checks(include_network: bool) -> list[Check]:
     check_python(checks)
     check_packages(checks)
     local_backend_reachable = check_local_backend(checks)
-    check_credentials(checks, local_backend_reachable)
+    codex_backend_usable = check_codex_backend(checks)
+    check_credentials(checks, local_backend_reachable, codex_backend_usable)
     check_git(checks)
     check_public_repo_reminder(checks)
     if include_network:

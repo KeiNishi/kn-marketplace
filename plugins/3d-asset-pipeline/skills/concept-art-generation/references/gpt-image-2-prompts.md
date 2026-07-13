@@ -1,6 +1,6 @@
 # GPT Image Prompt Patterns
 
-The planned default model for this plugin is `gpt-image-2`. The script also accepts `--model` and `PIPELINE_OPENAI_IMAGE_MODEL` for accounts that should use another GPT Image model.
+The planned default model for this plugin is `gpt-image-2`. The script also accepts `--model` and `PIPELINE_OPENAI_IMAGE_MODEL` for accounts that should use another GPT Image model. These two flags apply only to the `openai` backend; the `codex` backend always uses Codex's built-in `gpt-image-2` tool. See `references/codex-backend.md` for backend selection.
 
 ## Shared Anchor Template
 

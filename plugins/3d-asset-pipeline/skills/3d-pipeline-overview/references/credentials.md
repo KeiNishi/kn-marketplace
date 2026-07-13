@@ -21,6 +21,12 @@ OPENAI_API_KEY=sk-...
 REPLICATE_API_TOKEN=r8_...
 ```
 
+`OPENAI_API_KEY` is only required when Stage 1 (concept art) uses its
+`openai` image-generation backend. When the Codex CLI is on `PATH` and
+logged in with an active ChatGPT subscription, Stage 1 can instead use the
+`codex` backend (`concept_openai.py --backend codex`), which needs no
+`OPENAI_API_KEY`. See `skills/concept-art-generation/references/codex-backend.md`.
+
 Optional, but required for stages 3 and 4 (auto-rig and auto-animation):
 
 ```dotenv

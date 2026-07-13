@@ -8,8 +8,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from . import _common, _credentials, _manifest
+    from . import _codex_backend, _common, _credentials, _manifest
 except ImportError:
+    import _codex_backend  # type: ignore
     import _common  # type: ignore
     import _credentials  # type: ignore
     import _manifest  # type: ignore
@@ -189,6 +190,7 @@ def generate(
     quality: str,
     references: list[str],
     canonical: str | None,
+    backend: str | None = None,
 ) -> dict[str, Any]:
     manifest = _manifest.read(slug, base)
     asset_dir = _common.output_dir(slug, base)
@@ -197,13 +199,24 @@ def generate(
     reference_notes = [Path(path).name for path in references]
     prompts = build_prompts(manifest, style, reference_notes)
 
+    # Backend resolution has real-world side effects (spawns `codex login
+    # status`) and must not run in dry-run mode, so today's dry-run output
+    # (vendor/endpoint always "openai") stays byte-for-byte identical.
+    resolved_backend = "openai"
+    if not _common.is_dry_run():
+        resolved_backend, backend_detail = _codex_backend.resolve_backend(backend)
+        LOGGER.info("Concept backend resolved to %s (%s)", resolved_backend, backend_detail)
+
+    vendor = f"openai:{model}" if resolved_backend == "openai" else "codex:gpt-image-2"
+    endpoint = ENDPOINT if resolved_backend == "openai" else "codex-cli"
+
     _manifest.update_stage(
         slug,
         "concept",
         {
             "status": "in_progress",
-            "vendor": f"openai:{model}",
-            "endpoint": ENDPOINT,
+            "vendor": vendor,
+            "endpoint": endpoint,
             "prompts": prompts,
             "references": references,
             "dryRun": _common.is_dry_run(),
@@ -219,6 +232,12 @@ def generate(
         for angle in ANGLES:
             path = concept_dir / f"{angle}.png"
             _common.atomic_write_bytes(path, DRY_RUN_PNG)
+            files[angle] = _rel(asset_dir, path)
+    elif resolved_backend == "codex":
+        for angle, prompt in prompts.items():
+            LOGGER.info("Generating %s concept view with Codex CLI", angle)
+            path = concept_dir / f"{angle}.png"
+            _codex_backend.generate_image(prompt, path)
             files[angle] = _rel(asset_dir, path)
     else:
         credentials = _credentials.require("OPENAI_API_KEY")
@@ -237,7 +256,7 @@ def generate(
         "concept",
         {
             "status": "in_progress" if canonical is None else "done",
-            "vendor": f"openai:{model}",
+            "vendor": vendor,
             "requestIds": request_ids,
             "prompts": prompts,
             "files": files,
@@ -274,7 +293,25 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("slug", help="asset slug with an existing pipeline.json")
     parser.add_argument("--base", help="output base directory; defaults to git root or cwd")
     parser.add_argument("--style", default="stylized realistic game concept art with PBR-friendly material cues")
-    parser.add_argument("--model", default=None, help="OpenAI image model; defaults to gpt-image-2 or PIPELINE_OPENAI_IMAGE_MODEL")
+    parser.add_argument(
+        "--backend",
+        choices=("auto", "codex", "openai"),
+        default=None,
+        help=(
+            "image generation backend: 'codex' uses the Codex CLI's built-in gpt-image-2 tool "
+            "(covered by a ChatGPT subscription, no API key), 'openai' uses the OpenAI images API "
+            "(requires OPENAI_API_KEY, pay-per-use). Default 'auto' picks codex when a subscription "
+            "is active, else falls back to openai. Also configurable via PIPELINE_CONCEPT_BACKEND."
+        ),
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "OpenAI image model; defaults to gpt-image-2 or PIPELINE_OPENAI_IMAGE_MODEL. "
+            "Only applies to the openai backend -- the codex backend always uses its built-in gpt-image-2."
+        ),
+    )
     parser.add_argument("--size", default=DEFAULT_SIZE)
     parser.add_argument("--quality", default=DEFAULT_QUALITY)
     parser.add_argument("--reference", action="append", default=[], help="reference note/path recorded in the manifest")
@@ -315,10 +352,16 @@ def main(argv: list[str] | None = None) -> int:
                 quality=args.quality,
                 references=args.reference,
                 canonical=canonical,
+                backend=args.backend,
             )
     except ModerationBlocked as exc:
         LOGGER.error("%s", exc)
         _mark_failed(args.slug, base, str(exc), failure_kind="moderation_blocked")
+        return _common.EXIT_API_ERROR
+    except _codex_backend.CodexBackendError as exc:
+        LOGGER.error("%s", exc)
+        failure_kind = "codex_usage_limit" if exc.usage_limit else "codex_error"
+        _mark_failed(args.slug, base, str(exc), failure_kind=failure_kind)
         return _common.EXIT_API_ERROR
     except FileNotFoundError as exc:
         LOGGER.error("%s", exc)

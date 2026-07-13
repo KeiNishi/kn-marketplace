@@ -16,9 +16,13 @@ Use this guide when a stage fails, stalls, produces incomplete files, or needs m
 
 ## Stage 1: concept_openai.py
 
-Missing `OPENAI_API_KEY` means the key is absent from `~/.claude/3d-pipeline/.env`.
+Missing `OPENAI_API_KEY` means the key is absent from `~/.claude/3d-pipeline/.env`. This only blocks Stage 1 when the `openai` backend is selected; if the Codex CLI is on `PATH` with an active ChatGPT subscription, use `--backend codex` instead and no key is needed.
 
-Run `/3d-pipeline:check-pipeline` and fix the credentials file outside the repository.
+Run `/3d-pipeline:check-pipeline` and fix the credentials file outside the repository, or confirm the Codex CLI subscription backend instead.
+
+`failureKind: "codex_usage_limit"` means the codex backend was selected and the ChatGPT subscription's usage limit is exhausted. Wait for the reset time shown in `stages.concept.error`, buy more usage credits, or rerun with `--backend openai`.
+
+`failureKind: "codex_error"` means the codex backend failed for another reason (tool error, or `codex exec` exited 0 but produced no valid PNG). Inspect `stages.concept.error`, retry, or rerun with `--backend openai`. There is no automatic fallback from codex to openai on failure -- this is deliberate, to avoid surprise API spend.
 
 HTTP `429` means the OpenAI image API rate limit or quota was reached.
 

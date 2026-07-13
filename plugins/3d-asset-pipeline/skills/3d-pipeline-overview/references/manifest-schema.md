@@ -46,6 +46,8 @@
 
 The stage may remain `in_progress` after angle generation when canonical selection is deferred. It becomes `done` only after `concept/canonical.png` is written.
 
+When Stage 1 uses the `codex` backend instead of `openai`, `vendor` is `"codex:gpt-image-2"`, `endpoint` is `"codex-cli"`, and `requestIds` is always `[]` (codex has no per-request API ids). See `skills/concept-art-generation/references/codex-backend.md`.
+
 ## Status Values
 
 All stages use one of:

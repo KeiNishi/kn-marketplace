@@ -38,7 +38,7 @@ New fields on the `concept` stage:
 - `approved: bool` — set by `scripts/approve_concept.py`. Defaults to absent (treated as `false`).
 - `approvedAt: ISO-8601 string | null` — timestamp of the approval.
 - `approvedBy: "user" | null` — who approved. Currently always `"user"`.
-- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout"` — set when `status == failed` so the concept skill can surface tailored recovery text.
+- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout" | "codex_usage_limit" | "codex_error"` — set when `status == failed` so the concept skill can surface tailored recovery text. The `codex_*` kinds apply only when Stage 1 used the `codex` image-generation backend; see `skills/concept-art-generation/references/codex-backend.md`.
 
 Use `_manifest.concept_approved(manifest)` to check approval; mesh preflight scripts already do this.
 

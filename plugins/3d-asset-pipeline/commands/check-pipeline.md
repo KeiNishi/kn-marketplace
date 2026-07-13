@@ -37,4 +37,6 @@ When `--network` is provided, explain that the command also checks reachability 
 
 The checker also reports whether the local TRELLIS.2 mesh backend (`--vendor local`, no API key) is reachable. This check never fails; it is informational, since local mesh generation is optional. When the local backend is reachable, a missing `REPLICATE_API_TOKEN` is reported as `[WARN]` instead of `[FAIL]`, since Stage 2 can still run through the local vendor.
 
+The checker also reports the Codex CLI concept backend (Stage 1, `--backend codex`): whether the `codex` CLI is on `PATH` and logged in with an active ChatGPT subscription, plus which backend `auto` mode would currently pick ("Concept backend auto-selection"). Both checks are informational only. When the Codex backend is usable, a missing `OPENAI_API_KEY` is reported as `[WARN]` instead of `[FAIL]`, since Stage 1 can still run through the Codex CLI.
+
 Never print credential values.

@@ -21,7 +21,7 @@ This plugin is designed around cloud APIs, with an optional local mesh backend f
 
 The intended vendor stack is:
 
-- OpenAI `gpt-image-2` for concept images.
+- OpenAI `gpt-image-2` for concept images, or the Codex CLI's built-in `gpt-image-2` tool via an active ChatGPT subscription (no API key) as an alternate Stage 1 backend.
 - Hunyuan 3D 3.1 through Replicate for default mesh generation.
 - Meshy v5 for alternate mesh generation, rigging, and animation.
 - Tripo3D as an optional fallback for selected asset types.
@@ -98,7 +98,7 @@ Expected key providers:
 
 Required keys for stages 1, 2, 5, and 6:
 
-- `OPENAI_API_KEY`
+- `OPENAI_API_KEY` — not required for Stage 1 when the Codex CLI is on `PATH` and logged in with an active ChatGPT subscription; see "Codex Concept Backend" below.
 - `REPLICATE_API_TOKEN` — not required when Stage 2 uses the local mesh backend (`--vendor local`); see "Local Mesh Generation" below.
 
 Optional keys:
@@ -185,6 +185,14 @@ Requirements and measured performance: Windows only; ~8-10GB VRAM. On an RTX 407
 
 Licensing: the model and fork are MIT, but the texture-bake path depends on NVIDIA nvdiffrast (non-commercial source license, unresolved upstream question) and bundled helpers include RMBG-2.0 (CC BY-NC 4.0) and DINOv3 (Meta custom license). This plugin redistributes none of them; assess licensing yourself before commercial use. Details: `skills/mesh-generation/references/trellis2-local.md`.
 
+## Codex Concept Backend (No API Key)
+
+Stage 1 (concept art) can also run through the Codex CLI's built-in `gpt-image-2` image tool instead of the OpenAI Images API, using an active ChatGPT subscription instead of `OPENAI_API_KEY`.
+
+Selection is automatic by default: if the `codex` CLI is on `PATH` and `codex login status` reports an active ChatGPT subscription, `/3d-pipeline:concept` uses it; otherwise it falls back to the `openai` API backend, exactly as before this feature existed. Force a specific backend with `--backend codex` or `--backend openai`, or set `PIPELINE_CONCEPT_BACKEND` in the shell session.
+
+If the codex backend fails during generation (subscription usage limit exhausted, or a codex tool error), the stage fails rather than silently falling back to the pay-per-use API, so there is no surprise spend. Re-run with `--backend openai` to use the API path instead. Details: `skills/concept-art-generation/references/codex-backend.md`.
+
 ## Concept Approval Gate
 
 Stage 2 mesh generation is mechanically blocked until a human approves the canonical concept. This prevents accidental mesh spend on un-vetted concept art.
@@ -223,7 +231,7 @@ New fields on the `concept` stage:
 - `approved: bool` — set by `scripts/approve_concept.py`. Treated as `false` when absent.
 - `approvedAt: ISO-8601 string | null`
 - `approvedBy: "user" | null`
-- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout"` — set when `status == failed`.
+- `failureKind: "moderation_blocked" | "api_error" | "user_error" | "timeout" | "codex_usage_limit" | "codex_error"` — set when `status == failed`. The `codex_*` kinds apply only when Stage 1 used the `codex` image-generation backend (see "Codex Concept Backend" above).
 
 New fields on the `engine` stage:
 
