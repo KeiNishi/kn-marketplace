@@ -191,6 +191,8 @@ Stage 1 (concept art) can also run through the Codex CLI's built-in `gpt-image-2
 
 Selection is automatic by default: if the `codex` CLI is on `PATH` and `codex login status` reports an active ChatGPT subscription, `/3d-pipeline:concept` uses it; otherwise it falls back to the `openai` API backend, exactly as before this feature existed. Force a specific backend with `--backend codex` or `--backend openai`, or set `PIPELINE_CONCEPT_BACKEND` in the shell session.
 
+The codex backend also chains views for consistency: the `front` view is generated first and attached as a reference image to the remaining angles, so all four views show one identical design, one single view per image. The openai backend has no image input and is unchanged.
+
 If the codex backend fails during generation (subscription usage limit exhausted, or a codex tool error), the stage fails rather than silently falling back to the pay-per-use API, so there is no surprise spend. Re-run with `--backend openai` to use the API path instead. Details: `skills/concept-art-generation/references/codex-backend.md`.
 
 ## Concept Approval Gate

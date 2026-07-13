@@ -78,6 +78,7 @@ The approval gate is enforced mechanically — `mesh_hunyuan.py`, `mesh_meshy.py
 ## Notes
 
 - Two backends are available: `codex` (Codex CLI's built-in `gpt-image-2` tool, uses an active ChatGPT subscription, no API key) and `openai` (the Images API, pay-per-use). Precedence: `--backend` > `PIPELINE_CONCEPT_BACKEND` env var (`codex`, `openai`, or `auto`) > auto detection (codex CLI on `PATH` and an active subscription -> codex, else openai).
+- The codex backend generates `front` first and attaches it as a reference image to the remaining angles, keeping one consistent design across all four views. The openai backend has no image input and is unchanged.
 - `OPENAI_API_KEY` (read only from `~/.claude/3d-pipeline/.env`) is required only when the `openai` backend is used. It is not needed when the `codex` backend is selected.
 - Set `PIPELINE_DRY_RUN=1` to create placeholder PNGs without network calls or API spend; this is unchanged by the backend feature and always records `vendor: openai:<model>`.
 - The planned default model is `gpt-image-2`; pass `--model` or set `PIPELINE_OPENAI_IMAGE_MODEL` if the account should use another GPT Image model. These only apply to the `openai` backend.

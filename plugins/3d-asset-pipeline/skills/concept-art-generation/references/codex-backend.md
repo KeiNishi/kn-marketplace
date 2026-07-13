@@ -7,6 +7,7 @@
 - [Auto Detection](#auto-detection)
 - [Forcing the Codex Backend](#forcing-the-codex-backend)
 - [Runtime Failure Policy](#runtime-failure-policy)
+- [Reference Chaining](#reference-chaining)
 - [Manifest Fields](#manifest-fields)
 - [Usage Limit Cost Note](#usage-limit-cost-note)
 - [Sandboxing](#sandboxing)
@@ -84,6 +85,27 @@ Two distinct failure kinds are recorded on the concept stage:
     codex output.
   - Retry the same command.
   - Re-run with `--backend openai` to fall back to the API path.
+
+## Reference Chaining
+
+The codex backend generates the `front` view first, then attaches it to
+each remaining angle's `codex exec` session as a reference image (`-i`),
+with a prompt clause requiring the exact same design — proportions,
+silhouette, colors, materials, and distinctive details — changed only to
+the requested camera angle. Every angle's prompt also requires exactly ONE
+view per image (never a turnaround sheet or grid).
+
+Measured effect (same asset description, with vs. without chaining): the
+four views go from "same palette but drifting proportions and moving
+parts" to a near-identical single design across all views, and the
+occasional multi-view turnaround sheet output disappears. This helps both
+Stage 2 (a cleaner canonical for image-to-3D) and Stage 6 (a stable
+comparison baseline for multimodal review).
+
+Chaining is codex-only: the openai backend's Images Generations endpoint
+accepts no image input, so its behavior is unchanged. If the `front`
+generation fails, the whole stage fails (standard error-stop policy);
+there is no partial fallback to unchained generation.
 
 ## Manifest Fields
 

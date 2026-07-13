@@ -234,11 +234,25 @@ def generate(
             _common.atomic_write_bytes(path, DRY_RUN_PNG)
             files[angle] = _rel(asset_dir, path)
     elif resolved_backend == "codex":
-        for angle, prompt in prompts.items():
-            LOGGER.info("Generating %s concept view with Codex CLI", angle)
+        # Reference chaining: the front view is generated first, then attached
+        # as a reference image to the remaining angles so all four views show
+        # one consistent design. Codex backend only -- the openai Images
+        # Generations endpoint takes no image input.
+        anchor_angle = "front"
+        anchor_path: Path | None = None
+        ordered = sorted(prompts, key=lambda a: a != anchor_angle)
+        for angle in ordered:
+            reference = anchor_path if angle != anchor_angle else None
+            LOGGER.info(
+                "Generating %s concept view with Codex CLI%s",
+                angle,
+                " (front reference attached)" if reference else "",
+            )
             path = concept_dir / f"{angle}.png"
-            _codex_backend.generate_image(prompt, path)
+            _codex_backend.generate_image(prompts[angle], path, reference=reference)
             files[angle] = _rel(asset_dir, path)
+            if angle == anchor_angle:
+                anchor_path = path
     else:
         credentials = _credentials.require("OPENAI_API_KEY")
         api_key = credentials["OPENAI_API_KEY"]

@@ -177,8 +177,20 @@ def _existing_subdirs(root: Path) -> set[str]:
     return {entry.name for entry in root.iterdir() if entry.is_dir()}
 
 
-def generate_image(prompt: str, out_path: Path, *, timeout: float = 600.0) -> None:
+def generate_image(
+    prompt: str,
+    out_path: Path,
+    *,
+    reference: Path | None = None,
+    timeout: float = 600.0,
+) -> None:
     """Generate one PNG image via the Codex CLI's built-in gpt-image-2 tool.
+
+    When `reference` is given, that image is attached to the codex session
+    (`codex exec -i`) and the prompt instructs the agent to reproduce the
+    exact same asset design from the requested camera angle. Stage 1 uses
+    this to chain the front view into the remaining angles so all four
+    views show one consistent design.
 
     Runs `codex exec` in a freshly created, empty temporary staging
     directory (never inside the pipeline workspace), so the agent cannot
@@ -207,16 +219,28 @@ def generate_image(prompt: str, out_path: Path, *, timeout: float = 600.0) -> No
     if codex_path is None:
         raise CodexBackendError("codex CLI not found on PATH")
 
+    reference_clause = ""
+    if reference is not None:
+        reference_clause = (
+            "Reference image: the attached image shows the exact same asset from another angle. "
+            "Reproduce the SAME design -- identical proportions, silhouette, colors, materials, "
+            "part shapes, and distinctive details -- changed only to the requested camera angle. "
+            "Pass the attached image to the image generation tool as its reference input.\n"
+        )
+
     full_prompt = (
         "Use case: stylized-concept\n"
         "Asset type: multi-angle concept art for a 3D game asset pipeline\n\n"
         f"Primary request:\n{prompt}\n\n"
+        f"{reference_clause}"
         "Execution requirements:\n"
         "- This request is issued programmatically by the 3d-asset-pipeline's own scripts. Do NOT invoke "
         "any 3d-asset-pipeline skill, command, or script, and do not read or modify any project files.\n"
         "- Use your built-in image generation tool (image_gen, gpt-image-2) to generate exactly one image, "
         "then print IMAGEGEN_OK. The tool's saved output is collected automatically afterward; do not "
         "move, copy, or save any files yourself, and do not create any files in the working directory.\n"
+        "- The image must contain exactly ONE view of the subject on a plain background -- never a "
+        "turnaround sheet, grid, or multiple views in one image.\n"
         "- If the built-in image_gen tool is NOT available in your tool list, print exactly "
         f"{IMAGEGEN_UNAVAILABLE_MARKER} and stop. Never draw or synthesize the image with code (no Pillow, "
         "no SVG, no matplotlib, no scripts) -- a code-drawn image is a failure."
@@ -235,17 +259,20 @@ def generate_image(prompt: str, out_path: Path, *, timeout: float = 600.0) -> No
             # The prompt is passed via stdin ("-"), never as an argv token: on
             # Windows the codex CLI is an npm .cmd shim, and cmd.exe argument
             # expansion truncates a multi-line argv at the first newline.
+            args = [
+                codex_path,
+                "exec",
+                "--sandbox",
+                "workspace-write",
+                "--skip-git-repo-check",
+                "--output-last-message",
+                str(last_message_path),
+            ]
+            if reference is not None:
+                args += ["-i", str(reference)]
+            args.append("-")
             result = subprocess.run(
-                [
-                    codex_path,
-                    "exec",
-                    "--sandbox",
-                    "workspace-write",
-                    "--skip-git-repo-check",
-                    "--output-last-message",
-                    str(last_message_path),
-                    "-",
-                ],
+                args,
                 cwd=str(staging_dir),
                 input=full_prompt,
                 capture_output=True,
