@@ -2,7 +2,6 @@
 name: generate-mesh
 description: Stage 2 of the 3D asset pipeline - generate a textured 3D mesh from the canonical concept image. Defaults to Hunyuan 3D 3.1 via Replicate; supports Meshy v5 alt, Tripo3D fallback, and a local TRELLIS.2 backend (no API key).
 argument-hint: "<asset-slug> [--vendor hunyuan|meshy|tripo|local] [--mode rapid|pro] [--target-polys N] [--no-pbr]"
-allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Generate-Mesh Command

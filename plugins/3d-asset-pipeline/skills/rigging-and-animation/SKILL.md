@@ -1,7 +1,6 @@
 ---
 name: rigging-and-animation
 description: This skill should be used when the user asks to "auto-rig", "skin the mesh", "auto-animate", or as stages 3-4 of the 3D pipeline. Uses Meshy v5 auto-rig and auto-animation APIs for humanoids and creatures. Skipped automatically for static props. Also triggers on "/3d-pipeline:rig" and "/3d-pipeline:animate" commands.
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # Rigging And Animation

@@ -2,7 +2,6 @@
 name: godot-import
 description: Stage 5 of the 3D asset pipeline -- copy the final asset into a Godot 4 project and emit the import config. Godot 4 only in v0.1.0.
 argument-hint: "<asset-slug> --project <godot-project-root> [--source-stage animated|mesh|rigged] [--scene]"
-allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Godot-Import Command

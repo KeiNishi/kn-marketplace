@@ -1,7 +1,6 @@
 ---
 name: concept-art-generation
 description: This skill should be used when the user asks to "generate concept art", "create concept images", "pick the canonical concept", or runs Stage 1 of the 3d-asset-pipeline. It covers writing multi-angle prompts, selecting a canonical concept image, driving the concept approval gate, recovering from moderation blocks, and updating the concept stage in pipeline.json. Also triggers on "/3d-pipeline:concept" and "/3d-pipeline:approve" commands.
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # Concept Art Generation

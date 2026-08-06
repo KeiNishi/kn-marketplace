@@ -1,7 +1,6 @@
 ---
 name: 3d-pipeline-overview
 description: This skill should be used when the user asks to "run the 3D pipeline", "check pipeline status", "resume an asset", or mentions pipeline.json, 3d-pipeline-output, or stage routing for the 3d-asset-pipeline. It coordinates the six stages (concept, mesh, rig, animate, engine import, review), reads and updates pipeline.json, checks stage prerequisites, and decides which stage to run next. Also triggers on "/3d-pipeline:run-pipeline" and "/3d-pipeline:pipeline-info" commands.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Overview

@@ -2,7 +2,6 @@
 name: animate
 description: Stage 4 of the 3D asset pipeline -- auto-animate the rigged mesh via Meshy v5. Skipped for static props.
 argument-hint: "<asset-slug> [--clips idle,walk,run,attack]"
-allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Animate Command

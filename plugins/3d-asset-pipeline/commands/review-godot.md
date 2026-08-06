@@ -2,7 +2,6 @@
 name: review-godot
 description: Stage 6 capture, review, fix, and iterate for a Godot-imported 3D asset.
 argument-hint: "<asset-slug> --project <godot-project-root> [--max-iters 5] [--no-loop] [--godot <path>] [--base <dir>]"
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Review-Godot Command

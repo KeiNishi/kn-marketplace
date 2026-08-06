@@ -2,7 +2,6 @@
 name: rig
 description: Stage 3 of the 3D asset pipeline -- auto-rig the generated mesh via Meshy v5. Skipped for static props.
 argument-hint: "<asset-slug> [--template humanoid|quadruped]"
-allowed-tools: Read, Write, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Rig Command

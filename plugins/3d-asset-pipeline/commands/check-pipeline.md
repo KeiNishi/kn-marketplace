@@ -2,7 +2,6 @@
 name: check-pipeline
 description: Health check for the 3D asset pipeline -- verifies Python, deps, credentials file, required keys, git, and (optionally) network reachability of OpenAI, Replicate, Meshy.
 argument-hint: "[--network]"
-allowed-tools: Bash
 ---
 
 # 3D Pipeline Check-Pipeline Command

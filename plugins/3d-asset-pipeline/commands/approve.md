@@ -2,7 +2,6 @@
 name: approve
 description: Approve or reject the canonical concept art for a 3D asset pipeline run. Mesh generation refuses to run until the concept is approved.
 argument-hint: "<slug> [--reject] [--canonical front|three-quarter|side|back]"
-allowed-tools: Read, Bash
 ---
 
 # 3D Pipeline Approve Command

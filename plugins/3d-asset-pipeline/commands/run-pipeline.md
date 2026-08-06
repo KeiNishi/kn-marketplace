@@ -2,7 +2,6 @@
 name: run-pipeline
 description: Run the full 6-stage 3D asset pipeline (concept to mesh to rig to animate to import to review) with approval gates between stages and an automatic in-engine review loop. Default review loop is ON; use --no-review to skip.
 argument-hint: "<asset-name> <description> [--type humanoid|quadruped|prop] [--no-review] [--max-iters 5] [--engine-project <godot-project-root>] [--vendor hunyuan|meshy|tripo|local]"
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Run Command

@@ -2,7 +2,6 @@
 name: pipeline-info
 description: Print the pipeline.json status table for an asset slug -- stage names, statuses, vendors, and key file paths.
 argument-hint: "<asset-slug>"
-allowed-tools: Read, Bash
 ---
 
 # 3D Pipeline Info Command

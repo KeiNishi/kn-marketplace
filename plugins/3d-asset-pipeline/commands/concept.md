@@ -2,7 +2,6 @@
 name: concept
 description: Generate Stage 1 multi-angle concept art for an existing 3D asset pipeline manifest.
 argument-hint: "<slug> [--canonical front|three-quarter|side|back] [--defer-canonical] [--backend auto|codex|openai] [--model MODEL]"
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # 3D Pipeline Concept Command
