@@ -33,8 +33,8 @@ After the canonical is selected:
 
 1. Display the four angle PNGs and `concept/canonical.png` to the user multimodally.
 2. Compare against `pipeline.json.description`.
-3. Ask the user to choose one of: **Approve**, **Change canonical**, **Re-roll with new description**, **Stop** (use the AskUserQuestion tool if available; otherwise ask in a plain message and wait for the reply).
-4. On approve, run `python3 scripts/approve_concept.py <slug> --approve`.
+3. Ask the user to choose one of: **Approve**, **Change canonical**, **Re-roll with new description**, **Stop**. Use the AskUserQuestion tool if available. In a non-interactive or single-turn environment (no AskUserQuestion; the user's reply arrives in a later run), present the four angles and the canonical through whatever image-presentation channel the host environment provides, ask the question in your final message, and end the run in the host's "waiting for user input" state. The approval then happens in a later run that carries the user's reply. Ending a run at this gate is the correct outcome, not a failure.
+4. On approve — meaning the user has replied approving the concept, never on your own judgment — run `python3 scripts/approve_concept.py <slug> --approve`. Running the approve script without such a reply is a workflow violation even when generation is free; being unable to wait interactively is not an excuse to self-approve. Sole exception: the user's original instruction explicitly waives this gate (e.g. "skip approval", "auto-approve and continue"); then approve and state in your report that the gate was waived by instruction.
 5. On change canonical, run `python3 scripts/concept_openai.py <slug> --select-canonical <angle>` then approve.
 6. On re-roll, run `python3 scripts/concept_openai.py <slug> --description "<new text>"` and loop back to step 1.
 7. On stop, end and remind the user that `/3d-pipeline:approve <slug>` can be run later to unblock mesh.

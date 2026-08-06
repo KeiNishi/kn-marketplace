@@ -160,11 +160,11 @@ Display or read `concept/canonical.png`.
 
 Ask whether to proceed to Stage 2 mesh generation.
 
-Use `AskUserQuestion` with `yes` and `stop`.
+Use `AskUserQuestion` with `yes` and `stop`. If AskUserQuestion is unavailable (non-interactive or single-turn host), present the canonical through the host's image-presentation channel, ask in your final message, and end the run in the host's "waiting for user input" state; continue in a later run based on the user's reply. Ending at this gate is the correct outcome, not a failure.
 
 If the user chooses `stop`, report the slug and concept folder, then end. The user can run `/3d-pipeline:approve <slug>` later to unblock mesh generation, or `/3d-pipeline:concept <slug> --description "<new text>"` to re-roll first.
 
-If the user chooses `yes`, record the approval so the mesh preflight passes:
+If the user chooses `yes` — approval must come from the user's reply, or from an explicit waiver in the user's original instruction (e.g. "skip approval"); never approve on your own judgment — record the approval so the mesh preflight passes:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/approve_concept.py" <slug> --approve
