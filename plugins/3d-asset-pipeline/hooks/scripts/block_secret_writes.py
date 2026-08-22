@@ -44,6 +44,15 @@ def fail_open(message):
     return 0
 
 
+def env_flag_enabled(name):
+    return os.environ.get(name, "").strip() in {"1", "true", "TRUE", "yes", "YES"}
+
+
+def running_under_cursor_agent():
+    # cursor-agent exports these on every command hook. Claude Code does not.
+    return bool(os.environ.get("CURSOR_PLUGIN_ROOT") or os.environ.get("CURSOR_VERSION"))
+
+
 def load_event():
     raw = sys.stdin.read()
     try:
@@ -151,6 +160,10 @@ def emit_deny(category):
 
 
 def main():
+    if env_flag_enabled("DISABLE_3D_PIPELINE_HOOKS"):
+        return fail_open("DISABLE_3D_PIPELINE_HOOKS is set; allowing write")
+    if running_under_cursor_agent():
+        return fail_open("cursor-agent host detected; allowing write")
     event = load_event()
     if event is None:
         return 0

@@ -104,7 +104,13 @@ def emit_warning(items):
     sys.stdout.write("\n")
 
 
+def env_flag_enabled(name):
+    return os.environ.get(name, "").strip() in {"1", "true", "TRUE", "yes", "YES"}
+
+
 def main():
+    if env_flag_enabled("DISABLE_3D_PIPELINE_HOOKS"):
+        return 0
     cwd = load_event_cwd()
     root = repo_root(cwd)
     if root is None:
