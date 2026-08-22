@@ -126,11 +126,13 @@ Confirm each screenshot is newly written for the current iteration.
 
 ## Hooks
 
-If PreToolUse blocks edits, the secret-protection hook probably detected a credential-like write.
+If Claude Code PreToolUse blocks edits, the secret-protection hook probably detected a credential-like write.
 
 Set `DISABLE_3D_PIPELINE_HOOKS=1` only for the emergency maintenance shell session, then unset it.
 
 Never bypass hooks to commit secrets.
+
+On Windows, `cursor-agent` currently composes Claude command hooks as PowerShell and then evaluates them with bash when `MSYSTEM` is set. That bash eval exits 2, which cursor-agent treats as a deny, so every Write/Edit is blocked even when the file has no secrets. This plugin therefore keeps the Write/Edit PreToolUse command hook in `hooks/hooks.json` (Claude Code loads that file automatically) and points `plugin.json` `hooks` at `hooks/session-start.json` (SessionStart only). cursor-agent imports the manifest hook path instead of `hooks/hooks.json`. Do not add a PreToolUse command hook to `plugin.json` or to `hooks/session-start.json`; that would restore the cursor-agent full-deny.
 
 A SessionStart warning for `.env.example` is a false positive.
 
