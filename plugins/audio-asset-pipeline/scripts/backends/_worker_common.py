@@ -247,7 +247,7 @@ def run_cli(generate: Callable[[dict[str, Any]], dict[str, Any]], description: s
         exit_code = 1
 
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    result_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
     return exit_code
 
 

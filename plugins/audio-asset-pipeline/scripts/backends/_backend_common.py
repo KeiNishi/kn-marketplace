@@ -294,7 +294,7 @@ def run_worker(
         request_path = pathlib.Path(tmp) / "request.json"
         result_path = pathlib.Path(tmp) / "result.json"
         request = {**request, "resultPath": str(result_path)}
-        request_path.write_text(json.dumps(request, indent=2, ensure_ascii=False), encoding="utf-8")
+        request_path.write_text(json.dumps(request, indent=2, ensure_ascii=False), encoding="utf-8", newline="\n")
 
         logger.info("Running the %s worker (timeout %.0f min)", stack, timeout / 60)
         # Hands the worker any HF_TOKEN kept in the plugin's private .env so

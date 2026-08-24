@@ -336,7 +336,7 @@ def atomic_write_json(path: pathlib.Path | str, obj: Any) -> None:
     # and sequential; add a lock file if concurrent writers ever become real.
     handle_fd, tmp_name = tempfile.mkstemp(dir=str(target.parent), prefix=f"{target.name}.", suffix=".tmp")
     try:
-        with os.fdopen(handle_fd, "w", encoding="utf-8") as handle:
+        with os.fdopen(handle_fd, "w", encoding="utf-8", newline="\n") as handle:
             json.dump(obj, handle, indent=2, sort_keys=False, ensure_ascii=False)
             handle.write("\n")
         os.replace(tmp_name, target)
