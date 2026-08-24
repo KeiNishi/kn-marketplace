@@ -1,0 +1,23 @@
+{
+  "name": "audio-asset-pipeline",
+  "version": "0.1.0",
+  "description": "Two-mode (auto/manual) game BGM and sound-effect pipeline driven by locally run models (ACE-Step 1.5, Stable Audio 3, MiniMax-Music3). Text-prompt and reference-audio conditioning, seeded candidate iteration with approval gates, and loop post-processing (seamless loop points, LUFS normalization, WAV/OGG export).",
+  "author": {
+    "name": "KN"
+  },
+  "hooks": "./hooks/session-start.json",
+  "keywords": [
+    "gamedev",
+    "audio",
+    "bgm",
+    "sound-effects",
+    "music-generation",
+    "pipeline",
+    "ace-step",
+    "stable-audio",
+    "minimax-music",
+    "local-generation",
+    "loop",
+    "ffmpeg"
+  ]
+}

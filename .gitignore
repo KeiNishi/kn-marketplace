@@ -19,6 +19,9 @@ __pycache__/
 # 3D asset pipeline outputs (test artifacts, generated assets)
 3d-pipeline-output/
 
+# Audio asset pipeline outputs (generated audio, candidates, renders)
+audio-pipeline-output/
+
 # Add your custom ignores below
 # 個人的なスキルファイルで公開したくないものがあれば、ここに追加してください
 .claude/settings.local.json
