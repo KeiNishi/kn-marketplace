@@ -131,7 +131,7 @@ backend therefore generates at least 2 s regardless of the requirement and
 records `requestedDurationSeconds` in the candidate params.
 
 For a 0.3 s UI blip: keep `requirement.durationSeconds` at the length actually
-wanted, let the backend generate its 2 s, and trim in the post stage. Prompt for
+wanted, let the backend generate its 2 s, and let the post stage trim it. Prompt for
 the transient itself (`short UI click, dry, no tail`) so the useful part sits at
 the very start of the file.
 
@@ -170,6 +170,17 @@ Before declaring the generate stage done, confirm all of the following:
 - `stages.generate.failureKind` is `null`.
 
 If any item fails, fix it and re-verify before moving to the post stage.
+
+## Next Stage
+
+After selecting a candidate, run the post stage - see the `loop-and-postprocess`
+skill. It trims the dead air and the decay tail, normalizes to
+`requirement.targetLufs` (-12 LUFS for sound effects) under a -1.0 dBTP ceiling,
+and writes the 16-bit WAV and OGG an engine loads:
+
+```bash
+python3 "<plugin-root>/scripts/post_process.py" <slug> --candidate generate/cand-01.wav
+```
 
 ## Reference Index
 

@@ -10,6 +10,7 @@ Self-check: `python _manifest.py --selftest`.
 
 from __future__ import annotations
 
+import math
 import pathlib
 from typing import Any
 
@@ -48,6 +49,10 @@ _SE_OVERRIDES: dict[str, Any] = {
     "durationSeconds": 3.0,
     "loop": False,
     "bpm": None,
+    # Sound effects sit 4 LU above the music so they cut through the mix at the
+    # same fader position; -12 LUFS is the usual game-SFX bus target against
+    # music at -16. Both are integrated figures the post stage normalizes to.
+    "targetLufs": -12.0,
 }
 
 
@@ -78,7 +83,13 @@ def _stage_skeleton() -> dict[str, dict[str, Any]]:
             "approvedBy": None,
             "failureKind": None,
         },
-        "post": {"status": "pending", "loopProcessing": None, "normalize": None, "outputs": []},
+        "post": {
+            "status": "pending",
+            "loopProcessing": None,
+            "normalize": None,
+            "outputs": [],
+            "failureKind": None,
+        },
         "review": {"status": "pending", "checks": None, "clapScore": None, "verdict": None},
     }
 
@@ -220,6 +231,23 @@ def validate(manifest: dict[str, Any]) -> None:
         raise ValueError(f"requirement.durationSeconds must be a positive number: {duration!r}")
     if not isinstance(requirement.get("formats"), list) or not requirement["formats"]:
         raise ValueError("requirement.formats must be a non-empty list")
+    # The post stage normalizes to this, so a bool or a stray string must not
+    # reach ffmpeg: `True` would silently become a 1.0 LUFS target, which is
+    # 15 dB of gain into a limiter. The range is the useful span for game audio -
+    # quieter than -36 LUFS is inaudible under a mix, louder than -6 has no
+    # headroom left for peaks.
+    target_lufs = requirement.get("targetLufs")
+    if (
+        isinstance(target_lufs, bool)
+        or not isinstance(target_lufs, (int, float))
+        or not math.isfinite(target_lufs)
+        or not -36.0 <= target_lufs <= -6.0
+    ):
+        raise ValueError(
+            f"requirement.targetLufs must be a number between -36 and -6 "
+            f"(integrated LUFS), got {target_lufs!r}"
+        )
+
     strength = requirement.get("referenceStrength")
     if isinstance(strength, bool) or not isinstance(strength, (int, float)) or not 0.0 <= strength <= 1.0:
         raise ValueError(
@@ -269,6 +297,14 @@ def _validate_generate(generate: dict[str, Any]) -> None:
             raise ValueError(f"stages.generate.candidates[{index}] must be an object")
         _common.relative_artifact_path(candidate.get("file"), f"candidates[{index}].file")
         _check_backend(candidate.get("backend"), f"candidates[{index}].backend")
+        # Later stages read tempo and silence figures out of this; a hand-edited
+        # string or list here would surface as an AttributeError deep in the post
+        # stage instead of a rejected manifest.
+        if not isinstance(candidate.get("params", {}), dict):
+            raise ValueError(
+                f"stages.generate.candidates[{index}].params must be an object, "
+                f"got {candidate['params']!r}"
+            )
 
     backend = generate.get("backend")
     if backend is not None:
@@ -310,6 +346,10 @@ def _selftest() -> None:
 
         se = init("door-open", "se", "manual", base=base)
         assert se["requirement"]["loop"] is False and se["requirement"]["durationSeconds"] == 3.0
+        # Sound effects normalize louder than music; both defaults are read by
+        # the post stage straight from the requirement.
+        assert se["requirement"]["targetLufs"] == -12.0
+        assert bgm["requirement"]["targetLufs"] == -16.0
 
         candidate = make_candidate("generate/cand-01.wav", 123, "acestep", {"steps": 30})
         updated = update_stage(
@@ -349,7 +389,15 @@ def _selftest() -> None:
             lambda: update_stage("boss-battle-theme", "mixdown", {}, base),
             lambda: update_stage("boss-battle-theme", "post", {"status": "almost"}, base),
             lambda: update_requirement("boss-battle-theme", {"volume": 1.0}, base),
+            lambda: init("x", "bgm", "auto", {"targetLufs": True}, base),
+            lambda: init("x", "bgm", "auto", {"targetLufs": "-16"}, base),
+            lambda: init("x", "bgm", "auto", {"targetLufs": -100.0}, base),
+            lambda: init("x", "bgm", "auto", {"targetLufs": 0.0}, base),
+            lambda: init("x", "bgm", "auto", {"targetLufs": float("nan")}, base),
             lambda: make_candidate("C:/weights/leak.wav", 1, "acestep"),
+            # Drive-relative: not absolute, but it still escapes the asset dir.
+            lambda: make_candidate("C:evil.wav", 1, "acestep"),
+            lambda: make_candidate("c:generate/evil.wav", 1, "acestep"),
             lambda: make_candidate("../../escape.wav", 1, "acestep"),
             lambda: make_candidate("/etc/passwd", 1, "acestep"),
             lambda: make_candidate("generate/ok.wav", 1, "suno"),  # unknown backend
@@ -371,6 +419,13 @@ def _selftest() -> None:
             lambda m: m["stages"]["generate"].__setitem__("candidates", ["generate/a.wav"]),
             lambda m: m["stages"]["generate"].__setitem__("selected", "../outside.wav"),
             lambda m: m["stages"]["post"].__setitem__("outputs", ["C:/absolute.ogg"]),
+            lambda m: m["stages"]["post"].__setitem__("outputs", ["C:drive-relative.ogg"]),
+            lambda m: m["requirement"].__setitem__("targetLufs", True),
+            lambda m: m["requirement"].__setitem__("targetLufs", "-16"),
+            lambda m: m["requirement"].__setitem__("targetLufs", None),
+            lambda m: m["requirement"].__setitem__("targetLufs", -60.0),
+            lambda m: m["stages"]["generate"]["candidates"][0].__setitem__("params", "steps=30"),
+            lambda m: m["stages"]["generate"]["candidates"][0].__setitem__("params", [1, 2]),
         ):
             broken = read("boss-battle-theme", base)
             mutate(broken)

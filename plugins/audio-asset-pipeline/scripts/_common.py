@@ -74,8 +74,13 @@ def relative_artifact_path(value: str, field: str = "path") -> str:
         raise ValueError(f"{field} must be a non-empty string, got {value!r}")
     normalized = value.replace("\\", "/").strip()
     parts = pathlib.PurePosixPath(normalized).parts
+    # `.drive`, not only `.is_absolute()`: on Windows "C:evil.wav" is
+    # DRIVE-RELATIVE, so it is not absolute, yet joining it onto a base path
+    # discards that base entirely and writes to whatever the drive's current
+    # directory happens to be.
     if (
         pathlib.PureWindowsPath(normalized).is_absolute()
+        or pathlib.PureWindowsPath(normalized).drive
         or normalized.startswith("/")
         or ".." in parts
     ):

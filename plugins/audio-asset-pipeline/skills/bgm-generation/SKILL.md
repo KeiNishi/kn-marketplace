@@ -176,11 +176,11 @@ the planner writes an intro and a fade-out by default, likes to resolve early,
 and none of that survives a loop point. Pass `--no-loop-hints` to turn it off
 (for example when the asset genuinely wants a one-shot intro).
 
-**Be honest about what is not done yet**: bar snapping is generation-side only.
-Trimming exactly on the downbeat and crossfading the seam belong to the post
-stage, which is not implemented yet. Until it lands, verify the loop by ear and
-expect to trim manually. Do not tell the user the loop is seamless because the
-bar count is right.
+Bar snapping here is generation-side only: it fixes the *requested* length to a
+whole number of bars. Trimming exactly on the downbeat and crossfading the seam
+belong to the post stage - see the `loop-and-postprocess` skill. Do not tell the
+user the loop is seamless because the bar count is right; it is seamless once
+`post_process.py` has cut it and the wrap has been listened to.
 
 The snapped length is also a target, not a guarantee. ACE-Step renders on a
 25 Hz latent grid, so the decoder rounds the request down to a whole 40 ms
@@ -220,9 +220,10 @@ when either end carries more than 0.75 s of dead air:
 When nothing is loop-viable, the fix is the requirement, not another roll of the
 dice: shorten `requirement.durationSeconds` toward where the music actually
 stops. **A loop does not have to be the requested bar count to be valid** - the
-post stage (a later chunk) will trim to the last contentful bar boundary as the
-final fallback, so a 15-bar loop out of an 18-bar request is a good outcome, not
-a failure.
+post stage trims to the last contentful bar boundary, so a 15-bar loop out of an
+18-bar request is a good outcome, not a failure. On the measured chiptune take
+that is exactly what happens: 4.10 s of trailing silence becomes a bar-exact
+25.714 s loop.
 
 Set expectations accordingly: on the chiptune case the loop prompt hints cut the
 trailing silence from 5.05 s to 3.05-4.10 s across three seeds, but never below
@@ -454,6 +455,22 @@ Every backend writes 32-bit float WAV (`pcm_f32le`) - that is what `torchaudio`
 produces from a float tensor. The post stage decides the shipped bit depth.
 
 If any item fails, fix it and re-verify before moving to the post stage.
+
+## Next Stage
+
+After selecting a candidate, run the post stage - see the `loop-and-postprocess`
+skill. It is where a loop actually becomes a loop: the take is trimmed to its
+last contentful bar, the seam is equal-power crossfaded and measured, the track
+is normalized to `requirement.targetLufs` (-16 LUFS for music) under a -1.0 dBTP
+ceiling, and the WAV/OGG exports are written.
+
+```bash
+python3 "<plugin-root>/scripts/post_process.py" <slug> --candidate generate/cand-03.wav
+```
+
+Bar snapping only works there for ACE-Step candidates, which record the tempo
+they rendered to. A MiniMax take needs `--bpm <measured tempo>` or it falls back
+to a content-boundary cut.
 
 ## Reference Index
 
