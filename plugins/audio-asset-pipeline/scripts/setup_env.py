@@ -56,6 +56,12 @@ _TORCH_CU128: dict[str, Any] = {
 # `stable_audio_3.StableAudioModel.from_pretrained(...)` / `.generate(...)`.
 _SA3_COMMIT = "a0b57f5483c4588f827f3552b7d5c6ca2a9687be"
 
+# ACE-Step-1.5 main @ 2026-08-24, verified to expose
+# `acestep.inference.generate_music(dit_handler, llm_handler, GenerationParams,
+# GenerationConfig)` plus `acestep.handler.AceStepHandler` and
+# `acestep.llm_inference.LLMHandler`.
+_ACESTEP_COMMIT = "14c0211d5a0653b0f63e27686f4c3f151b4d8629"
+
 STACKS: dict[str, dict[str, Any]] = {
     "sa3": {
         "label": "Stable Audio 3",
@@ -113,13 +119,27 @@ STACKS: dict[str, dict[str, Any]] = {
     "acestep": {
         "label": "ACE-Step 1.5",
         "pythons": ("3.12", "3.11"),
-        "imports": ("torch",),
+        # `acestep` is the package the `ace-step` distribution installs;
+        # importing it is what proves the install actually works.
+        "imports": ("acestep", "torch", "torchaudio"),
+        # Anything that runs acestep code - including a bare import probe - must
+        # carry these, or the library resolves its checkpoint tree from the
+        # current working directory and can fill the user's project with weights.
+        # The backend worker sets the same two variables from the same helper.
+        "probe_env": {
+            "ACESTEP_PROJECT_ROOT": str(_common.stack_data_dir("acestep")),
+            "ACESTEP_CHECKPOINTS_DIR": str(_common.stack_data_dir("acestep") / "checkpoints"),
+        },
         "steps": (
             {
                 "id": "project",
                 "kind": "pip",
-                "args": ["git+https://github.com/ace-step/ACE-Step-1.5"],
-                "label": "ACE-Step-1.5 from GitHub (PyTorch backend; vLLM is not available on Windows)",
+                # Pinned: ACE-Step-1.5's default branch moves fast and its
+                # generate_music() signature is not a stable public API, so an
+                # unpinned git install silently changes the backend under a user
+                # who re-runs setup months later. Bump this deliberately.
+                "args": [f"git+https://github.com/ace-step/ACE-Step-1.5@{_ACESTEP_COMMIT}"],
+                "label": f"ACE-Step-1.5 from GitHub @ {_ACESTEP_COMMIT[:7]} (PyTorch LM backend; vLLM has no Windows build)",
             },
             _TORCH_CU128,
         ),

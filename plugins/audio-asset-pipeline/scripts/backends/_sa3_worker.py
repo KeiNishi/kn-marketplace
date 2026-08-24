@@ -31,70 +31,39 @@ Result JSON (always written, success or failure):
 
 Error kinds are a closed vocabulary the driver maps onto manifest failure kinds:
     user_error | missing_flash_attn | oom | model_download_failed | backend_error
+
+The error taxonomy, the wav writer and the result harness are shared with the
+other workers in `_worker_common.py` (imported from this file's own directory).
 """
 
 from __future__ import annotations
 
-import argparse
 import importlib.util
-import json
-import os
 import pathlib
 import sys
 import time
-import traceback
 from typing import Any
+
+# Sibling module in this file's own directory, which is sys.path[0] for a
+# script launched by absolute path - no package install needed inside the venv.
+from _worker_common import (
+    WorkerError,
+    classify,
+    duration_warning,
+    looks_like_download_failure,
+    measure_silence,
+    run_cli,
+    save_wav,
+    to_stereo,
+)
 
 # Stable Audio 3 renders at 44.1 kHz stereo; the pipeline contract downstream
 # (loop points, LUFS normalization, OGG export) assumes exactly that.
 TARGET_SAMPLE_RATE = 44100
-TARGET_CHANNELS = 2
-# Written audio may drift from the request by a rounding step; anything past this
-# means the model produced a different length than asked for (the classic symptom
-# is a missing sample_size, which silently truncates long medium generations).
-DURATION_TOLERANCE_RATIO = 0.05
-DURATION_TOLERANCE_FLOOR = 0.5
-# Infix for the in-progress write. The file is renamed into place only once it
-# is complete, so a crash or timeout can never leave a half-written candidate
-# that later stages would treat as real audio.
-#
-# The temp name MUST keep the real .wav extension: torchaudio.save picks the
-# container format from the extension, so a '.part' tail makes it raise
-# "Unsupported format: part". The leading dot keeps the temp file out of the
-# way (hidden on POSIX) without changing how it is encoded.
-PARTIAL_INFIX = ".tmp"
 # Only the medium DiT ships fused attention kernels that need Flash Attention 2.
 # Without it the model still runs and still writes a file - the audio is just
 # quietly wrong, which is the one failure mode a user cannot detect from a log.
 FLASH_ATTN_MODELS = frozenset({"medium"})
-# Substrings that mark a weight-fetch problem rather than a compute problem.
-# Checked case-insensitively against the exception text raised by from_pretrained.
-_DOWNLOAD_MARKERS = (
-    "connection",
-    "connecterror",
-    "couldn't connect",
-    "could not connect",
-    "timed out",
-    "429",
-    "404",
-    "401",
-    "403",
-    "gated",
-    "unauthorized",
-    "offline mode",
-    "huggingface.co",
-    "resolve",
-    "no such file or directory",
-)
-
-
-class WorkerError(Exception):
-    """A failure that maps onto one of the structured error kinds."""
-
-    def __init__(self, kind: str, message: str) -> None:
-        super().__init__(message)
-        self.kind = kind
-        self.message = message
 
 
 def flash_attn_status() -> tuple[bool, str]:
@@ -111,25 +80,6 @@ def flash_attn_status() -> tuple[bool, str]:
     except Exception as exc:  # ImportError, OSError (DLL), RuntimeError
         return False, f"installed but not importable ({type(exc).__name__}: {exc})"
     return True, "ok"
-
-
-def classify(exc: BaseException) -> str:
-    """Map an arbitrary exception onto the structured error vocabulary."""
-    import torch
-
-    oom_types: tuple[type[BaseException], ...] = (MemoryError,)
-    cuda_oom = getattr(torch, "OutOfMemoryError", None) or getattr(
-        torch.cuda, "OutOfMemoryError", None
-    )
-    if isinstance(cuda_oom, type):
-        oom_types = (*oom_types, cuda_oom)
-    if isinstance(exc, oom_types):
-        return "oom"
-    text = str(exc).lower()
-    # Older torch paths raise a plain RuntimeError for allocator exhaustion.
-    if "out of memory" in text or "cuda error: out of memory" in text:
-        return "oom"
-    return "backend_error"
 
 
 def load_model(model_id: str, device: str | None) -> Any:
@@ -161,8 +111,7 @@ def load_model(model_id: str, device: str | None) -> Any:
     except WorkerError:
         raise
     except Exception as exc:
-        text = str(exc).lower()
-        kind = "model_download_failed" if any(m in text for m in _DOWNLOAD_MARKERS) else classify(exc)
+        kind = "model_download_failed" if looks_like_download_failure(str(exc)) else classify(exc)
         hint = ""
         if kind == "model_download_failed":
             hint = (
@@ -205,15 +154,6 @@ def sample_rate_of(model: Any) -> int:
     return TARGET_SAMPLE_RATE
 
 
-def partial_path(output: pathlib.Path) -> pathlib.Path:
-    """Temp name for the in-progress write of `output`.
-
-    Keeps the original extension so torchaudio can still infer the container
-    format. generate_sa3.cleanup_attempt mirrors this rule to remove leftovers.
-    """
-    return output.with_name(f".{output.stem}{PARTIAL_INFIX}{output.suffix}")
-
-
 def model_sample_size(model: Any) -> int | None:
     """The model's native latent window, which generate() needs to size output.
 
@@ -229,35 +169,8 @@ def model_sample_size(model: Any) -> int | None:
     return None
 
 
-def duration_warning(actual: float, requested: float) -> str | None:
-    tolerance = max(DURATION_TOLERANCE_FLOOR, requested * DURATION_TOLERANCE_RATIO)
-    if abs(actual - requested) <= tolerance:
-        return None
-    return (
-        f"wrote {actual:.2f}s of audio for a {requested:.2f}s request "
-        f"(tolerance {tolerance:.2f}s)"
-    )
-
-
-def to_stereo(waveform: Any) -> Any:
-    """Force a (channels, samples) tensor to stereo.
-
-    SA3 already returns stereo; this only guards the contract so a mono model
-    variant cannot silently break the post stage's channel assumptions.
-    """
-    if waveform.dim() == 1:
-        waveform = waveform.unsqueeze(0)
-    channels = waveform.shape[0]
-    if channels == TARGET_CHANNELS:
-        return waveform
-    if channels == 1:
-        return waveform.repeat(TARGET_CHANNELS, 1)
-    return waveform[:TARGET_CHANNELS]
-
-
 def generate(request: dict[str, Any]) -> dict[str, Any]:
     import torch
-    import torchaudio
 
     model_id = request["model"]
     duration = float(request["durationSeconds"])
@@ -326,11 +239,10 @@ def generate(request: dict[str, Any]) -> dict[str, Any]:
 
         waveform = to_stereo(audio[0].detach().cpu().float())
         actual_seconds = waveform.shape[-1] / float(sample_rate)
-        # Write beside the target, then rename: a crash mid-encode must not leave
-        # a truncated wav sitting at the candidate's final name.
-        partial = partial_path(output)
-        torchaudio.save(str(partial), waveform, sample_rate)
-        os.replace(partial, output)
+        # Dead air matters for looping ambience too, and the post stage needs the
+        # numbers regardless, so every backend reports them.
+        leading_silence, trailing_silence = measure_silence(waveform, sample_rate)
+        save_wav(waveform, output, sample_rate)
 
         # The tensors are the largest live allocation; dropping them before the
         # next generate() is what keeps peak VRAM at one candidate's worth.
@@ -347,6 +259,8 @@ def generate(request: dict[str, Any]) -> dict[str, Any]:
                 "seed": seed,
                 "generationSeconds": round(elapsed, 2),
                 "actualDurationSeconds": round(actual_seconds, 3),
+                "leadingSilenceSeconds": leading_silence,
+                "trailingSilenceSeconds": trailing_silence,
                 "warning": warning,
                 "params": {
                     "model": model_id,
@@ -370,41 +284,5 @@ def generate(request: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Stable Audio 3 generation worker (venv-side)")
-    parser.add_argument("--request", required=True, help="path to the request JSON file")
-    args = parser.parse_args(argv)
-
-    request_path = pathlib.Path(args.request)
-    try:
-        request = json.loads(request_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        print(f"unreadable request file {request_path}: {exc}", file=sys.stderr)
-        return 1
-
-    result_path = pathlib.Path(request["resultPath"])
-    try:
-        payload = generate(request)
-        exit_code = 0
-    except WorkerError as exc:
-        payload = {"ok": False, "error": {"kind": exc.kind, "message": exc.message}}
-        print(f"{exc.kind}: {exc.message}", file=sys.stderr)
-        exit_code = 1
-    except BaseException as exc:  # keep the driver informed even on KeyboardInterrupt
-        payload = {
-            "ok": False,
-            "error": {
-                "kind": "backend_error",
-                "message": f"{type(exc).__name__}: {exc}",
-            },
-        }
-        traceback.print_exc()
-        exit_code = 1
-
-    result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-    return exit_code
-
-
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run_cli(generate, "Stable Audio 3 generation worker (venv-side)"))

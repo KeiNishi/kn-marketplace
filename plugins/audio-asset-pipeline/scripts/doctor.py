@@ -144,9 +144,16 @@ def check_stack(checks: list[Check], stack: str) -> bool:
         _add(checks, label, "warn", f"venv missing; run setup_env.py --stack {stack}")
         return False
 
+    # Some stacks resolve cache and checkpoint directories from the working
+    # directory the moment their package is touched. The registry says where
+    # those belong; without it a health check could write gigabytes into
+    # whatever project the user happened to run doctor from.
+    probe_env = spec.get("probe_env")
+    env = {**_common.subprocess_env(), **probe_env} if probe_env else None
+
     missing = []
     for module in spec["imports"]:
-        result = _common.run([python, "-c", f"import {module}"], timeout=180)
+        result = _common.run([python, "-c", f"import {module}"], timeout=180, env=env)
         if result.returncode != 0:
             missing.append(module)
     if missing:
@@ -162,7 +169,7 @@ def check_stack(checks: list[Check], stack: str) -> bool:
     if "torch" in spec["imports"]:
         # An import check alone passes on a CPU-only torch, which would make the
         # stack look healthy and then generate at unusable speeds.
-        cuda = _common.run([python, "-c", _CUDA_PROBE], timeout=300)
+        cuda = _common.run([python, "-c", _CUDA_PROBE], timeout=300, env=env)
         if cuda.returncode != 0:
             detail = cuda.stderr.strip()[-300:]
             _add(

@@ -210,6 +210,21 @@ def subprocess_env() -> dict[str, str]:
     return merged
 
 
+def stack_data_dir(stack: str) -> pathlib.Path:
+    """Per-stack private working directory for model weights and caches.
+
+    Kept out of any repository and out of the venv. ACE-Step in particular
+    resolves its checkpoint tree from the CURRENT WORKING DIRECTORY unless it is
+    told otherwise, and the working directory is the user's game project - one
+    unguarded call would drop ~11 GB of weights into it. Every caller that can
+    trigger that (the backend worker, the doctor's import probe) points the
+    stack's environment variables here, so they all agree on one location.
+    """
+    if stack not in STACKS:
+        raise ValueError(f"Unknown stack: {stack}; expected one of {list(STACKS)}")
+    return data_dir() / stack
+
+
 def venv_dir(stack: str) -> pathlib.Path:
     if stack not in STACKS:
         raise ValueError(f"Unknown stack: {stack}; expected one of {list(STACKS)}")

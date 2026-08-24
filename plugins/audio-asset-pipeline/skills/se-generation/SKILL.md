@@ -59,7 +59,9 @@ Useful flags: `--model`, `--candidates N`, `--seed N`, `--negative-prompt`,
 | `medium` | Quality re-render of an approved idea, longer musical or ambient beds. | ~5-6.5 GB | 380 s | **required** |
 
 - `--model auto` (the default) picks `small-sfx` for `assetType: se` and
-  `medium` for `assetType: bgm`.
+  `medium` for `assetType: bgm`. `medium` on a BGM asset is for ambient beds and
+  textures with no musical structure; for actual music (tempo, key, loops,
+  vocals) use the `bgm-generation` skill and its ACE-Step backend instead.
 - Explore on `small-sfx` first. It is quick enough to run several batches while
   the prompt is still being tuned.
 - `medium` without Flash Attention 2 does not crash, it produces glitchy audio.

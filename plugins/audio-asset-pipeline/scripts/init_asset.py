@@ -67,6 +67,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="whether the asset should contain vocals (default: off)",
     )
+    parser.add_argument(
+        "--lyrics",
+        default=None,
+        help="lyrics for a vocal track; required by the music backend when --vocals is set",
+    )
     parser.add_argument("--base", default=None, help="workspace to hold audio-pipeline-output/")
     args = parser.parse_args(argv)
 
@@ -83,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             ("bpm", args.bpm),
             ("loop", args.loop),
             ("vocals", args.vocals),
+            ("lyrics", args.lyrics),
         )
         if value is not None
     }
