@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "door-creak",
+  "prompt": "Generate a wooden door creaking open sound effect for my game, about 3 seconds.",
+  "assertions": [
+    "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+    "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+    "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+    "Does not invent a script or flag that generate_sa3.py does not provide",
+    "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success"
+  ]
+}

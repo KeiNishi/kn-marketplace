@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "slug": "door-open",
+  "assetType": "se",
+  "mode": "manual",
+  "createdAt": "2026-08-24T16:35:35Z",
+  "updatedAt": "2026-08-24T16:35:55Z",
+  "dryRun": true,
+  "requirement": {
+    "prompt": "wooden door creaking open, interior, close mic",
+    "referenceAudio": null,
+    "referenceStrength": 0.7,
+    "durationSeconds": 3.0,
+    "loop": false,
+    "vocals": false,
+    "lyrics": null,
+    "bpm": null,
+    "timeSignature": "4/4",
+    "styleTags": [],
+    "targetLufs": -12.0,
+    "formats": [
+      "wav",
+      "ogg"
+    ]
+  },
+  "stages": {
+    "requirement": {
+      "status": "pending"
+    },
+    "generate": {
+      "status": "done",
+      "backend": "sa3",
+      "attempts": 1,
+      "candidates": [
+        {
+          "file": "generate/cand-01.wav",
+          "seed": 1647208824,
+          "backend": "sa3",
+          "params": {
+            "dryRun": true,
+            "model": "small-sfx",
+            "durationSeconds": 3.0,
+            "leadingSilenceSeconds": 0.0,
+            "trailingSilenceSeconds": 0.0
+          },
+          "createdAt": "2026-08-24T16:35:41Z"
+        },
+        {
+          "file": "generate/cand-02.wav",
+          "seed": 1339493294,
+          "backend": "sa3",
+          "params": {
+            "dryRun": true,
+            "model": "small-sfx",
+            "durationSeconds": 3.0,
+            "leadingSilenceSeconds": 0.0,
+            "trailingSilenceSeconds": 0.0
+          },
+          "createdAt": "2026-08-24T16:35:41Z"
+        },
+        {
+          "file": "generate/cand-03.wav",
+          "seed": 2985872003,
+          "backend": "sa3",
+          "params": {
+            "dryRun": true,
+            "model": "small-sfx",
+            "durationSeconds": 3.0,
+            "leadingSilenceSeconds": 0.0,
+            "trailingSilenceSeconds": 0.0
+          },
+          "createdAt": "2026-08-24T16:35:41Z"
+        }
+      ],
+      "selected": "generate/cand-01.wav",
+      "approved": false,
+      "approvedAt": null,
+      "approvedBy": null,
+      "approvedFile": null,
+      "failureKind": null
+    },
+    "post": {
+      "status": "pending",
+      "loopProcessing": null,
+      "normalize": null,
+      "outputs": [],
+      "failureKind": null
+    },
+    "review": {
+      "status": "pending",
+      "checks": null,
+      "clapScore": null,
+      "verdict": null
+    }
+  }
+}

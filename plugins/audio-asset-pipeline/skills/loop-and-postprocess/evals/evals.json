@@ -1,0 +1,61 @@
+{
+  "description": "Evaluation scenarios for the loop-and-postprocess skill (audio pipeline post stage).",
+  "scenarios": [
+    {
+      "skill": "loop-and-postprocess",
+      "query": "The chiptune loop I generated has a few seconds of silence at the end and the loop point clicks. Make it a proper seamless loop.",
+      "expected_behavior": [
+        "Runs scripts/post_process.py with the asset slug rather than hand-building ffmpeg commands",
+        "Passes --candidate (or points at stages.generate.selected) instead of guessing when the asset has more than one candidate",
+        "Explains that the trailing silence is trimmed to the last fully contentful bar, so the loop may come out shorter than the requested bar count",
+        "Reports the resulting bar count and duration from stages.post.loopProcessing rather than assuming the requested length",
+        "Tells the user to hear the wrap by playing the file twice in a row or looping it in engine, and does not treat the recorded seamRatio as proof on its own"
+      ]
+    },
+    {
+      "skill": "loop-and-postprocess",
+      "query": "I asked for 18 bars and post_process only gave me 15. Re-run it until I get all 18.",
+      "expected_behavior": [
+        "Explains that ACE-Step's planner ended the song around bar 15 and the remaining bars are silence, so the 15-bar loop is the correct result",
+        "Does not re-run the post stage repeatedly, which is deterministic and would produce the same cut",
+        "Offers the real fix if 18 bars are genuinely needed: regenerate with a different seed or a shorter requirement.durationSeconds, not more post-processing",
+        "Points at the recorded contentEndSeconds / bars figures as the evidence",
+        "Does not silently pad the loop with silence or stretch it to reach 18 bars"
+      ]
+    },
+    {
+      "skill": "loop-and-postprocess",
+      "query": "Normalize this vocal track to -16 LUFS and give me an ogg. It was made with MiniMax.",
+      "expected_behavior": [
+        "Runs post_process.py and lets requirement.targetLufs and requirement.formats drive the run instead of inventing flags",
+        "Reports this candidate's own measured input true peak from stages.post.normalize.measuredInput rather than reciting a remembered figure (one earlier MiniMax take measured +0.11 dBTP, which is an example, not this file's value)",
+        "Explains that MiniMax candidates arrive unnormalized and can sit above 0 dBTP, which is what the -1.0 dBTP ceiling exists to pull back before the 16-bit and Vorbis exports are written",
+        "Verifies the measured output loudness and true peak from stages.post.normalize rather than assuming the normalization hit the target",
+        "Mentions that the ogg may read a fraction of a dB above the ceiling as normal encoder overshoot, and that only a reading at or above 0 dBTP is a failure",
+        "Does not use requirement.bpm for bar snapping on a MiniMax take without the user having measured the tempo"
+      ]
+    },
+    {
+      "skill": "loop-and-postprocess",
+      "query": "Trim the silence off this door creak sound effect and export it for Unity.",
+      "expected_behavior": [
+        "Recognises the asset as a one-shot (requirement.loop false) and does not apply bar snapping or a loop crossfade",
+        "Explains that the trailing trim keeps 0.2 s past the last contentful window so the decay is not clipped, and that a short leading pre-roll under 0.5 s is left alone",
+        "Points at post/<slug>.wav (16-bit PCM) as the file the engine loads, and master.wav as the float archive copy",
+        "Checks the exported file for clipping and for the expected duration before reporting success",
+        "Does not suggest re-generating the sound effect when the fix is a trim"
+      ]
+    },
+    {
+      "skill": "loop-and-postprocess",
+      "query": "Everything in this project has to be 44.1 kHz, but the ACE-Step tracks came out at 48k. Convert them.",
+      "expected_behavior": [
+        "Uses post_process.py --target-rate 44100 rather than a separate conversion step after export",
+        "Explains that the resample happens once, at the end, with soxr precision 28, because 44.1 <-> 48 kHz is not an integer ratio",
+        "Notes that the float master.wav stays at the source rate and only the exports are converted",
+        "Confirms that a bar-exact loop stays bar-exact after the conversion, by checking the exported duration",
+        "Does not resample the candidate before processing or chain two conversions"
+      ]
+    }
+  ]
+}

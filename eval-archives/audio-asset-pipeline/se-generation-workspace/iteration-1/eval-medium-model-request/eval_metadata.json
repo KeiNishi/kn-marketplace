@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "medium-model-request",
+  "prompt": "Use the medium model for this one, I want the best quality.",
+  "assertions": [
+    "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+    "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+    "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+    "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+    "Does not attempt to bypass, disable, or work around the flash-attn refusal"
+  ]
+}

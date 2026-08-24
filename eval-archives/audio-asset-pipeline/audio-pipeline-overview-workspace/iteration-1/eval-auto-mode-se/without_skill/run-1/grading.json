@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Recognises auto mode and does NOT ask the user any clarifying questions about mood, duration, loop or backend",
+      "passed": false,
+      "evidence": "The 'Final answer given to the user' section (the actual deliverable) ends with: 'Two questions I'd normally have asked before locking the prompt ... should the dash sound lean retro/8-bit or modern/cinematic, and is 0.4s the right length for your dash's actual active-frames duration? Happy to adjust either and regenerate.' This puts a mood question and a duration question directly to the user in the delivered response, which is exactly what auto mode is supposed to avoid, even though it also proceeded with its own assumption in the meantime. (The earlier 'Assumptions made' section at lines 75-80 lists similar questions but frames them as internal reasoning, not part of the user-facing answer; the line-272 instance is the one that actually reaches the user.)"
+    },
+    {
+      "text": "Infers the requirement from the conversation (se, short one-shot, no loop, Stable Audio 3 small-sfx) and states the inference in one line before running",
+      "passed": false,
+      "evidence": "Section 3 ('Assumptions made') does infer se/short one-shot/no-loop/sa3-small-sfx before running init_asset.py in section 6, so the substance is present, but it is written as a sprawling multi-bullet list (7+ lines) rather than a single-line inference statement, and no one-line summary equivalent to the with_skill run's 'Auto mode: SE, ... small-sfx, from ...' appears anywhere before the commands run."
+    },
+    {
+      "text": "Runs the stages in order: init_asset.py, generate_sa3.py with 1 candidate, post_process.py, review_asset.py",
+      "passed": false,
+      "evidence": "init_asset.py (section 6), generate_sa3.py with candidates=1 (section 7), and post_process.py (section 8) are run in order, but review_asset.py is never invoked anywhere in the transcript (confirmed via grep -- zero occurrences of 'review' in the whole file) and pipeline.json / dash-pipeline-manifest.json both show stages.review.status: 'pending' with verdict: null at the end of the run. The review stage was skipped entirely."
+    },
+    {
+      "text": "Does not stop for approval and does not call approve_asset.py --approve on the user's behalf; the candidate is selected but stays unapproved",
+      "passed": true,
+      "evidence": "approve_asset.py is never called (section 8 explicitly notes 'the manual-mode approval gate in approve_asset.py were read and understood but not exercised'). pipeline.json / dash-pipeline-manifest.json show stages.generate.approved: false, approvedBy: null. The run did not pause for user approval at any point."
+    },
+    {
+      "text": "Reports the output paths and the review verdict, and if the review fails, adjusts seed or prompt and regenerates at most twice more before reporting honestly",
+      "passed": false,
+      "evidence": "Output paths are reported (dash-DRYRUN-placeholder.wav, dash-pipeline-manifest.json, workspace path), but the review stage and any review verdict are never mentioned anywhere in the transcript or the final answer to the user (grep for 'review' returns zero matches). The run silently stops after post_process.py and presents the result as complete without acknowledging that review_asset.py was never run, so there is no honest accounting of a review verdict (present or absent) at all."
+    }
+  ],
+  "summary": {"passed": 1, "failed": 4, "total": 5, "pass_rate": 0.2}
+}

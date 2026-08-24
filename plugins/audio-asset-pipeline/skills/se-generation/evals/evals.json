@@ -1,0 +1,71 @@
+{
+  "description": "Evaluation scenarios for the se-generation skill (Stable Audio 3 generate stage).",
+  "scenarios": [
+    {
+      "skill": "se-generation",
+      "query": "Generate a wooden door creaking open sound effect for my game, about 3 seconds.",
+      "expected_behavior": [
+        "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+        "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+        "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+        "Does not invent a script or flag that generate_sa3.py does not provide",
+        "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success"
+      ]
+    },
+    {
+      "skill": "se-generation",
+      "query": "I need five different footstep sounds on gravel so it doesn't sound repetitive in game.",
+      "expected_behavior": [
+        "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+        "Explains that varying the seed on one prompt is what produces a usable variation set",
+        "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+        "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+        "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard"
+      ]
+    },
+    {
+      "skill": "se-generation",
+      "query": "Use the medium model for this one, I want the best quality.",
+      "expected_behavior": [
+        "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+        "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+        "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+        "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+        "Does not attempt to bypass, disable, or work around the flash-attn refusal"
+      ]
+    },
+    {
+      "skill": "se-generation",
+      "query": "Here is a reference whoosh.wav, make me three more that sound like it.",
+      "expected_behavior": [
+        "Sets requirement.referenceAudio to the reference file path in the manifest",
+        "Chooses a high referenceStrength (roughly 0.7-0.9) and explains that higher means closer to the reference",
+        "Runs generate_sa3.py with --candidates 3",
+        "Confirms the reference file exists before running, since a missing reference is a user_error failure",
+        "Does not claim the reference guarantees a matching timbre across a whole stylized set"
+      ]
+    },
+    {
+      "skill": "se-generation",
+      "query": "I want a 0.3 second UI click sound.",
+      "expected_behavior": [
+        "Explains that Stable Audio 3 cannot reliably generate sub-2-second audio because of its latent frame rate",
+        "Notes that the backend generates at least 2 seconds and records requestedDurationSeconds, with trimming happening in the post stage",
+        "Keeps requirement.durationSeconds at the length actually wanted rather than inflating it",
+        "Writes a transient-focused prompt such as 'short UI click, dry, no tail' so the usable audio sits at the start of the file",
+        "Does not present the 2-second floor as a failure or retry the generation to try to get a shorter file"
+      ]
+    },
+    {
+      "skill": "se-generation",
+      "query": "Can you check the audio pipeline wiring works without burning GPU time?",
+      "expected_behavior": [
+        "Sets AUDIO_PIPELINE_DRY_RUN=1 and runs generate_sa3.py normally",
+        "Explains that ffmpeg synthesizes 44.1 kHz stereo placeholder tones and that the manifest is filled in with dryRun: true in the candidate params",
+        "Notes that ffmpeg is required even in dry-run mode",
+        "Does not present the placeholder tones as usable audio or judge their quality",
+        "Optionally runs doctor.py --stack sa3 to report what a real run would still need"
+      ]
+    }
+  ]
+}

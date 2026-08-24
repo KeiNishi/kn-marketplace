@@ -1,0 +1,1 @@
+We're building a 2D platformer and the player just got a dash. Auto mode: give me the dash sound effect.

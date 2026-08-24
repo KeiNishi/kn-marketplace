@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+      "passed": false,
+      "evidence": "Grep across the full transcript for 'flash_attn', 'flash attention', and 'glitchy' returns zero matches. The run never mentions Flash Attention 2 at all, let alone the silent-glitchy-audio risk without it."
+    },
+    {
+      "text": "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+      "passed": false,
+      "evidence": "No mention of any refusal behavior or 'broken file' concept anywhere. Step 7 ('What I did not do') explicitly states 'I did not run doctor.py' and reasons that dry-run mode 'would not have changed anything about this run'  -  the flash_attn gate is never investigated or surfaced."
+    },
+    {
+      "text": "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+      "passed": false,
+      "evidence": "small-sfx is used, but not as a fallback for a flash_attn-blocked medium  -  the run instead claims (Step 3, lines 39-54) that 'medium' is simply the wrong, differently-trained ambient/BGM checkpoint for any SFX use case ('not a higher-fidelity version of the SFX model'), a claim that contradicts the plugin's own SKILL.md, which documents medium as 'Quality re-render of an approved idea, longer musical or ambient beds.' No flash_attn wheel-install alternative is mentioned anywhere."
+    },
+    {
+      "text": "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+      "passed": false,
+      "evidence": "The word 'VRAM' appears only twice (lines 40, 197), both generic descriptions of small-sfx as 'the fast, low-VRAM checkpoint' with no numbers attached. No figures for either model's VRAM cost, and no comparison, appear anywhere in the transcript."
+    },
+    {
+      "text": "Does not attempt to bypass, disable, or work around the flash-attn refusal",
+      "passed": true,
+      "evidence": "The run never engages with the medium model's flash_attn gate at all  -  it deliberately chose small-sfx instead of even attempting --model medium (Step 3, Step 7: 'I did not generate a second batch with --model medium'), and explicitly skipped doctor.py. There is no evidence anywhere of an attempt to bypass, disable, or work around a refusal, since no refusal was ever encountered or sought."
+    }
+  ],
+  "summary": {"passed": 1, "failed": 4, "total": 5, "pass_rate": 0.2}
+}

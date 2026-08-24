@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+      "passed": true,
+      "evidence": "transcript.md step 8 runs `python backends/generate_sa3.py door-creak-open --base \"$OUT\"` where $OUT=<run-dir>/outputs, and generated-files.txt / pipeline.json confirm the output landed at outputs/audio-pipeline-output/door-creak-open/generate/cand-01.wav, i.e. --base points at the workspace holding audio-pipeline-output/."
+    },
+    {
+      "text": "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+      "passed": true,
+      "evidence": "No --model flag was passed to generate_sa3.py (step 8), leaving the default 'auto'. The command output and pipeline.json both show \"model\": \"small-sfx\" (auto-routed for assetType se), matching the with_skill run's routing."
+    },
+    {
+      "text": "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+      "passed": true,
+      "evidence": "init_asset.py step 7 uses `--prompt \"wooden door creaking open, single slow hinge creak, interior room, close mic, foley sound effect, no music, no voice\"` -- a comma-separated tag list covering material (wooden door), action (creaking open, single slow hinge creak), space (interior room), and mic-distance (close mic), not a narrative sentence. It is more bloated than the skill's canonical example (it stuffs negative-style terms like 'no music, no voice' into the positive prompt instead of using --negative-prompt, which this run never used at all), but it is not a story/narrative sentence and does hit the required descriptor categories."
+    },
+    {
+      "text": "Does not invent a script or flag that generate_sa3.py does not provide",
+      "passed": true,
+      "evidence": "The generate_sa3.py invocation in step 8 uses only `--base`, a real flag. Step 7 mentions 'An earlier attempt with a typo'd flag name was rejected by argparse' but that was against init_asset.py, not generate_sa3.py, and it was caught by argparse before any file was written -- no invented flag was ever used to run generate_sa3.py."
+    },
+    {
+      "text": "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success",
+      "passed": true,
+      "evidence": "transcript.md step 10 runs ffprobe on the produced cand-01.wav confirming pcm_s16le/44100Hz/2ch/3.000000s, and explicitly states 'Also inspected pipeline.json: generate stage is done with the one candidate recorded' before the Final answer section reports success."
+    }
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}
+}

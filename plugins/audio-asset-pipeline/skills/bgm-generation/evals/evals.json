@@ -1,0 +1,95 @@
+{
+  "description": "Evaluation scenarios for the bgm-generation skill (ACE-Step 1.5 and MiniMax-Music3 generate stage).",
+  "scenarios": [
+    {
+      "skill": "bgm-generation",
+      "query": "Generate a looping boss battle theme for my game, about a minute, 140 BPM.",
+      "expected_behavior": [
+        "Initializes the asset with --type bgm and sets bpm 140 plus a loop flag, then runs scripts/backends/generate_acestep.py",
+        "Explains that the duration is snapped to a whole number of bars because requirement.loop is set and bpm and timeSignature are both available",
+        "Writes a mood/genre/instrumentation prompt such as 'driving orchestral boss battle theme, taiko drums, brass ostinato, D minor' rather than a narrative description",
+        "Puts BPM in requirement.bpm rather than only in the prompt text",
+        "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Make me a short sound effect for a menu click.",
+      "expected_behavior": [
+        "Routes to the Stable Audio 3 backend (generate_sa3.py) instead of ACE-Step",
+        "States that ACE-Step's minimum length is 10 seconds and that generate_acestep.py refuses assetType se",
+        "Uses --type se when creating the manifest",
+        "Does not try to work around the refusal by inflating the duration to 10 seconds",
+        "Points at the se-generation skill or its prompt guidance for the sound effect wording"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "I want a song with vocals for the ending credits.",
+      "expected_behavior": [
+        "Sets requirement.vocals to true AND supplies requirement.lyrics, for example via init_asset.py --vocals --lyrics",
+        "States that vocals with empty lyrics is a user_error the backend refuses rather than generating wordless singing",
+        "Uses section markers such as [verse] and [chorus], each on its own line, in the lyrics",
+        "Notes that the vocal language is detected from the lyrics themselves",
+        "Names both vocal backends and explains the tradeoff: ACE-Step for fast iteration at 48 kHz, MiniMax-Music3 for the final take's vocal quality at minutes per candidate",
+        "Does not claim the melody or a specific singer can be specified"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Generate a vocal ballad for the credits with these lyrics, best quality you can manage: [verse] The harbour lights are fading / [chorus] We carry the light home",
+      "expected_behavior": [
+        "Routes to scripts/backends/generate_minimax.py because the request is a finished vocal performance rather than an iteration pass",
+        "Surfaces the MiniMax-Music3 Community License requirement to display 'MiniMax-Music3' prominently in the product UI, and mentions the US$20M revenue threshold needing separate authorization",
+        "Warns before starting that the first run downloads 27 GB and that each candidate takes many minutes of GPU time on a 12 GB card, and prefers a single candidate",
+        "Reformats the lyrics so each section tag sits on its own line, because MiniMax drops text sharing a line with a leading tag",
+        "Writes a structured caption covering global metadata, vocal details and arrangement rather than a bare mood phrase",
+        "Notes the output is 44.1 kHz stereo and that requirement.durationSeconds is a ceiling the model may stop short of"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Use MiniMax-Music3 for my looping instrumental town theme, it's the best model.",
+      "expected_behavior": [
+        "Routes to generate_acestep.py instead and explains that generate_minimax.py refuses vocals false as a user_error",
+        "States that MiniMax has no instrumental mode worth using and that ACE-Step renders an instrumental in seconds rather than many minutes",
+        "Adds that only ACE-Step has structured tempo control, so only it can snap a loop to whole bars",
+        "Does not work around the refusal by inventing placeholder lyrics or an [Instrumental] marker for MiniMax",
+        "Does not silently switch backends without telling the user why"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "The loop has an audible seam when it repeats. Fix it.",
+      "expected_behavior": [
+        "Explains that bar snapping only fixes the generated length, and that downbeat trimming plus crossfade belong to the post stage, which is not implemented yet",
+        "Checks that requirement.bpm and requirement.timeSignature are both set, since without them no snapping happened at all",
+        "Suggests prompt-side loop hygiene (no fade out, no intro flourish, consistent arrangement) and confirms the loop hints were not disabled with --no-loop-hints",
+        "Offers to re-generate with a different seed rather than claiming the seam is already solved",
+        "Does not claim the track loops seamlessly just because barSnappedDurationSeconds is recorded in the manifest"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Here's a track I like, reference.wav. Write me something in that style.",
+      "expected_behavior": [
+        "Sets requirement.referenceAudio to the file and picks a referenceStrength, explaining that higher means closer to the reference",
+        "Confirms the reference file exists before running, since a missing reference is a user_error",
+        "States that this is style conditioning sampled from about 30 seconds of the file, not a cover: it borrows character, not melody",
+        "Notes that cover and repaint modes are not wired up yet",
+        "Still supplies a text prompt alongside the reference rather than relying on the reference alone"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Can you check the music pipeline wiring works without downloading 10GB of weights?",
+      "expected_behavior": [
+        "Sets AUDIO_PIPELINE_DRY_RUN=1 and runs generate_acestep.py normally",
+        "Explains that ffmpeg synthesizes 48 kHz stereo placeholder tones at the bar-snapped duration, with dryRun true in the candidate params",
+        "Confirms the bar snapping numbers in the manifest rather than judging the audio",
+        "Notes that ffmpeg is required even in dry-run mode",
+        "Optionally runs doctor.py --stack acestep to report what a real run would still need"
+      ]
+    }
+  ]
+}

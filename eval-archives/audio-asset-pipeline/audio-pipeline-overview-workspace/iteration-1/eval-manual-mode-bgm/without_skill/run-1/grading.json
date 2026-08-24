@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Recognises this as manual mode and elicits the requirement first: purpose and scene, mood or genre, duration, loop, vocals, reference track (AskUserQuestion if available, otherwise plain questions, then waits for the reply)",
+      "passed": false,
+      "evidence": "The run does recognise manual mode ('The correct setup is: create the manifest in manual mode, generate the candidate takes, and then stop and hand the takes to the user'). But its Step 4 list of 'questions I would have asked' only covers mood/instrumentation (combining purpose, scene and genre into one loose item), tempo, length (duration), and loop needed - four of the six required categories, and even 'purpose and scene' is not asked separately from mood. Vocals is only addressed as an embedded assumption inside the mood answer ('...no vocals') rather than as its own question, and reference track is never mentioned anywhere in the transcript or final answer. So two of the six required elicitation categories (vocals, reference track) are missing entirely as questions."
+    },
+    {
+      "text": "Initializes with init_asset.py --mode manual and generates 3 candidates on ACE-Step",
+      "passed": true,
+      "evidence": "Step 5 command: 'python init_asset.py town-theme --type bgm --mode manual --prompt ... --duration 60 --bpm 95 --base ...', output confirms 'bgm / manual mode'. Step 6 runs 'backends/generate_acestep.py town-theme --base ...' with output 'Generated 3 candidate(s) ... with acestep/acestep-v15-turbo' and three files cand-01/02/03.wav; pipeline.json confirms backend: 'acestep' with 3 candidate entries."
+    },
+    {
+      "text": "Presents each candidate with its file path, its leading and trailing silence figures (and loopViable when false), and a one-line description of its character, then waits for the user's choice",
+      "passed": false,
+      "evidence": "The final answer to the user only lists file paths with seeds ('cand-01.wav (seed 3901074856)', etc.) plus one collective statement ('3 candidate takes, all loop-viable (no dead air at either end)'). No per-candidate leadingSilenceSeconds/trailingSilenceSeconds figures and no one-line description of each candidate's character appear anywhere in the report, even though per-file silence numbers were captured in the raw Step 6 command output ('silence lead=0.00s tail=0.00s' per file) and never carried into a per-candidate presentation. It does correctly tell the user to listen and choose."
+    },
+    {
+      "text": "Does not run post_process.py before the user has chosen, and explains that the post stage refuses until the choice is approved",
+      "passed": true,
+      "evidence": "Step 8: 'Left post ... and review stages untouched (pending), since both require the approved selection ... which only the user can give.' Step 7 explicitly cites the mechanical gate: 'the pipeline's own post stage mechanically refuses to run without that approval ... generation_approved() gates it.' pipeline.json confirms stages.post.status: 'pending' and stages.review.status: 'pending'."
+    },
+    {
+      "text": "Records the choice with approve_asset.py <slug> --select generate/cand-NN.wav --approve, then runs the post and review stages and confirms the result with the user",
+      "passed": false,
+      "evidence": "approve_asset.py, post_process.py, and review_asset.py were never run. pipeline.json shows stages.generate.selected: null, approved: false, stages.post.status: 'pending', stages.review.status: 'pending'. The run correctly stopped at the manual-mode gate and handed the approve/post/review commands to the user as next steps ('I stopped here on purpose - selecting/approving is the one step that's yours'), but the assertion's described actions never actually occurred in this run."
+    }
+  ],
+  "summary": {"passed": 2, "failed": 3, "total": 5, "pass_rate": 0.4}
+}

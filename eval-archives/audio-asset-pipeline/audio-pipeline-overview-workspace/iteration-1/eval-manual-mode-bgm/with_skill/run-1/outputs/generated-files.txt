@@ -1,0 +1,6 @@
+Audio and image files this run produced. Not archived: every
+one is a dry-run placeholder tone, not real generated audio.
+
+outputs/workspace/audio-pipeline-output/town-theme/generate/cand-01.wav
+outputs/workspace/audio-pipeline-output/town-theme/generate/cand-02.wav
+outputs/workspace/audio-pipeline-output/town-theme/generate/cand-03.wav

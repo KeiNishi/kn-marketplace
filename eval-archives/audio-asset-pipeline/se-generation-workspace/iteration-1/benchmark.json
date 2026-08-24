@@ -1,0 +1,336 @@
+{
+  "metadata": {
+    "skill_name": "se-generation",
+    "skill_path": "plugins/audio-asset-pipeline/skills/se-generation",
+    "executor_model": "sonnet (subagent)",
+    "analyzer_model": "sonnet (subagent grader)",
+    "timestamp": "2026-08-24T16:52:42Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 218.4,
+        "tokens": 98739,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+          "passed": true,
+          "evidence": "transcript.md step 5 runs `python \".../scripts/backends/generate_sa3.py\" door-open --base \"<RUN_DIR>\" --negative-prompt \"music, speech, reverb, noise\"`, and generated-files.txt confirms the resulting files land at audio-pipeline-output/door-open/generate/cand-01..03.wav under the run directory (--base points to the workspace that contains, and after init_asset.py already created, audio-pipeline-output/)."
+        },
+        {
+          "text": "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+          "passed": true,
+          "evidence": "generate_sa3.py is invoked with no --model flag (default auto). transcript.md step 5 output shows `model=small-sfx` and step 2 states 'assetType: se with no override routes to the small-sfx model ... via --model auto'. pipeline.json candidate params confirm \"model\": \"small-sfx\"."
+        },
+        {
+          "text": "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+          "passed": true,
+          "evidence": "init_asset.py is called with `--prompt \"wooden door creaking open, interior, close mic\"` (transcript.md step 4), an exact match to the skill's canonical example, confirmed in pipeline.json requirement.prompt."
+        },
+        {
+          "text": "Does not invent a script or flag that generate_sa3.py does not provide",
+          "passed": true,
+          "evidence": "Only real flags are used: --base and --negative-prompt (both defined in generate_sa3.py's argparse, verified against D:/Projects/kn-marketplace/plugins/audio-asset-pipeline/scripts/backends/generate_sa3.py lines 92-111). No fabricated flags or scripts appear anywhere in the transcript's commands."
+        },
+        {
+          "text": "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success",
+          "passed": true,
+          "evidence": "transcript.md step 6 runs `ls -la` and `ffprobe` against audio-pipeline-output/door-open/generate/, confirms all three files are 529278 bytes, 44.1kHz stereo, 3.000000s duration, and explicitly checks 'stages.generate.status in the manifest ... is done, backend is sa3, failureKind is null' before the final answer is given in step 9/Final answer section."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-door-creak"
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 185.2,
+        "tokens": 83016,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+          "passed": true,
+          "evidence": "Transcript step 6 shows one command: `python scripts/backends/generate_sa3.py footstep-gravel --candidates 5 --seed 1000 --negative-prompt \"music, speech, reverb, noise\" --base \"<run-dir>/outputs\"`, producing all 5 cand-01..05.wav files in one call. pipeline.json confirms `stages.generate.attempts: 1` with all 5 candidates recorded from that single attempt."
+        },
+        {
+          "text": "Explains that varying the seed on one prompt is what produces a usable variation set",
+          "passed": true,
+          "evidence": "Transcript section 1 quotes SKILL.md: 'For a variation set, prefer several seeds on one prompt over several prompts. Same character, different take, which is what a footstep set needs.' The final answer restates it: 'one prompt, five seeds, not five different prompts, so the takes stay recognizably the same footstep while actually differing enough that back-to-back playback won't sound like a machine-gun repeat.'"
+        },
+        {
+          "text": "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+          "passed": true,
+          "evidence": "Prompt used was 'single footstep on gravel, close mic, dry' (transcript section 5, pipeline.json requirement.prompt). Transcript explicitly states the rationale: '\"single\" to avoid a multi-step sequence' (section 5, Decisions and assumptions) and earlier notes the reference doc 'calls out saying \"single\"/\"one\" explicitly so the model doesn't render a walking sequence' (section 1)."
+        },
+        {
+          "text": "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+          "passed": false,
+          "evidence": "No mention of append/overwrite behavior anywhere in the transcript (grep for 'append'/'overwrit' returns nothing). The SKILL.md's Variation Batches section the agent read actually states this directly ('Re-running appends (cand-04.wav, cand-05.wav, ...) instead of overwriting earlier takes, so nothing is lost by trying again'  -  plugins/audio-asset-pipeline/skills/se-generation/SKILL.md lines 147-148), but the transcript's quote of that section elides this sentence with '...' (section 1) and it is never surfaced to the user."
+        },
+        {
+          "text": "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard",
+          "passed": true,
+          "evidence": "Final answer explicitly instructs: 'Listen to all 5 real candidates and keep the ones that actually sound distinct... for a variety pack meant to avoid repetition, that likely means keeping most or all 5, not narrowing to one winner.' The transcript also explicitly declines to judge audio quality: 'I did not claim to have picked a \"best\" or \"most different-sounding\" take, and left stages.generate.selected unset rather than recording a fake judgement call' (section 7)."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-footstep-variations"
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 177.7,
+        "tokens": 78099,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+          "passed": true,
+          "evidence": "Step 3 (line 50): '(per the skill, `medium` without Flash Attention 2 refuses to run rather than producing glitchy audio)'. Final answer to the user (lines 148-150): 'doctor.py confirms your machine has the flash_attn wheel medium needs, so it isn't silently falling back to glitchy output  -  medium is actually running as requested, not just requested.' Both explicitly tie medium to the Flash Attention 2 requirement and the silent-glitchy-audio risk without it."
+        },
+        {
+          "text": "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+          "passed": true,
+          "evidence": "Step 3 (line 49-51): 'flash_attn is present, so medium is actually usable on this machine (per the skill, medium without Flash Attention 2 refuses to run rather than producing glitchy audio).' This explicitly states the refuse-rather-than-write-broken-output behavior, matching SKILL.md lines 67-68 verbatim in substance."
+        },
+        {
+          "text": "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+          "passed": true,
+          "evidence": "Final answer (lines 163-169): 'medium's documented sweet spot is re-rendering an idea you've already validated cheaply on small-sfx... a small-sfx pass would be the cheap way to do that before spending more medium renders'  -  small-sfx is explicitly offered as the alternative path. (The wheel-install alternative for torch 2.7.1/CUDA 12.8 is never mentioned anywhere in the transcript, but the assertion's 'or' is satisfied by the small-sfx offer alone.)"
+        },
+        {
+          "text": "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+          "passed": false,
+          "evidence": "Medium's VRAM figure appears once, only in internal step notes (line 26): 'needs Flash Attention 2, ~5-6.5 GB VRAM.' It is never repeated in the final answer to the user, and small-sfx's ~2 GB figure is never stated anywhere in the transcript (grep for '2 GB'/'~2GB' returns nothing)  -  so no comparison of 'higher VRAM cost' is ever actually communicated, only a single unattributed number buried in working notes."
+        },
+        {
+          "text": "Does not attempt to bypass, disable, or work around the flash-attn refusal",
+          "passed": true,
+          "evidence": "No refusal ever occurred (doctor.py reported flash_attn present), and the transcript shows no env-var tricks, --skip/--force flags, or any language suggesting an attempt to override a check. Grep for 'bypass/workaround/skip/override/force' finds nothing suspicious  -  medium was run only after the doctor check confirmed it was legitimately usable."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-medium-model-request"
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 360.1,
+        "tokens": 124751,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+          "passed": true,
+          "evidence": "transcript.md step 8 runs `python backends/generate_sa3.py door-creak-open --base \"$OUT\"` where $OUT=<run-dir>/outputs, and generated-files.txt / pipeline.json confirm the output landed at outputs/audio-pipeline-output/door-creak-open/generate/cand-01.wav, i.e. --base points at the workspace holding audio-pipeline-output/."
+        },
+        {
+          "text": "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+          "passed": true,
+          "evidence": "No --model flag was passed to generate_sa3.py (step 8), leaving the default 'auto'. The command output and pipeline.json both show \"model\": \"small-sfx\" (auto-routed for assetType se), matching the with_skill run's routing."
+        },
+        {
+          "text": "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+          "passed": true,
+          "evidence": "init_asset.py step 7 uses `--prompt \"wooden door creaking open, single slow hinge creak, interior room, close mic, foley sound effect, no music, no voice\"` -- a comma-separated tag list covering material (wooden door), action (creaking open, single slow hinge creak), space (interior room), and mic-distance (close mic), not a narrative sentence. It is more bloated than the skill's canonical example (it stuffs negative-style terms like 'no music, no voice' into the positive prompt instead of using --negative-prompt, which this run never used at all), but it is not a story/narrative sentence and does hit the required descriptor categories."
+        },
+        {
+          "text": "Does not invent a script or flag that generate_sa3.py does not provide",
+          "passed": true,
+          "evidence": "The generate_sa3.py invocation in step 8 uses only `--base`, a real flag. Step 7 mentions 'An earlier attempt with a typo'd flag name was rejected by argparse' but that was against init_asset.py, not generate_sa3.py, and it was caught by argparse before any file was written -- no invented flag was ever used to run generate_sa3.py."
+        },
+        {
+          "text": "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success",
+          "passed": true,
+          "evidence": "transcript.md step 10 runs ffprobe on the produced cand-01.wav confirming pcm_s16le/44100Hz/2ch/3.000000s, and explicitly states 'Also inspected pipeline.json: generate stage is done with the one candidate recorded' before the Final answer section reports success."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-door-creak"
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 295.2,
+        "tokens": 155001,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+          "passed": false,
+          "evidence": "run_pipeline.sh and transcript section 7 show five completely separate slugs (footstep-gravel-01..05), each with its own init_asset.py + generate_sa3.py call, and none of the five `python backends/generate_sa3.py <slug> --seed <N> --base <ws>` invocations passes --candidates at all (auto mode defaults to --candidates 1). The transcript explicitly rejects the single-invocation approach in section 5: '`post_process.py` writes its finished export to a fixed name... The \"3 candidates to choose from\" mechanism inside a single slug is for picking one best take of the same sound, not for shipping several different variations. Since the user wants five distinct, independently usable in-game sounds, I created five separate slugs.'"
+        },
+        {
+          "text": "Explains that varying the seed on one prompt is what produces a usable variation set",
+          "passed": false,
+          "evidence": "The run does the opposite: it varies both the prompt wording and the seed across five separate slugs, and explicitly argues against seed-only variation on one prompt (section 5: the multi-candidate/seed mechanism is 'for picking one best take of the same sound, not for shipping several different variations'). No statement anywhere in the transcript credits seed variation on a shared prompt as producing a usable variation set; instead five distinct prompts were authored by design."
+        },
+        {
+          "text": "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+          "passed": true,
+          "evidence": "Every one of the five prompts begins with 'single footstep on ...' and ends with '...video game sound effect one-shot' (transcript table in section 7 and run_pipeline.sh prompts array, e.g. 'single footstep on dry gravel, boot heel then toe, close-mic foley, crunchy pebbles shifting underfoot, no reverb, no music, video game sound effect one-shot'). Section 5 also notes the intent behind the short duration/one-shot framing ('a footstep is a short one-shot'). The wording achieves the one-shot-not-a-sequence goal even though the transcript doesn't spell out the 'walking sequence' failure mode by name."
+        },
+        {
+          "text": "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+          "passed": false,
+          "evidence": "No mention of append/overwrite semantics anywhere in transcript.md (grep for 'append', 'overwrit' returns zero matches in the body text). The run never revisits this because it never re-ran a generation for the same slug, and never discusses what happens if you re-run generate_sa3.py on an existing slug."
+        },
+        {
+          "text": "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard",
+          "passed": false,
+          "evidence": "The final answer to the user (section 'Final answer given to the user') presents all five slugs as a finished, ready-to-use set ('ready to drop into the game's gravel-footstep sound bank') once regenerated without dry-run, and never instructs the user to listen to the outputs and pick/keep favorites. It does honestly disclose the dry-run placeholder-audio caveat, but that is a disclosure about tooling state, not an instruction to audition and record keepers. The word 'listen' appears only once, in section 5, describing manual-mode's internal human-approval gate ('this benchmark run cannot pause to ask the user to listen to and approve manual-mode candidates')  -  not as guidance given to the end user in the final report. Additionally, because the design produced exactly one candidate per slug rather than multiple candidates per prompt, there was no auditioning step offered to the user at all."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-footstep-variations"
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 241.4,
+        "tokens": 116746,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+          "passed": false,
+          "evidence": "Grep across the full transcript for 'flash_attn', 'flash attention', and 'glitchy' returns zero matches. The run never mentions Flash Attention 2 at all, let alone the silent-glitchy-audio risk without it."
+        },
+        {
+          "text": "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+          "passed": false,
+          "evidence": "No mention of any refusal behavior or 'broken file' concept anywhere. Step 7 ('What I did not do') explicitly states 'I did not run doctor.py' and reasons that dry-run mode 'would not have changed anything about this run'  -  the flash_attn gate is never investigated or surfaced."
+        },
+        {
+          "text": "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+          "passed": false,
+          "evidence": "small-sfx is used, but not as a fallback for a flash_attn-blocked medium  -  the run instead claims (Step 3, lines 39-54) that 'medium' is simply the wrong, differently-trained ambient/BGM checkpoint for any SFX use case ('not a higher-fidelity version of the SFX model'), a claim that contradicts the plugin's own SKILL.md, which documents medium as 'Quality re-render of an approved idea, longer musical or ambient beds.' No flash_attn wheel-install alternative is mentioned anywhere."
+        },
+        {
+          "text": "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+          "passed": false,
+          "evidence": "The word 'VRAM' appears only twice (lines 40, 197), both generic descriptions of small-sfx as 'the fast, low-VRAM checkpoint' with no numbers attached. No figures for either model's VRAM cost, and no comparison, appear anywhere in the transcript."
+        },
+        {
+          "text": "Does not attempt to bypass, disable, or work around the flash-attn refusal",
+          "passed": true,
+          "evidence": "The run never engages with the medium model's flash_attn gate at all  -  it deliberately chose small-sfx instead of even attempting --model medium (Step 3, Step 7: 'I did not generate a second batch with --model medium'), and explicitly skipped doctor.py. There is no evidence anywhere of an attempt to bypass, disable, or work around a refusal, since no refusal was ever encountered or sought."
+        }
+      ],
+      "notes": [],
+      "eval_name": "eval-medium-model-request"
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.8667,
+        "stddev": 0.1155,
+        "min": 0.8,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 193.7667,
+        "stddev": 21.6602,
+        "min": 177.7,
+        "max": 218.4
+      },
+      "tokens": {
+        "mean": 86618.0,
+        "stddev": 10781.1504,
+        "min": 78099,
+        "max": 98739
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.4667,
+        "stddev": 0.4619,
+        "min": 0.2,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 298.9,
+        "stddev": 59.4364,
+        "min": 241.4,
+        "max": 360.1
+      },
+      "tokens": {
+        "mean": 132166.0,
+        "stddev": 20176.6678,
+        "min": 116746,
+        "max": 155001
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.40",
+      "time_seconds": "-105.1",
+      "tokens": "-45548"
+    }
+  },
+  "notes": [
+    "eval-door-creak is non-discriminating on its current assertions (5/5 both arms): generating one sound effect is reachable from the argparse help alone. The visible difference was prompt hygiene - the baseline wrote 'no music, no voice' into the positive prompt and never used --negative-prompt at all - and no assertion checks that. Add one.",
+    "eval-medium-model-request is the sharpest result (0.80 vs 0.20). The baseline read generate_sa3.py's source, concluded from the auto-routing that 'medium' is a BGM-only checkpoint, and silently substituted small-sfx for the user's explicit instruction. It never ran doctor.py and never mentioned Flash Attention 2. The source alone genuinely misleads here; the skill's model table is what prevents the wrong conclusion.",
+    "eval-footstep-variations separates on structure rather than wording (0.80 vs 0.20): the skill's Variation Batches section produces one asset with five seeded candidates, while the baseline reasoned from the source that --candidates is for picking a best take and built five separate assets with five different prompts - the exact thing the skill warns against, because it yields five unrelated sounds instead of five takes of one. The baseline then presented them as ready to ship, with no instruction to audition.",
+    "The with_skill arm's one miss is worth fixing in the skill: it read the sentence about re-generation appending rather than overwriting candidates and still did not pass it on to the user.",
+    "Same shape as the overview skill: with_skill is faster and cheaper, 193.8 s and 87 k tokens against 298.9 s and 132 k. Reconstructing the skill's knowledge from the Python source costs more than reading it.",
+    "The first without_skill run of this eval was discarded and re-run: that agent found and read the plugin's SKILL.md files directly, so it was not a baseline at all. The replacement was explicitly forbidden to open anything under skills/. See the methodology note below."
+  ]
+}

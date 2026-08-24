@@ -1,0 +1,5 @@
+Audio and image files this run produced. Not archived: every
+one is a dry-run placeholder tone, not real generated audio.
+
+outputs/dash-DRYRUN-placeholder.wav
+outputs/workspace/audio-pipeline-output/dash/generate/cand-01.wav

@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "KN's personal marketplace for Claude Code plugins",
-    "version": "1.8.1"
+    "version": "1.9.0"
   },
   "plugins": [
     {
@@ -121,6 +121,29 @@
         "auto-rig",
         "trellis",
         "local-generation"
+      ]
+    },
+    {
+      "name": "audio-asset-pipeline",
+      "source": "./plugins/audio-asset-pipeline",
+      "description": "Two-mode (auto/manual) game BGM and sound-effect pipeline driven by locally run models (ACE-Step 1.5, Stable Audio 3, MiniMax-Music3). Text-prompt and reference-audio conditioning, seeded candidate iteration with approval gates, and loop post-processing (seamless loop points, LUFS normalization, WAV/OGG export).",
+      "version": "0.1.0",
+      "author": {
+        "name": "KN"
+      },
+      "tags": [
+        "gamedev",
+        "audio",
+        "bgm",
+        "sound-effects",
+        "music-generation",
+        "pipeline",
+        "ace-step",
+        "stable-audio",
+        "minimax-music",
+        "local-generation",
+        "loop",
+        "ffmpeg"
       ]
     }
   ]

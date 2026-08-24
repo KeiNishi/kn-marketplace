@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Runs scripts/backends/generate_sa3.py with the asset slug from the working directory containing audio-pipeline-output/",
+      "passed": true,
+      "evidence": "transcript.md step 5 runs `python \".../scripts/backends/generate_sa3.py\" door-open --base \"<RUN_DIR>\" --negative-prompt \"music, speech, reverb, noise\"`, and generated-files.txt confirms the resulting files land at audio-pipeline-output/door-open/generate/cand-01..03.wav under the run directory (--base points to the workspace that contains, and after init_asset.py already created, audio-pipeline-output/)."
+    },
+    {
+      "text": "Leaves the model on auto (or states small-sfx) rather than choosing medium for a short sound effect",
+      "passed": true,
+      "evidence": "generate_sa3.py is invoked with no --model flag (default auto). transcript.md step 5 output shows `model=small-sfx` and step 2 states 'assetType: se with no override routes to the small-sfx model ... via --model auto'. pipeline.json candidate params confirm \"model\": \"small-sfx\"."
+    },
+    {
+      "text": "Uses a source/material/space/mic-distance prompt such as 'wooden door creaking open, interior, close mic' instead of a narrative sentence",
+      "passed": true,
+      "evidence": "init_asset.py is called with `--prompt \"wooden door creaking open, interior, close mic\"` (transcript.md step 4), an exact match to the skill's canonical example, confirmed in pipeline.json requirement.prompt."
+    },
+    {
+      "text": "Does not invent a script or flag that generate_sa3.py does not provide",
+      "passed": true,
+      "evidence": "Only real flags are used: --base and --negative-prompt (both defined in generate_sa3.py's argparse, verified against D:/Projects/kn-marketplace/plugins/audio-asset-pipeline/scripts/backends/generate_sa3.py lines 92-111). No fabricated flags or scripts appear anywhere in the transcript's commands."
+    },
+    {
+      "text": "Verifies the candidate files exist under audio-pipeline-output/<slug>/generate/ and that stages.generate.status is done before reporting success",
+      "passed": true,
+      "evidence": "transcript.md step 6 runs `ls -la` and `ffprobe` against audio-pipeline-output/door-open/generate/, confirms all three files are 529278 bytes, 44.1kHz stereo, 3.000000s duration, and explicitly checks 'stages.generate.status in the manifest ... is done, backend is sa3, failureKind is null' before the final answer is given in step 9/Final answer section."
+    }
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}
+}

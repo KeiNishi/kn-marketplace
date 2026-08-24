@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+      "passed": true,
+      "evidence": "Transcript step 6 shows one command: `python scripts/backends/generate_sa3.py footstep-gravel --candidates 5 --seed 1000 --negative-prompt \"music, speech, reverb, noise\" --base \"<run-dir>/outputs\"`, producing all 5 cand-01..05.wav files in one call. pipeline.json confirms `stages.generate.attempts: 1` with all 5 candidates recorded from that single attempt."
+    },
+    {
+      "text": "Explains that varying the seed on one prompt is what produces a usable variation set",
+      "passed": true,
+      "evidence": "Transcript section 1 quotes SKILL.md: 'For a variation set, prefer several seeds on one prompt over several prompts. Same character, different take, which is what a footstep set needs.' The final answer restates it: 'one prompt, five seeds, not five different prompts, so the takes stay recognizably the same footstep while actually differing enough that back-to-back playback won't sound like a machine-gun repeat.'"
+    },
+    {
+      "text": "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+      "passed": true,
+      "evidence": "Prompt used was 'single footstep on gravel, close mic, dry' (transcript section 5, pipeline.json requirement.prompt). Transcript explicitly states the rationale: '\"single\" to avoid a multi-step sequence' (section 5, Decisions and assumptions) and earlier notes the reference doc 'calls out saying \"single\"/\"one\" explicitly so the model doesn't render a walking sequence' (section 1)."
+    },
+    {
+      "text": "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+      "passed": false,
+      "evidence": "No mention of append/overwrite behavior anywhere in the transcript (grep for 'append'/'overwrit' returns nothing). The SKILL.md's Variation Batches section the agent read actually states this directly ('Re-running appends (cand-04.wav, cand-05.wav, ...) instead of overwriting earlier takes, so nothing is lost by trying again'  -  plugins/audio-asset-pipeline/skills/se-generation/SKILL.md lines 147-148), but the transcript's quote of that section elides this sentence with '...' (section 1) and it is never surfaced to the user."
+    },
+    {
+      "text": "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard",
+      "passed": true,
+      "evidence": "Final answer explicitly instructs: 'Listen to all 5 real candidates and keep the ones that actually sound distinct... for a variety pack meant to avoid repetition, that likely means keeping most or all 5, not narrowing to one winner.' The transcript also explicitly declines to judge audio quality: 'I did not claim to have picked a \"best\" or \"most different-sounding\" take, and left stages.generate.selected unset rather than recording a fake judgement call' (section 7)."
+    }
+  ],
+  "summary": {"passed": 4, "failed": 1, "total": 5, "pass_rate": 0.8}
+}

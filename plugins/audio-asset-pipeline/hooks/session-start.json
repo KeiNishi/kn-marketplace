@@ -1,0 +1,15 @@
+{
+  "description": "SessionStart warning for in-repo .env files and model caches. Keep Write/Edit PreToolUse out of this file so cursor-agent does not fail-closed on Windows.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/warn_repo_env.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
