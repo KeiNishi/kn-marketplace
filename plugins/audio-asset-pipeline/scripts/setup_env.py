@@ -33,8 +33,66 @@ except ImportError:  # executed as a script, not as a package module
 
 LOGGER = _common.setup_logger("audio-setup")
 STATE_VERSION = 1
-# Weights for all three stacks land in the Hugging Face cache, not in the venvs.
-DISK_WARN_GB = 40  # ~30 GB of weights plus ~8 GB of venvs, with headroom
+# Weights do not all land in one place, and the two places are often on
+# different drives, so each volume is checked against what really goes on it.
+#
+#   data directory : the three venvs (~8 GB) plus ACE-Step's own checkpoint tree
+#                    (~12 GB), which the library resolves from ACESTEP_* rather
+#                    than from the Hugging Face cache.
+#   HF hub cache   : Stable Audio 3 (~5 GB) and MiniMax-Music3 (27 GB measured).
+#
+# Both figures carry a few GB of headroom for the partial downloads that exist
+# while a stack is still being fetched.
+DATA_DIR_WARN_GB = 24
+HF_CACHE_WARN_GB = 36
+
+
+def disk_targets() -> tuple[tuple[str, pathlib.Path, float, str], ...]:
+    """(label, path, needed GB, what lives there) for every volume that matters."""
+    return (
+        (
+            "data directory",
+            _common.data_dir(),
+            DATA_DIR_WARN_GB,
+            "the stack venvs (~8 GB) and ACE-Step's checkpoints (~12 GB)",
+        ),
+        (
+            "Hugging Face cache",
+            _common.hf_cache_dir(),
+            HF_CACHE_WARN_GB,
+            "Stable Audio 3 (~5 GB) and MiniMax-Music3 (27 GB)",
+        ),
+    )
+
+
+def disk_report() -> list[tuple[str, bool, str]]:
+    """(label, ok, detail) per volume. Volumes that coincide are summed, not double-counted."""
+    rows: list[tuple[str, bool, str]] = []
+    targets = disk_targets()
+    anchors = [_common.free_gb(path)[1].anchor for _, path, _, _ in targets]
+    shared = len(set(anchors)) == 1
+
+    if shared:
+        needed = sum(need for _, _, need, _ in targets)
+        available, probe = _common.free_gb(targets[0][1])
+        detail = (
+            f"{available:.1f} GB free on {probe.anchor or probe}, which holds both the "
+            f"data directory and the Hugging Face cache; all three stacks need about "
+            f"{needed:g} GB there"
+        )
+        return [("Disk space", available >= needed, detail)]
+
+    for label, path, needed, contents in targets:
+        available, probe = _common.free_gb(path)
+        rows.append(
+            (
+                f"Disk space ({label})",
+                available >= needed,
+                f"{available:.1f} GB free on {probe.anchor or probe} for {path.as_posix()}; "
+                f"{contents} need about {needed:g} GB",
+            )
+        )
+    return rows
 
 # The three project installers resolve a CPU-only torch wheel on Windows, which
 # silently produces unusable (CPU) generation. Force the CUDA 12.8 build after
@@ -147,16 +205,40 @@ STACKS: dict[str, dict[str, Any]] = {
     "minimax": {
         "label": "MiniMax-Music3",
         "pythons": ("3.12", "3.11"),
-        "imports": ("torch", "diffusers"),
+        # `diffusers.modular_pipelines.minimax_music3` is where the integration
+        # lives; importing the pipeline class is what proves the pin is right,
+        # because a diffusers without it imports perfectly well and then fails at
+        # generation time.
+        "imports": (
+            "torch",
+            "torchaudio",
+            "soundfile",
+            "diffusers.modular_pipelines.minimax_music3",
+        ),
         "steps": (
-            _TORCH_CU128,
             {
                 "id": "diffusers",
                 "kind": "pip",
-                # Group offloading in diffusers is what keeps this model inside
-                # 12 GB of VRAM. Exact pins are settled when the backend lands.
-                "args": ["diffusers", "transformers", "accelerate"],
-                "label": "diffusers stack (group offloading for 12 GB cards)",
+                # Pinned: 0.40.0 is the first release carrying the MiniMax-Music3
+                # modular pipeline (MiniMaxMusic3ModularPipeline plus the
+                # transformer, condition encoder, RVQ depth decoder and vocoder
+                # classes), which is the whole integration. The model card still
+                # points at the pre-release PR commit; the release supersedes it.
+                # transformers supplies Qwen2Tokenizer/Qwen3ForCausalLM, and
+                # accelerate backs the components manager's CPU offloading.
+                "args": [
+                    "diffusers==0.40.0",
+                    "transformers>=5.0,<6",
+                    "accelerate>=1.10",
+                ],
+                "label": "diffusers 0.40.0 + transformers 5.x (MiniMax-Music3 modular pipeline)",
+            },
+            _TORCH_CU128,
+            {
+                "id": "soundfile",
+                "kind": "pip",
+                "args": ["soundfile"],
+                "label": "soundfile (torchaudio ships no audio backend on Windows)",
             },
         ),
     },
@@ -328,21 +410,16 @@ def print_notes() -> None:
     data = _common.data_dir()
     print(f"Data directory : {data.as_posix()}")
     print(f"Setup state    : {state_path().as_posix()}")
-    hf_home = os.environ.get("HF_HOME")
-    if hf_home:
-        print(f"HF_HOME        : {hf_home}")
+    cache = _common.hf_cache_dir()
+    if os.environ.get("HF_HUB_CACHE") or os.environ.get("HF_HOME"):
+        print(f"HF cache       : {cache.as_posix()}")
     else:
         print(
-            "HF_HOME        : not set; weights go to the default Hugging Face cache "
-            "(~/.cache/huggingface). Set HF_HOME to a drive with room to spare - "
-            "never to a path inside a git repository."
+            f"HF cache       : {cache.as_posix()} (default; set HF_HOME to move it to a "
+            "drive with room to spare - never to a path inside a git repository)"
         )
-    probe = data if data.exists() else pathlib.Path.home()
-    free_gb = shutil.disk_usage(probe).free / (1024**3)
-    line = f"Free disk space: {free_gb:.1f} GB on {probe.anchor or probe}"
-    if free_gb < DISK_WARN_GB:
-        line += f" - WARNING: model weights need roughly 30 GB, {DISK_WARN_GB} GB recommended"
-    print(line)
+    for label, ok, detail in disk_report():
+        print(f"{label:<15}: {detail}" + ("" if ok else " - WARNING: not enough room"))
     if _common.is_dry_run():
         print("Dry run        : AUDIO_PIPELINE_DRY_RUN=1, no changes will be made")
     print("")

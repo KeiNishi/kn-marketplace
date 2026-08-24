@@ -12,6 +12,7 @@ import logging
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
 import unicodedata
@@ -208,6 +209,44 @@ def subprocess_env() -> dict[str, str]:
         if value and key not in merged:
             merged[key] = value
     return merged
+
+
+def hf_cache_dir() -> pathlib.Path:
+    """The Hugging Face hub cache this machine will actually use.
+
+    Mirrors huggingface_hub's own resolution order so the disk checks look at the
+    volume the weights really land on. Two of the three stacks download through
+    it, and it is frequently on a different drive from the plugin data directory
+    - checking only one volume would clear a machine that has no room for either.
+
+    Kept stdlib: the driver-side scripts never import huggingface_hub, which
+    lives in the stack venvs rather than in this interpreter.
+    """
+    for variable, suffix in (("HF_HUB_CACHE", ""), ("HF_HOME", "hub")):
+        value = os.environ.get(variable, "").strip()
+        if value:
+            path = pathlib.Path(value).expanduser()
+            return path / suffix if suffix else path
+    xdg = os.environ.get("XDG_CACHE_HOME", "").strip()
+    root = pathlib.Path(xdg).expanduser() if xdg else pathlib.Path.home() / ".cache"
+    return root / "huggingface" / "hub"
+
+
+def free_gb(path: pathlib.Path) -> tuple[float, pathlib.Path]:
+    """Free space on the volume holding `path`, and the ancestor actually probed.
+
+    A cache or data directory that does not exist yet still sits on some volume;
+    walking up to the nearest existing ancestor measures that volume instead of
+    raising.
+    """
+    probe = pathlib.Path(path)
+    while not probe.exists():
+        parent = probe.parent
+        if parent == probe:  # reached the root without finding anything
+            probe = pathlib.Path.home()
+            break
+        probe = parent
+    return shutil.disk_usage(probe).free / (1024**3), probe
 
 
 def stack_data_dir(stack: str) -> pathlib.Path:

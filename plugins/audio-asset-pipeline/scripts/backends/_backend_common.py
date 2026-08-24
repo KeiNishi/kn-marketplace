@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import pathlib
 import random
@@ -76,6 +77,68 @@ def loop_viable(params: dict[str, Any]) -> bool:
             if value > LOOP_SILENCE_LIMIT_SECONDS:
                 return False
     return True
+
+
+def beats_per_bar(time_signature: Any) -> int | None:
+    """Beats per bar from a "4/4"-style signature, or None when unusable.
+
+    The numerator is the beat count per bar, and the music backends treat BPM as
+    the rate of the denominator's note value, so numerator beats really do make
+    one bar. A bare number ("4") is accepted too: that is ACE-Step's own
+    spelling of the same field.
+    """
+    numerator = str(time_signature or "").split("/")[0].strip()
+    if not numerator.isdigit():
+        return None
+    beats = int(numerator)
+    return beats if beats > 0 else None
+
+
+def snap_to_bars(
+    duration: float, bpm: float, beats: int, minimum: float, maximum: float
+) -> tuple[int, float]:
+    """Round a duration to a whole number of bars. Returns (bars, seconds).
+
+    A loop that ends mid-bar cannot be trimmed to a downbeat by the post stage
+    without either dropping musical content or leaving a rhythmic hiccup at the
+    seam, so the bar count is fixed here, before generation.
+
+    `minimum`/`maximum` are the calling backend's own accepted duration range.
+    The feasible bar counts are the integers whose length lands inside it, and
+    the answer is the nearest one to `duration`; when the interval is too narrow
+    to hold a single whole bar this raises ValueError, which every caller turns
+    into a user_error naming the tempo and the duration.
+
+    Closed form rather than stepping one bar at a time: at 300 BPM a six-minute
+    ceiling is already thousands of bars, and a backend that accepts an
+    unbounded tempo (MiniMax takes the requirement's bpm as caption text) would
+    otherwise spin for millions of iterations before returning.
+    """
+    if not (math.isfinite(bpm) and bpm > 0):
+        raise ValueError(f"bpm must be a finite positive number, got {bpm!r}")
+    if not (isinstance(beats, int) and not isinstance(beats, bool) and beats > 0):
+        raise ValueError(f"beats per bar must be a positive whole number, got {beats!r}")
+    if not (math.isfinite(duration) and duration > 0):
+        raise ValueError(f"duration must be a finite positive number, got {duration!r}")
+    if not (math.isfinite(minimum) and math.isfinite(maximum) and 0 < minimum <= maximum):
+        raise ValueError(
+            f"the backend's duration range is unusable: minimum={minimum!r} maximum={maximum!r}"
+        )
+
+    seconds_per_bar = 60.0 * beats / bpm
+    lowest = max(1, math.ceil(minimum / seconds_per_bar))
+    highest = math.floor(maximum / seconds_per_bar)
+    if lowest > highest:
+        raise ValueError(
+            f"no whole number of bars fits between {minimum:g}s and {maximum:g}s at "
+            f"{bpm:g} BPM with {beats} beats per bar (one bar is "
+            f"{seconds_per_bar:g}s). Change requirement.bpm or "
+            "requirement.timeSignature, or clear requirement.loop so the duration "
+            "is used as written."
+        )
+
+    bars = min(highest, max(lowest, round(duration / seconds_per_bar)))
+    return bars, bars * seconds_per_bar
 
 
 def candidate_params(

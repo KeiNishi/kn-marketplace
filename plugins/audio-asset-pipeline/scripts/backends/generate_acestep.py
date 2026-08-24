@@ -101,20 +101,6 @@ def fail(message: str, code: int = _common.EXIT_USER_ERROR) -> int:
     return code
 
 
-def beats_per_bar(time_signature: Any) -> int | None:
-    """Beats per bar from a "4/4"-style signature, or None when unusable.
-
-    The numerator is the beat count per bar; ACE-Step accepts 2, 3, 4 and 6
-    (i.e. 2/4, 3/4, 4/4, 6/8) and treats BPM as the rate of the denominator's
-    note value, so numerator beats really do make one bar.
-    """
-    numerator = str(time_signature or "").split("/")[0].strip()
-    if not numerator.isdigit():
-        return None
-    beats = int(numerator)
-    return beats if beats > 0 else None
-
-
 def validate_bpm(value: Any) -> int | None:
     """requirement.bpm as an int in ACE-Step's range, or None when unset."""
     if value is None or value == "":
@@ -139,7 +125,7 @@ def validate_beats(time_signature: Any) -> int | None:
     """Beats per bar for a supported signature, or None when unset."""
     if time_signature is None or not str(time_signature).strip():
         return None
-    beats = beats_per_bar(time_signature)
+    beats = backend.beats_per_bar(time_signature)
     if beats not in VALID_BEATS_PER_BAR:
         raise ValueError(
             f"requirement.timeSignature is {time_signature!r}, but ACE-Step only supports "
@@ -150,32 +136,21 @@ def validate_beats(time_signature: Any) -> int | None:
 
 
 def snap_to_bars(duration: float, bpm: int, beats: int) -> tuple[int, float]:
-    """Round a duration to a whole number of bars. Returns (bars, seconds).
-
-    A loop that ends mid-bar cannot be trimmed to a downbeat by the post stage
-    without either dropping musical content or leaving a rhythmic hiccup at the
-    seam, so the bar count is fixed here, before generation.
-    """
-    seconds_per_bar = 60.0 * beats / bpm
-    bars = max(1, round(duration / seconds_per_bar))
-    # Keep the snapped result inside the model's trained range; the nearest bar
-    # count can otherwise fall just under 10 s or just over 600 s.
-    while bars * seconds_per_bar < MIN_DURATION_SECONDS:
-        bars += 1
-    while bars > 1 and bars * seconds_per_bar > MAX_DURATION_SECONDS:
-        bars -= 1
-    return bars, bars * seconds_per_bar
+    """backend.snap_to_bars clamped to ACE-Step 1.5's own trained duration range."""
+    return backend.snap_to_bars(
+        duration, bpm, beats, MIN_DURATION_SECONDS, MAX_DURATION_SECONDS
+    )
 
 
 def _selftest() -> int:
     """Assertions for the bar-snapping arithmetic, which nothing else checks."""
-    assert beats_per_bar("4/4") == 4
-    assert beats_per_bar("3/4") == 3
-    assert beats_per_bar("6/8") == 6
+    assert backend.beats_per_bar("4/4") == 4
+    assert backend.beats_per_bar("3/4") == 3
+    assert backend.beats_per_bar("6/8") == 6
     # ACE-Step's own field is the bare numerator, so accept that spelling too.
-    assert beats_per_bar(4) == 4
+    assert backend.beats_per_bar(4) == 4
     for bad in (None, "", "x/4", "0/4", "-3/4", "/4"):
-        assert beats_per_bar(bad) is None, bad
+        assert backend.beats_per_bar(bad) is None, bad
 
     # 140 BPM in 4/4 is 12/7 s per bar: 30 s is 17.5 bars, which rounds to 18.
     bars, seconds = snap_to_bars(30.0, 140, 4)
@@ -192,6 +167,42 @@ def _selftest() -> int:
     # ...nor over its 600 s ceiling.
     bars, seconds = snap_to_bars(600.0, 30, 6)
     assert seconds <= MAX_DURATION_SECONDS, (bars, seconds)
+
+    # A tempo whose bar is longer than the whole accepted range has no answer,
+    # and the caller must hear about it instead of receiving a silent clamp.
+    # 30 BPM in 6/8 is a 12 s bar, which cannot land inside a 10-11 s window;
+    # 1 BPM in 7/4 is a 420 s bar, longer than MiniMax's whole 360 s ceiling.
+    for impossible in ((60.0, 30, 6, 10.0, 11.0), (360.0, 1, 7, 10.0, 360.0)):
+        try:
+            backend.snap_to_bars(*impossible)
+        except ValueError:
+            continue
+        raise AssertionError(f"expected snap_to_bars to reject {impossible}")
+
+    # A tempo that makes bars tiny must return immediately, not step bar by bar.
+    started = time.monotonic()
+    bars, seconds = backend.snap_to_bars(75.0, 1_000_000_000, 4, 10.0, 360.0)
+    assert 10.0 <= seconds <= 360.0 and bars > 1, (bars, seconds)
+    assert time.monotonic() - started < 1.0, "snap_to_bars must be constant time"
+
+    # Non-finite and non-positive inputs are rejected rather than producing NaN bars.
+    for bad_args in (
+        (60.0, float("nan"), 4, 10.0, 600.0),
+        (60.0, float("inf"), 4, 10.0, 600.0),
+        (60.0, 0, 4, 10.0, 600.0),
+        (60.0, -120, 4, 10.0, 600.0),
+        (60.0, 120, 0, 10.0, 600.0),
+        (60.0, 120, True, 10.0, 600.0),
+        (60.0, 120, 4.5, 10.0, 600.0),
+        (float("nan"), 120, 4, 10.0, 600.0),
+        (0.0, 120, 4, 10.0, 600.0),
+        (60.0, 120, 4, 600.0, 10.0),
+    ):
+        try:
+            backend.snap_to_bars(*bad_args)
+        except ValueError:
+            continue
+        raise AssertionError(f"expected snap_to_bars to reject {bad_args}")
     # Every model variant needs a step count and a CFG entry.
     assert set(STEPS_BY_MODEL) == set(MODELS) == set(CFG_BY_MODEL)
 
@@ -378,7 +389,10 @@ def main(argv: list[str] | None = None) -> int:
     duration = requested_duration
     loop_snap: dict[str, Any] = {}
     if loop and bpm and beats:
-        bars, duration = snap_to_bars(requested_duration, bpm, beats)
+        try:
+            bars, duration = snap_to_bars(requested_duration, bpm, beats)
+        except ValueError as exc:
+            return user_error(str(exc))
         loop_snap = {
             "requestedDurationSeconds": requested_duration,
             "barSnappedDurationSeconds": round(duration, 3),

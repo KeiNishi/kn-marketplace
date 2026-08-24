@@ -175,8 +175,18 @@ def duration_warning(actual: float, requested: float) -> str | None:
     )
 
 
+# Every backend writes 32-bit float PCM. Stated explicitly rather than left to
+# the default because torchaudio dispatches to whichever backend it finds first
+# (soundfile here, FFmpeg elsewhere) and those disagree: FFmpeg's wav muxer
+# defaults to 16-bit integer, which would silently quantize a candidate and clip
+# the samples MiniMax leaves sitting at +/-1.0. The post stage decides the
+# shipped bit depth; generation must not decide it by accident.
+WAV_ENCODING = "PCM_F"
+WAV_BITS_PER_SAMPLE = 32
+
+
 def save_wav(waveform: Any, output: pathlib.Path, sample_rate: int) -> None:
-    """Write a stereo wav atomically: encode beside the target, then rename.
+    """Write a stereo 32-bit float wav atomically: encode beside the target, then rename.
 
     A crash mid-encode must not leave a truncated wav sitting at the candidate's
     final name, where later stages would treat it as finished audio.
@@ -185,7 +195,25 @@ def save_wav(waveform: Any, output: pathlib.Path, sample_rate: int) -> None:
 
     output.parent.mkdir(parents=True, exist_ok=True)
     partial = partial_path(output)
-    torchaudio.save(str(partial), waveform, sample_rate)
+    torchaudio.save(
+        str(partial),
+        waveform,
+        sample_rate,
+        encoding=WAV_ENCODING,
+        bits_per_sample=WAV_BITS_PER_SAMPLE,
+    )
+    # Read the header back rather than trusting the request: a backend that
+    # quietly ignored the encoding would hand the post stage int16 audio under a
+    # float contract, and nothing downstream re-checks.
+    info = torchaudio.info(str(partial))
+    if info.encoding != WAV_ENCODING or info.bits_per_sample != WAV_BITS_PER_SAMPLE:
+        partial.unlink(missing_ok=True)
+        raise WorkerError(
+            "backend_error",
+            f"torchaudio wrote {output.name} as {info.encoding}/{info.bits_per_sample}-bit "
+            f"instead of {WAV_ENCODING}/{WAV_BITS_PER_SAMPLE}-bit. The pipeline's later "
+            "stages assume float wav; check the torchaudio backend in this environment.",
+        )
     os.replace(partial, output)
 
 
@@ -245,6 +273,29 @@ def _selftest() -> int:
 
     # A mono tensor is accepted as a single channel.
     assert measure_silence(torch.cat([silence[0], tone[0]]), rate) == (1.0, 0.0)
+
+    # save_wav must produce 32-bit float wav in every venv, and must leave no
+    # partial behind. Samples at exactly +/-1.0 are what int16 would clip.
+    import tempfile
+
+    import torchaudio
+
+    with tempfile.TemporaryDirectory() as tmp:
+        target = pathlib.Path(tmp) / "check.wav"
+        loud = torch.cat([tone, torch.full((2, 100), 1.0), torch.full((2, 100), -1.0)], dim=1)
+        save_wav(loud, target, rate)
+        info = torchaudio.info(str(target))
+        assert info.encoding == WAV_ENCODING, info.encoding
+        assert info.bits_per_sample == WAV_BITS_PER_SAMPLE, info.bits_per_sample
+        assert info.sample_rate == rate and info.num_channels == TARGET_CHANNELS
+        assert not partial_path(target).exists(), "the partial must be renamed away"
+        back, back_rate = torchaudio.load(str(target))
+        assert back_rate == rate and back.shape == loud.shape, (back_rate, back.shape)
+        # Float round-trip is exact; int16 would have clipped these to 0.99997.
+        assert float(back.max()) == 1.0 and float(back.min()) == -1.0, (
+            float(back.max()),
+            float(back.min()),
+        )
 
     print("_worker_common selftest: ok")
     return 0

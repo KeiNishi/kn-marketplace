@@ -31,7 +31,6 @@ MIN_PYTHON = (3, 10)  # the pipeline scripts themselves; stack venvs use 3.11/3.
 # Below this the 12 GB-tuned offloading configs no longer fit. A nominally
 # "12 GB" card reports ~12282 MiB (11.99 GiB), so the threshold sits at 11.5 GiB.
 MIN_VRAM_GB = 11.5
-DISK_WARN_GB = setup_env.DISK_WARN_GB
 # Run inside a stack venv: exit 1 when torch has no CUDA, else print the device.
 _CUDA_PROBE = (
     "import sys, torch\n"
@@ -188,14 +187,9 @@ def check_stack(checks: list[Check], stack: str) -> bool:
 
 
 def check_disk(checks: list[Check]) -> None:
-    data = _common.data_dir()
-    probe = data if data.exists() else pathlib.Path.home()
-    free_gb = shutil.disk_usage(probe).free / (1024**3)
-    detail = f"{free_gb:.1f} GB free on {probe.anchor or probe}"
-    if free_gb < DISK_WARN_GB:
-        _add(checks, "Disk space", "warn", f"{detail}; model weights need roughly 30 GB")
-    else:
-        _add(checks, "Disk space", "ok", detail)
+    """One row per volume: the data directory and the HF cache are often separate drives."""
+    for label, ok, detail in setup_env.disk_report():
+        _add(checks, label, "ok" if ok else "warn", detail)
 
 
 def check_data_dir(checks: list[Check]) -> None:

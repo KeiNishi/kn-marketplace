@@ -1,5 +1,5 @@
 {
-  "description": "Evaluation scenarios for the bgm-generation skill (ACE-Step 1.5 generate stage).",
+  "description": "Evaluation scenarios for the bgm-generation skill (ACE-Step 1.5 and MiniMax-Music3 generate stage).",
   "scenarios": [
     {
       "skill": "bgm-generation",
@@ -29,9 +29,33 @@
       "expected_behavior": [
         "Sets requirement.vocals to true AND supplies requirement.lyrics, for example via init_asset.py --vocals --lyrics",
         "States that vocals with empty lyrics is a user_error the backend refuses rather than generating wordless singing",
-        "Uses section markers such as [verse] and [chorus] in the lyrics",
+        "Uses section markers such as [verse] and [chorus], each on its own line, in the lyrics",
         "Notes that the vocal language is detected from the lyrics themselves",
+        "Names both vocal backends and explains the tradeoff: ACE-Step for fast iteration at 48 kHz, MiniMax-Music3 for the final take's vocal quality at minutes per candidate",
         "Does not claim the melody or a specific singer can be specified"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Generate a vocal ballad for the credits with these lyrics, best quality you can manage: [verse] The harbour lights are fading / [chorus] We carry the light home",
+      "expected_behavior": [
+        "Routes to scripts/backends/generate_minimax.py because the request is a finished vocal performance rather than an iteration pass",
+        "Surfaces the MiniMax-Music3 Community License requirement to display 'MiniMax-Music3' prominently in the product UI, and mentions the US$20M revenue threshold needing separate authorization",
+        "Warns before starting that the first run downloads 27 GB and that each candidate takes many minutes of GPU time on a 12 GB card, and prefers a single candidate",
+        "Reformats the lyrics so each section tag sits on its own line, because MiniMax drops text sharing a line with a leading tag",
+        "Writes a structured caption covering global metadata, vocal details and arrangement rather than a bare mood phrase",
+        "Notes the output is 44.1 kHz stereo and that requirement.durationSeconds is a ceiling the model may stop short of"
+      ]
+    },
+    {
+      "skill": "bgm-generation",
+      "query": "Use MiniMax-Music3 for my looping instrumental town theme, it's the best model.",
+      "expected_behavior": [
+        "Routes to generate_acestep.py instead and explains that generate_minimax.py refuses vocals false as a user_error",
+        "States that MiniMax has no instrumental mode worth using and that ACE-Step renders an instrumental in seconds rather than many minutes",
+        "Adds that only ACE-Step has structured tempo control, so only it can snap a loop to whole bars",
+        "Does not work around the refusal by inventing placeholder lyrics or an [Instrumental] marker for MiniMax",
+        "Does not silently switch backends without telling the user why"
       ]
     },
     {
