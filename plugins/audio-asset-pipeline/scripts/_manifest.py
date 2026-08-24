@@ -30,7 +30,10 @@ STATUSES = {"pending", "in_progress", "done", "failed", "skipped"}
 _REQUIREMENT_DEFAULTS: dict[str, Any] = {
     "prompt": "",
     "referenceAudio": None,
-    "referenceStrength": 0.3,
+    # How strongly the reference audio should survive: 1.0 = stay as close to it
+    # as possible, 0.0 = ignore it. Backends invert this into whatever noise-level
+    # knob they expose. 0.7 keeps the result recognisably related to the reference.
+    "referenceStrength": 0.7,
     "durationSeconds": 60.0,
     "loop": True,
     "vocals": False,
@@ -217,6 +220,12 @@ def validate(manifest: dict[str, Any]) -> None:
         raise ValueError(f"requirement.durationSeconds must be a positive number: {duration!r}")
     if not isinstance(requirement.get("formats"), list) or not requirement["formats"]:
         raise ValueError("requirement.formats must be a non-empty list")
+    strength = requirement.get("referenceStrength")
+    if isinstance(strength, bool) or not isinstance(strength, (int, float)) or not 0.0 <= strength <= 1.0:
+        raise ValueError(
+            f"requirement.referenceStrength must be a number between 0.0 and 1.0 "
+            f"(1.0 = stay closest to the reference), got {strength!r}"
+        )
 
     stages = manifest.get("stages")
     if not isinstance(stages, dict):
@@ -294,6 +303,8 @@ def _selftest() -> None:
         bgm = init("boss-battle-theme", "bgm", "auto", {"prompt": "orchestral boss fight"}, base)
         assert bgm["requirement"]["loop"] is True
         assert bgm["requirement"]["durationSeconds"] == 60.0
+        # Higher referenceStrength means closer to the reference; backends invert it.
+        assert bgm["requirement"]["referenceStrength"] == 0.7
         assert bgm["stages"]["generate"]["attempts"] == 0
         assert generation_approved(bgm) is False
 
@@ -331,6 +342,10 @@ def _selftest() -> None:
             lambda: init("x", "sfx", "auto", base=base),
             lambda: init("x", "bgm", "semi", base=base),
             lambda: init("x", "bgm", "auto", {"tempo": 90}, base),
+            lambda: init("x", "bgm", "auto", {"referenceStrength": 1.5}, base),
+            lambda: init("x", "bgm", "auto", {"referenceStrength": -0.1}, base),
+            lambda: init("x", "bgm", "auto", {"referenceStrength": "high"}, base),
+            lambda: init("x", "bgm", "auto", {"referenceStrength": True}, base),
             lambda: update_stage("boss-battle-theme", "mixdown", {}, base),
             lambda: update_stage("boss-battle-theme", "post", {"status": "almost"}, base),
             lambda: update_requirement("boss-battle-theme", {"volume": 1.0}, base),
@@ -348,6 +363,8 @@ def _selftest() -> None:
         # Hand-edited manifests must not slip past validate().
         for mutate in (
             lambda m: m["requirement"].__setitem__("durationSeconds", 0),
+            lambda m: m["requirement"].__setitem__("referenceStrength", 1.5),
+            lambda m: m["requirement"].__setitem__("referenceStrength", None),
             lambda m: m["stages"]["generate"].__setitem__("approved", "false"),
             lambda m: m["stages"]["generate"].__setitem__("attempts", -1),
             lambda m: m["stages"]["generate"].__setitem__("attempts", "1"),
@@ -362,6 +379,26 @@ def _selftest() -> None:
             except ValueError:
                 continue
             raise AssertionError("expected the hand-edited manifest to fail validation")
+
+        # Output name stems become paths, so the shared validator must reject
+        # anything that could climb out of the stage directory.
+        assert _common.validate_name_stem("cand") == "cand"
+        assert _common.validate_name_stem("take_02-alt") == "take_02-alt"
+        for bad_stem in ("../evil", "a/b", "a\\b", "C:evil", "", ".", "-lead", "nul", "x" * 65):
+            try:
+                _common.validate_name_stem(bad_stem)
+            except ValueError:
+                continue
+            raise AssertionError(f"expected validate_name_stem to reject {bad_stem!r}")
+
+        stage = _common.stage_dir("boss-battle-theme", "generate", base)
+        assert _common.assert_inside(stage / "cand-01.wav", stage).name == "cand-01.wav"
+        for outside in (stage / ".." / "escape.wav", stage / "nested" / "cand.wav"):
+            try:
+                _common.assert_inside(outside, stage)
+            except ValueError:
+                continue
+            raise AssertionError(f"expected assert_inside to reject {outside}")
 
     print("_manifest selftest: ok")
 

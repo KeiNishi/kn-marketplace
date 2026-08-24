@@ -85,6 +85,38 @@ def relative_artifact_path(value: str, field: str = "path") -> str:
     return normalized
 
 
+# A file-name stem supplied on the command line becomes part of a path, so it is
+# validated at the trust boundary exactly like a slug is.
+_NAME_STEM_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+
+
+def validate_name_stem(value: str, field: str = "name") -> str:
+    """Validate a bare file-name stem (no separators, no extension, no '..').
+
+    Callers build output paths from this, so anything that could climb out of
+    the intended directory has to be rejected before it reaches the filesystem.
+    """
+    if not isinstance(value, str) or not _NAME_STEM_RE.match(value):
+        raise ValueError(
+            f"{field} must be a bare file name stem: letters, digits, '-' and '_' "
+            f"only, starting with a letter or digit (max 64 chars). Got {value!r}."
+        )
+    if value.lower() in _RESERVED_NAMES:
+        raise ValueError(f"{field} must not be a reserved Windows device name: {value!r}")
+    return value
+
+
+def assert_inside(path: pathlib.Path, directory: pathlib.Path, field: str = "path") -> pathlib.Path:
+    """Assert `path` resolves to a direct child of `directory`."""
+    resolved = pathlib.Path(path).resolve()
+    if resolved.parent != pathlib.Path(directory).resolve():
+        raise ValueError(
+            f"{field} must live directly inside {pathlib.Path(directory).as_posix()}, "
+            f"got {resolved.as_posix()}"
+        )
+    return resolved
+
+
 def is_dry_run() -> bool:
     return os.environ.get("AUDIO_PIPELINE_DRY_RUN", "").strip().lower() in {"1", "true", "yes"}
 
@@ -132,6 +164,50 @@ def data_dir() -> pathlib.Path:
     committed to a repository.
     """
     return pathlib.Path.home() / ".claude" / "audio-pipeline"
+
+
+def env_file() -> pathlib.Path:
+    """The plugin's private .env (e.g. HF_TOKEN). Lives outside any repository."""
+    return data_dir() / ".env"
+
+
+def load_env_file() -> dict[str, str]:
+    """Parse simple KEY=VALUE lines from the private .env.
+
+    Blank lines, '#' comments and a leading 'export ' are ignored; surrounding
+    quotes are stripped. The values are secrets - never log them, never write
+    them into a manifest, never include them in an error message.
+    """
+    path = env_file()
+    if not path.exists():
+        return {}
+    values: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip().removeprefix("export ").strip()
+        if not key:
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def subprocess_env() -> dict[str, str]:
+    """The current environment plus any private .env keys it does not already set.
+
+    A real environment variable always wins, so a user can override the file for
+    one run without editing it.
+    """
+    merged = dict(os.environ)
+    for key, value in load_env_file().items():
+        if value and key not in merged:
+            merged[key] = value
+    return merged
 
 
 def venv_dir(stack: str) -> pathlib.Path:

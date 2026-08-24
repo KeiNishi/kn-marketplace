@@ -52,18 +52,27 @@ _TORCH_CU128: dict[str, Any] = {
     "label": "CUDA 12.8 torch/torchaudio (overrides the CPU wheel the projects resolve)",
 }
 
+# stable-audio-3 main @ 2026-08-24, verified to expose
+# `stable_audio_3.StableAudioModel.from_pretrained(...)` / `.generate(...)`.
+_SA3_COMMIT = "a0b57f5483c4588f827f3552b7d5c6ca2a9687be"
+
 STACKS: dict[str, dict[str, Any]] = {
     "sa3": {
         "label": "Stable Audio 3",
         # 3.12 preferred, 3.11 accepted; the projects do not support 3.13 yet.
         "pythons": ("3.12", "3.11"),
-        "imports": ("torch", "soundfile"),
+        # `stable_audio_3` is the package the `stable-audio-3` distribution
+        # installs; importing it is what proves the install actually works.
+        "imports": ("stable_audio_3", "torch", "soundfile"),
         "steps": (
             {
                 "id": "project",
                 "kind": "pip",
-                "args": ["git+https://github.com/Stability-AI/stable-audio-3"],
-                "label": "stable-audio-3 from GitHub",
+                # Pinned: stable-audio-3 has no releases and no tags, so an
+                # unpinned git install silently changes the model API under a
+                # user who re-runs setup months later. Bump this deliberately.
+                "args": [f"git+https://github.com/Stability-AI/stable-audio-3@{_SA3_COMMIT}"],
+                "label": f"stable-audio-3 from GitHub @ {_SA3_COMMIT[:7]}",
             },
             _TORCH_CU128,
             {
@@ -71,6 +80,22 @@ STACKS: dict[str, dict[str, Any]] = {
                 "kind": "pip",
                 "args": ["soundfile"],
                 "label": "soundfile (torchaudio ships no audio backend on Windows)",
+            },
+            {
+                "id": "hf-auth",
+                "kind": "manual",
+                "label": "Hugging Face access to the gated Stable Audio 3 weights",
+                "note": (
+                    "The stabilityai/stable-audio-3-* repositories are gated, so the "
+                    "first generation fails with a 401 GatedRepoError until access is "
+                    "granted. Accept the license at "
+                    "https://huggingface.co/stabilityai/stable-audio-3-small-sfx while "
+                    "signed in, then authenticate locally with a read token: put "
+                    "HF_TOKEN=<token> in ~/.claude/audio-pipeline/.env (the driver "
+                    "passes it to the backend), export HF_TOKEN, or run 'hf auth login' "
+                    "using the 'hf' CLI next to {venv_python}. Note 'huggingface-cli' "
+                    "was removed in huggingface_hub 1.x; the command is 'hf' now."
+                ),
             },
             {
                 "id": "flash-attn",
