@@ -17,6 +17,7 @@ anything. (On Windows, use `py -3` if `python3` is not available.)
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import os
@@ -110,6 +111,34 @@ _TORCH_CU128: dict[str, Any] = {
     "label": "CUDA 12.8 torch/torchaudio (overrides the CPU wheel the projects resolve)",
 }
 
+# Stable Audio 3's `medium` DiT needs Flash Attention 2, which has no wheels on
+# PyPI at all - every install is either a source build or a third-party wheel.
+# These are the community prebuilds from mjun0812/flash-attention-prebuild-wheels,
+# pinned by release tag and keyed by "<platform tag>-<CPython tag>". Every entry is
+# built against exactly the torch 2.7.1 / CUDA 12.8 pair the torch-cu128 step
+# installs, so a mismatched wheel imports and then fails inside the kernel - bump
+# these together with _TORCH_CU128, never on their own.
+#
+# Verified 2026-08-25 on Windows / CPython 3.12 / RTX 12 GB: the cp312 win_amd64
+# wheel imports, runs flash_attn_func on CUDA, and lets sa3 `medium` render a
+# clean 60 s ambient bed. Combinations absent from this table fall back to the
+# step's manual note.
+#
+# Each URL carries a `#sha256=` fragment, which pip and uv treat as a required
+# hash: a wheel whose bytes do not match is refused rather than installed. These
+# are third-party binaries carrying CUDA kernels, so the pin is what makes them
+# safe to fetch unattended - a re-uploaded or tampered asset fails loudly instead
+# of landing in the venv. Every hash below was computed from the downloaded file
+# on 2026-08-25 and agreed with the digest GitHub reports for the same asset.
+_FLASH_ATTN_VERSION = "2.8.3+cu128torch2.7"
+_FLASH_ATTN_RELEASES = "https://github.com/mjun0812/flash-attention-prebuild-wheels/releases"
+_FLASH_ATTN_WHEELS: dict[str, str] = {
+    "win_amd64-cp312": f"{_FLASH_ATTN_RELEASES}/download/v0.7.11/flash_attn-2.8.3%2Bcu128torch2.7-cp312-cp312-win_amd64.whl#sha256=d0d8eaf2a11aac1d971b74ad5d1a9fbb852b4943895b0f8792e653bddb141638",
+    "win_amd64-cp311": f"{_FLASH_ATTN_RELEASES}/download/v0.7.11/flash_attn-2.8.3%2Bcu128torch2.7-cp311-cp311-win_amd64.whl#sha256=ee22b69054b067de658e4a85183fc0d494b495770c8ff557e2d85b34f1f477fb",
+    "linux_x86_64-cp312": f"{_FLASH_ATTN_RELEASES}/download/v0.7.16/flash_attn-2.8.3%2Bcu128torch2.7-cp312-cp312-linux_x86_64.whl#sha256=7778847721137d8bd233911ec9710a42cc9c44851ff202e02f90e3ca4cd4e860",
+    "linux_x86_64-cp311": f"{_FLASH_ATTN_RELEASES}/download/v0.7.16/flash_attn-2.8.3%2Bcu128torch2.7-cp311-cp311-linux_x86_64.whl#sha256=562ada63800388bfe9733e37feb09992d59a12a386430f40a2b119c0ff68c6ad",
+}
+
 # stable-audio-3 main @ 2026-08-24, verified to expose
 # `stable_audio_3.StableAudioModel.from_pretrained(...)` / `.generate(...)`.
 _SA3_COMMIT = "a0b57f5483c4588f827f3552b7d5c6ca2a9687be"
@@ -128,6 +157,21 @@ STACKS: dict[str, dict[str, Any]] = {
         # `stable_audio_3` is the package the `stable-audio-3` distribution
         # installs; importing it is what proves the install actually works.
         "imports": ("stable_audio_3", "torch", "soundfile"),
+        # Gates one model, not the stack: `small-sfx` runs without flash_attn.
+        # Importing flash_attn only proves the wheel is present. A wheel built
+        # against a different torch or CUDA imports perfectly well and then dies
+        # inside the kernel, which is exactly the failure a mismatched pin has,
+        # so the health check calls a kernel rather than trusting the import.
+        "optional_imports": {
+            "flash_attn": {
+                "unlocks": "the 'medium' model",
+                "probe": (
+                    "import torch; from flash_attn import flash_attn_func; "
+                    "q = torch.randn(1, 8, 4, 64, device='cuda', dtype=torch.float16); "
+                    "assert flash_attn_func(q, q, q).shape == q.shape"
+                ),
+            }
+        },
         "steps": (
             {
                 "id": "project",
@@ -163,13 +207,19 @@ STACKS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "flash-attn",
-                "kind": "manual",
-                "label": "flash-attn (cu128) - required only by the 'medium' model",
+                "kind": "wheel",
+                "wheels": _FLASH_ATTN_WHEELS,
+                "label": f"flash-attn {_FLASH_ATTN_VERSION} (cu128/torch2.7) - required by the 'medium' model",
                 "note": (
-                    "No prebuilt flash-attn cu128 wheel is published for Windows; "
-                    "building from source needs the MSVC toolchain. The 'small' model "
-                    "runs without it. Install a matching wheel into "
-                    "{venv_python} before using the 'medium' model."
+                    "No pinned flash-attn "
+                    + _FLASH_ATTN_VERSION
+                    + " wheel is configured for this platform and Python, and "
+                    "building from source needs the CUDA toolkit plus a C++ compiler. "
+                    "The 'small-sfx' model runs without flash-attn; the 'medium' model "
+                    "refuses to run rather than emit glitchy audio. Look for a wheel "
+                    "built against torch 2.7.1 / CUDA 12.8 at "
+                    + _FLASH_ATTN_RELEASES
+                    + " and install it into {venv_python} before using 'medium'."
                 ),
             },
         ),
@@ -370,6 +420,37 @@ def pip_install(stack: str, args: list[str], dry_run: bool) -> None:
     _common.run(cmd, timeout=3600, check=True)
 
 
+@functools.lru_cache(maxsize=None)
+def venv_wheel_tags(stack: str) -> tuple[str, str] | None:
+    """(platform tag, CPython tag) of the stack's venv interpreter, e.g.
+    ("win_amd64", "cp312"). None when the venv cannot be interrogated."""
+    python = _common.venv_python(stack)
+    if not python.exists():
+        return None
+    result = _common.run(
+        [
+            str(python),
+            "-c",
+            "import sys, sysconfig; print(sysconfig.get_platform()); "
+            "print('cp%d%d' % sys.version_info[:2])",
+        ],
+        timeout=60,
+    )
+    if result.returncode != 0:
+        return None
+    lines = result.stdout.split()
+    if len(lines) != 2:
+        return None
+    # sysconfig spells these 'win-amd64' / 'linux-x86_64'; wheel tags use '_'.
+    return lines[0].replace("-", "_").replace(".", "_"), lines[1]
+
+
+def wheel_step_url(stack: str, step: dict[str, Any]) -> str | None:
+    """Prebuilt wheel URL for this venv, or None when no build exists for it."""
+    tags = venv_wheel_tags(stack)
+    return step["wheels"].get(f"{tags[0]}-{tags[1]}") if tags else None
+
+
 def setup_stack(stack: str, dry_run: bool) -> None:
     spec = STACKS[stack]
     LOGGER.info("=== %s (%s) ===", stack, spec["label"])
@@ -389,6 +470,32 @@ def setup_stack(stack: str, dry_run: bool) -> None:
         if step_id in done:
             LOGGER.info("%s: step '%s' changed since it was installed; re-running", stack, step_id)
 
+        args = list(step.get("args", ()))
+        if step["kind"] == "wheel":
+            # A prebuilt wheel only exists for some interpreter/platform pairs;
+            # where it does not, the step degrades to its manual note.
+            url = wheel_step_url(stack, step)
+            if url is None:
+                tags = venv_wheel_tags(stack)
+                LOGGER.warning(
+                    "%s: no pinned wheel configured for '%s' on %s",
+                    stack,
+                    step_id,
+                    "/".join(tags) if tags else "this interpreter",
+                )
+                LOGGER.warning(
+                    "%s: %s",
+                    stack,
+                    step["note"].format(venv_python=_common.venv_python(stack).as_posix()),
+                )
+                continue
+            # --no-deps: flash-attn declares a bare `torch` requirement, so a
+            # plain install is free to pull a fresh PyPI torch over the pinned
+            # cu128 build the previous step just installed - which silently
+            # turns the stack CPU-only. The wheel is built against that exact
+            # torch and needs nothing else.
+            args = ["--no-deps", url]
+
         if step["kind"] == "manual":
             note = step["note"].format(venv_python=_common.venv_python(stack).as_posix())
             LOGGER.warning("%s: manual step '%s' - %s", stack, step_id, step["label"])
@@ -396,7 +503,7 @@ def setup_stack(stack: str, dry_run: bool) -> None:
             continue
 
         LOGGER.info("%s: installing %s", stack, step["label"])
-        pip_install(stack, list(step["args"]), dry_run)
+        pip_install(stack, args, dry_run)
         if not dry_run:
             record_step(stack, step_id, step_hash(step))
 
@@ -432,12 +539,28 @@ def print_status(stacks: list[str]) -> None:
         spec = STACKS[stack]
         python = _common.venv_python(stack)
         done = state_stacks.get(stack, {}).get("steps", {})
+        # A wheel step is installable here only when a prebuilt wheel exists for
+        # this venv's interpreter and platform; otherwise it is a manual step.
+        # Before the venv exists there is no interpreter to match a wheel
+        # against, so a wheel step counts as pending until setup can look.
+        unknown = venv_wheel_tags(stack) is None
+        installable = [
+            step
+            for step in spec["steps"]
+            if step["kind"] == "pip"
+            or (step["kind"] == "wheel"
+                and (unknown or wheel_step_url(stack, step) is not None))
+        ]
         pending = [
+            step["id"] for step in installable if not step_is_current(done, step)
+        ]
+        installable_ids = {step["id"] for step in installable}
+        manual = [
             step["id"]
             for step in spec["steps"]
-            if step["kind"] == "pip" and not step_is_current(done, step)
+            if step["kind"] == "manual"
+            or (step["kind"] == "wheel" and step["id"] not in installable_ids)
         ]
-        manual = [step["id"] for step in spec["steps"] if step["kind"] == "manual"]
         status = "ready" if python.exists() and not pending else "incomplete"
         print(f"[{status}] {stack} ({spec['label']})")
         print(f"    venv    : {python.as_posix()} {'(present)' if python.exists() else '(missing)'}")

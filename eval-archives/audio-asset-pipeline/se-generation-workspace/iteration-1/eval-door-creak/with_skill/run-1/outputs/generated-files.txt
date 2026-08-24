@@ -1,0 +1,9 @@
+Audio and image files this run produced. Not archived: every
+one is a dry-run placeholder tone, not real generated audio.
+
+audio-pipeline-output/door-open/generate/cand-01.wav
+audio-pipeline-output/door-open/generate/cand-02.wav
+audio-pipeline-output/door-open/generate/cand-03.wav
+outputs/generate/cand-01.wav
+outputs/generate/cand-02.wav
+outputs/generate/cand-03.wav

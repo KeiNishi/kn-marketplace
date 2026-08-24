@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "slug": "dash",
+  "assetType": "se",
+  "mode": "auto",
+  "createdAt": "2026-08-24T16:36:06Z",
+  "updatedAt": "2026-08-24T16:36:10Z",
+  "dryRun": true,
+  "requirement": {
+    "prompt": "quick air dash whoosh for a 2D platformer, short punchy burst of wind with a subtle energetic zip, crisp transient attack, fast decay, no reverb tail, mono-compatible, retro-arcade leaning game SFX",
+    "referenceAudio": null,
+    "referenceStrength": 0.7,
+    "durationSeconds": 0.4,
+    "loop": false,
+    "vocals": false,
+    "lyrics": null,
+    "bpm": null,
+    "timeSignature": "4/4",
+    "styleTags": [],
+    "targetLufs": -12.0,
+    "formats": [
+      "wav",
+      "ogg"
+    ]
+  },
+  "stages": {
+    "requirement": {
+      "status": "pending"
+    },
+    "generate": {
+      "status": "done",
+      "backend": "sa3",
+      "attempts": 1,
+      "candidates": [
+        {
+          "file": "generate/cand-01.wav",
+          "seed": 1854382748,
+          "backend": "sa3",
+          "params": {
+            "dryRun": true,
+            "model": "small-sfx",
+            "durationSeconds": 2.0,
+            "leadingSilenceSeconds": 0.0,
+            "trailingSilenceSeconds": 0.0,
+            "requestedDurationSeconds": 0.4
+          },
+          "createdAt": "2026-08-24T16:36:10Z"
+        }
+      ],
+      "selected": null,
+      "approved": false,
+      "approvedAt": null,
+      "approvedBy": null,
+      "approvedFile": null,
+      "failureKind": null
+    },
+    "post": {
+      "status": "pending",
+      "loopProcessing": null,
+      "normalize": null,
+      "outputs": [],
+      "failureKind": null
+    },
+    "review": {
+      "status": "pending",
+      "checks": null,
+      "clapScore": null,
+      "verdict": null
+    }
+  }
+}

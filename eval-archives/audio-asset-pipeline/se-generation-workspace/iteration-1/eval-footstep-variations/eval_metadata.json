@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "footstep-variations",
+  "prompt": "I need five different footstep sounds on gravel so it doesn't sound repetitive in game.",
+  "assertions": [
+    "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+    "Explains that varying the seed on one prompt is what produces a usable variation set",
+    "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+    "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+    "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard"
+  ]
+}

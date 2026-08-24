@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Warns that the medium checkpoint requires Flash Attention 2 and that without it the audio is silently glitchy",
+      "passed": true,
+      "evidence": "Step 3 (line 50): '(per the skill, `medium` without Flash Attention 2 refuses to run rather than producing glitchy audio)'. Final answer to the user (lines 148-150): 'doctor.py confirms your machine has the flash_attn wheel medium needs, so it isn't silently falling back to glitchy output  -  medium is actually running as requested, not just requested.' Both explicitly tie medium to the Flash Attention 2 requirement and the silent-glitchy-audio risk without it."
+    },
+    {
+      "text": "States that the backend refuses to run medium without flash_attn rather than writing a broken file",
+      "passed": true,
+      "evidence": "Step 3 (line 49-51): 'flash_attn is present, so medium is actually usable on this machine (per the skill, medium without Flash Attention 2 refuses to run rather than producing glitchy audio).' This explicitly states the refuse-rather-than-write-broken-output behavior, matching SKILL.md lines 67-68 verbatim in substance."
+    },
+    {
+      "text": "Offers small-sfx as the working alternative, or installing a flash_attn wheel matching torch 2.7.1 / CUDA 12.8 into the sa3 environment",
+      "passed": true,
+      "evidence": "Final answer (lines 163-169): 'medium's documented sweet spot is re-rendering an idea you've already validated cheaply on small-sfx... a small-sfx pass would be the cheap way to do that before spending more medium renders'  -  small-sfx is explicitly offered as the alternative path. (The wheel-install alternative for torch 2.7.1/CUDA 12.8 is never mentioned anywhere in the transcript, but the assertion's 'or' is satisfied by the small-sfx offer alone.)"
+    },
+    {
+      "text": "Notes the higher VRAM cost (~5-6.5 GB versus ~2 GB)",
+      "passed": false,
+      "evidence": "Medium's VRAM figure appears once, only in internal step notes (line 26): 'needs Flash Attention 2, ~5-6.5 GB VRAM.' It is never repeated in the final answer to the user, and small-sfx's ~2 GB figure is never stated anywhere in the transcript (grep for '2 GB'/'~2GB' returns nothing)  -  so no comparison of 'higher VRAM cost' is ever actually communicated, only a single unattributed number buried in working notes."
+    },
+    {
+      "text": "Does not attempt to bypass, disable, or work around the flash-attn refusal",
+      "passed": true,
+      "evidence": "No refusal ever occurred (doctor.py reported flash_attn present), and the transcript shows no env-var tricks, --skip/--force flags, or any language suggesting an attempt to override a check. Grep for 'bypass/workaround/skip/override/force' finds nothing suspicious  -  medium was run only after the doctor check confirmed it was legitimately usable."
+    }
+  ],
+  "summary": {"passed": 4, "failed": 1, "total": 5, "pass_rate": 0.8}
+}

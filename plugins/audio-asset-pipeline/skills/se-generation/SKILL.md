@@ -66,8 +66,14 @@ Useful flags: `--model`, `--candidates N`, `--seed N`, `--negative-prompt`,
   the prompt is still being tuned.
 - `medium` without Flash Attention 2 does not crash, it produces glitchy audio.
   The backend detects this and refuses to run rather than writing a broken file.
-  Install a `flash_attn` wheel matching torch 2.7.1 / CUDA 12.8 into the sa3
-  environment, or stay on `small-sfx`.
+  `setup_env.py --stack sa3` installs a prebuilt `flash_attn` wheel matching
+  torch 2.7.1 / CUDA 12.8 on Windows and Linux x86-64 for CPython 3.11 and 3.12;
+  on any other interpreter or platform it prints where to find one and `medium`
+  stays unavailable until it is installed. `doctor.py --stack sa3` reports
+  `extra flash_attn` either way. `small-sfx` never needs it.
+- Measured on a 12 GB card: `medium` renders 60 s of ambience in about 3 s of
+  compute once loaded, but the first call also downloads and loads the
+  checkpoint - budget around 9 minutes wall clock for a cold first run.
 
 ## Writing The Prompt
 
@@ -86,6 +92,26 @@ Use `--negative-prompt` to push away what keeps leaking in, most often
 
 Read `references/prompt-recipes.md` for realistic foley, ambience, impact, and
 stylized/anime recipes with worked examples.
+
+### Give The Sound Room To Decay
+
+Stable Audio 3 fills whatever window it is given. Ask for a window barely longer
+than the event and it renders a sustained texture instead of an event with a
+tail - no transient, no decay, and `leadingSilenceSeconds` /
+`trailingSilenceSeconds` both come back at `0.00`, which is the tell.
+
+Measured, same prompt (`bright magical sparkle chime, anime style, ascending,
+cute`) on `small-sfx`:
+
+| `--duration` | What came out |
+| --- | --- |
+| `2.5` | Flat broadband shimmer for the whole 2.5 s, no onset, no decay. Held across 4 seeds and a re-worded prompt. |
+| `6` | Real one-shot: transient at 0.05 s, ascending shimmer, then a decay visible on the spectrogram out to about 5.3 s. Silence figures 0.05 s / 3.05 s - the tail drops under the -45 dBFS content floor at 2.95 s and keeps ringing below it. |
+
+So for anything with a tail - chimes, impacts, whooshes, magic - request roughly
+twice the length of the audible event and let the post stage trim to the content
+it finds. This is the same reasoning as **Short Sound Effects** below, one step
+further up the scale.
 
 ## Reference Audio
 

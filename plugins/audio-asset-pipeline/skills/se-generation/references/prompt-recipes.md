@@ -98,6 +98,17 @@ Techniques:
   `ice magic spell`.
 - Say `short` and `dry` for anything that plays on a button press.
 
+Measured limits of prompt-only styling (`small-sfx`, 4 seeds, two wordings of
+the same request): style words carry far less than the physical description does.
+`bright magical sparkle chime, anime style, ascending, cute` and
+`glockenspiel and bell tree glissando, single ascending run, bright shimmering
+tail, clean studio recording` produced the same kind of output as each other -
+which is to say the instrument names did the work and `anime style` and `cute`
+did none of it. What did change the result was the duration: at a 6 s window the
+ascending shimmer and the decay both appeared, at 2.5 s neither did. Tune the
+window and the physical description first; treat genre and mood adjectives as
+free but weak.
+
 When a whole stylized set has to share a timbre, prompting is the wrong tool.
 The forward path is a LoRA fine-tuned on the target library; Stable Audio 3
 supports loading LoRA weights, and the pipeline does not wire that up yet. In

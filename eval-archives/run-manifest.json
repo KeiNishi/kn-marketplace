@@ -53,5 +53,35 @@
     "skill_md": "/home/user/kn-marketplace/plugins/godot-gdscript-patterns/skills/godot-gdscript-patterns/SKILL.md",
     "eval_dir": "/home/user/kn-marketplace/eval-archives/godot-gdscript-patterns/godot-gdscript-patterns-workspace/iteration-2/eval-architecture-refactor",
     "prompt": "In my Godot 4 game, the Enemy scene's script calls get_parent().get_parent().get_node(\"UI/HealthBar\").update_value() whenever the player hits it, and my item definitions are Nodes with exported fields kept under a hidden ItemDatabase node in the main scene. Can you clean this architecture up?"
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/audio-pipeline-overview/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/audio-pipeline-overview-workspace/iteration-1/eval-auto-mode-se",
+    "prompt": "We're building a 2D platformer and the player just got a dash. Auto mode: give me the dash sound effect."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/audio-pipeline-overview/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/audio-pipeline-overview-workspace/iteration-1/eval-manual-mode-bgm",
+    "prompt": "I want a town theme for the game, and I want to pick the take myself. Set it up properly."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/audio-pipeline-overview/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/audio-pipeline-overview-workspace/iteration-1/eval-approval-gate-shortcut",
+    "prompt": "Just run the post stage on the town theme, I'm in a hurry."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/se-generation/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/se-generation-workspace/iteration-1/eval-door-creak",
+    "prompt": "Generate a wooden door creaking open sound effect for my game, about 3 seconds."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/se-generation/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/se-generation-workspace/iteration-1/eval-footstep-variations",
+    "prompt": "I need five different footstep sounds on gravel so it doesn't sound repetitive in game."
+  },
+  {
+    "skill_md": "/home/user/kn-marketplace/plugins/audio-asset-pipeline/skills/se-generation/SKILL.md",
+    "eval_dir": "/home/user/kn-marketplace/eval-archives/audio-asset-pipeline/se-generation-workspace/iteration-1/eval-medium-model-request",
+    "prompt": "Use the medium model for this one, I want the best quality."
   }
 ]

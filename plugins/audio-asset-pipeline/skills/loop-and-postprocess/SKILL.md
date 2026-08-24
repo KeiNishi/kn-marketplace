@@ -168,9 +168,15 @@ reconstructs. It is enforced even with `--skip-normalize`, because a master
 sitting at 0 dBTP clips when it is turned into 16-bit or Vorbis - MiniMax
 candidates arrive at **+0.11 dBTP** and are exactly that case.
 
-A lossy export may still measure a fraction of a dB above the ceiling (Vorbis
-reconstruction adds about 0.1 dB); it is recorded per file in
-`normalize.exports`, and only a reading at or above 0 dBTP is a failure.
+A lossy encoder reconstructs its own waveform, so an export made from a master
+sitting exactly on the ceiling decodes above it - measured at **+0.25 dB** on a
+limited sound effect, which is enough to fail the review stage. How much a given
+file overshoots is only knowable after the encode, so the post stage measures
+each export and re-encodes it once from the master attenuated by exactly that
+much, recording the correction as `encoderTrimDb` in `normalize.exports`. A
+trimmed export therefore reads slightly quieter than its WAV sibling; that
+difference is the ceiling being honoured, not a normalization error. A reading
+at or above 0 dBTP is still a hard failure.
 
 Integrated loudness gates in 400 ms blocks, so under about 3 s of programme the
 figure is indicative rather than exact. Short one-shots get
@@ -220,6 +226,12 @@ sample-exact cut, crossfade, loudness target, exports - and writes nothing. The
 manifest is not touched either. Use it to confirm the bar count before spending
 the (short) processing time, and to show the user what is about to happen.
 
+The generate stage treats the same flag differently: it writes placeholder audio
+and fills in the manifest, so a dry run stops dead here and `review_asset.py`
+then refuses for want of outputs. That is not a wiring fault. This stage needs no
+model and no GPU, so to finish a rehearsal just run it **without** the flag - it
+processes placeholder candidates exactly as it does real ones.
+
 ## When It Fails
 
 The stage records `stages.post.failureKind` and prints an actionable message.
@@ -248,8 +260,9 @@ Before declaring the post stage done, confirm all of the following:
 - `normalize.measuredOutput.integratedLufs` is within 1 LU of
   `requirement.targetLufs`, or `normalize.targetShortfallDb` explains the
   difference and the user has been told.
-- `normalize.measuredOutput.truePeakDbtp` is at or under -1.0 dBTP, and no entry
-  in `normalize.exports` reads at or above 0 dBTP.
+- `normalize.measuredOutput.truePeakDbtp` is at or under -1.0 dBTP, and every
+  entry in `normalize.exports` is at or under it too (an `encoderTrimDb` on an
+  entry is how it got there).
 - The 16-bit export does not clip: `ffmpeg -i <file> -af astats -f null -` shows
   a peak level below 0 dB.
 - The `.ogg` decodes (the same `ffprobe`/`astats` run proves it).

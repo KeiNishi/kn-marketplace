@@ -1,0 +1,13 @@
+Audio and image files this run produced. Not archived: every
+one is a dry-run placeholder tone, not real generated audio.
+
+audio-pipeline-output/footstep-gravel-01/generate/cand-01.wav
+audio-pipeline-output/footstep-gravel-02/generate/cand-01.wav
+audio-pipeline-output/footstep-gravel-03/generate/cand-01.wav
+audio-pipeline-output/footstep-gravel-04/generate/cand-01.wav
+audio-pipeline-output/footstep-gravel-05/generate/cand-01.wav
+workspace/audio-pipeline-output/footstep-gravel-01/generate/cand-01.wav
+workspace/audio-pipeline-output/footstep-gravel-02/generate/cand-01.wav
+workspace/audio-pipeline-output/footstep-gravel-03/generate/cand-01.wav
+workspace/audio-pipeline-output/footstep-gravel-04/generate/cand-01.wav
+workspace/audio-pipeline-output/footstep-gravel-05/generate/cand-01.wav

@@ -1030,11 +1030,60 @@ def export(
             raise user_error(f"unsupported format {fmt!r}")
         path = stage_path / f"{slug}.{fmt}"
         with atomic_output(path) as staged:
-            run_ffmpeg(["-i", str(master), "-af", chain, *codec[fmt], "-ar", str(rate),
-                        "-y", str(staged)])
-            measured.append(_verify_export(staged, path.relative_to(asset_dir).as_posix(), target_lufs))
+            measured.append(_render_export(
+                staged, master, chain, codec[fmt], rate,
+                path.relative_to(asset_dir).as_posix(), target_lufs,
+            ))
         written.append(path)
     return written, measured
+
+
+def _render_export(
+    staged: pathlib.Path, master: pathlib.Path, chain: str, codec: list[str],
+    rate: int, name: str, target_lufs: float
+) -> dict[str, Any]:
+    """Encode one export and hold the encoded file to the true-peak ceiling.
+
+    A lossy encoder reconstructs its own waveform, so an export made from a
+    master sitting exactly on the ceiling decodes a fraction of a dB above it -
+    which is the review stage's true_peak failure, seen on a limited sound
+    effect. How much it overshoots depends on the material and is only knowable
+    after the encode, so the file is measured and, when it is over, re-encoded
+    once from the master attenuated by exactly that much. Same
+    measure-then-correct the master itself gets in `_settle_true_peak`, rather
+    than a blanket headroom guess that would quietly cost loudness on every
+    export that never needed it.
+    """
+    render = ["-i", str(master), "-af", chain, *codec, "-ar", str(rate), "-y", str(staged)]
+    run_ffmpeg(render)
+    entry = _verify_export(staged, name, target_lufs)
+    peak = entry.get("truePeakDbtp")
+    if peak is None or peak <= TRUE_PEAK_CEILING_DBTP + TRUE_PEAK_TOLERANCE_DB:
+        return entry
+
+    trim = TRUE_PEAK_CEILING_DBTP - peak
+    LOGGER.info(
+        "%s encoded to %.2f dBTP, over the %g dBTP ceiling: re-encoding %.2f dB down",
+        name, peak, TRUE_PEAK_CEILING_DBTP, trim,
+    )
+    render[3] = f"volume={trim:.2f}dB,{chain}"
+    run_ffmpeg(render)
+    entry = _verify_export(staged, name, target_lufs)
+    entry["encoderTrimDb"] = round(trim, 2)
+
+    # One re-encode is the whole budget: a codec that still overshoots after
+    # being handed exactly its own measured overshoot is not converging, and
+    # looping would just burn time on it. Fail here, inside the staging window,
+    # so the previous good export stays in place.
+    settled = entry.get("truePeakDbtp")
+    if settled is not None and settled > TRUE_PEAK_CEILING_DBTP + TRUE_PEAK_TOLERANCE_DB:
+        raise backend_error(
+            f"{name} still measures {settled:+.2f} dBTP after being re-encoded "
+            f"{trim:.2f} dB down, over the {TRUE_PEAK_CEILING_DBTP:g} dBTP ceiling. "
+            "The encoder is not converging - check the ffmpeg build. The previous "
+            "export was left in place."
+        )
+    return entry
 
 
 def _verify_export(staged: pathlib.Path, name: str, target_lufs: float) -> dict[str, Any]:
@@ -1043,8 +1092,8 @@ def _verify_export(staged: pathlib.Path, name: str, target_lufs: float) -> dict[
     A lossy encoder reconstructs its own waveform and can land a fraction of a
     dB above the master's true peak - which is the whole reason the ceiling sits
     a full dB below full scale. Anything at or above 0 dBTP would clip on decode
-    and is a hard failure; between the ceiling and 0 it is recorded and warned
-    about.
+    and is a hard failure; between the ceiling and 0 it is flagged
+    `aboveCeiling` for `_render_export` to correct.
     """
     figures = measure_loudness(staged, target_lufs)
     peak = _finite(figures.get("input_tp"))
@@ -1062,15 +1111,9 @@ def _verify_export(staged: pathlib.Path, name: str, target_lufs: float) -> dict[
             "previous export was left in place."
         )
     if peak > TRUE_PEAK_CEILING_DBTP + TRUE_PEAK_TOLERANCE_DB:
+        # Recorded, not logged: `_render_export` decides what to do about it and
+        # logs the correction it applies.
         entry["aboveCeiling"] = True
-        LOGGER.info(
-            "%s measures %.2f dBTP, just over the %.1f dBTP ceiling - normal encoder "
-            "overshoot, still %.2f dB below full scale",
-            name,
-            peak,
-            TRUE_PEAK_CEILING_DBTP,
-            -peak,
-        )
     return entry
 
 
@@ -1369,6 +1412,64 @@ def _tone(path: pathlib.Path, frequency: float, seconds: float, rate: int, pad: 
     run_ffmpeg([*args, "-ac", "2", "-c:a", "pcm_f32le", "-y", str(path)])
 
 
+def _selftest_reencode_rule() -> None:
+    """The at-most-one-re-encode state machine, with measurements injected.
+
+    The codec fixture above proves the correction works on real audio, but what
+    it exercises depends on the libvorbis build. This drives `_render_export`
+    with scripted true-peak readings instead, so all four transitions are pinned
+    on any machine: compliant first encode, one correction, a codec that will
+    not converge, and an unmeasurable file.
+    """
+    real_ffmpeg, real_verify = run_ffmpeg, _verify_export
+    calls: list[list[str]] = []
+    peaks: list[float | None] = []
+
+    def fake_ffmpeg(args: Sequence[str], **_: Any) -> None:
+        calls.append(list(args))
+
+    def fake_verify(_staged: pathlib.Path, name: str, _lufs: float) -> dict[str, Any]:
+        return {"file": name, "integratedLufs": -12.0, "truePeakDbtp": peaks.pop(0)}
+
+    def render(readings: list[float | None]) -> dict[str, Any]:
+        calls.clear()
+        peaks[:] = readings
+        return _render_export(pathlib.Path("staged.ogg"), pathlib.Path("master.wav"),
+                              "aresample=dither_method=triangular",
+                              ["-c:a", "libvorbis"], 44100, "post/x.ogg", -12.0)
+
+    globals()["run_ffmpeg"], globals()["_verify_export"] = fake_ffmpeg, fake_verify
+    try:
+        # Under the ceiling on the first encode: encoded once, nothing recorded.
+        entry = render([-1.4])
+        assert len(calls) == 1, calls
+        assert "encoderTrimDb" not in entry, entry
+
+        # Over by 0.25 dB, compliant after the correction: encoded twice, the
+        # second pass carries exactly that much attenuation, and it is recorded.
+        entry = render([-0.75, -1.02])
+        assert len(calls) == 2, calls
+        assert calls[1][3].startswith("volume=-0.25dB,"), calls[1]
+        assert entry["encoderTrimDb"] == -0.25, entry
+        assert calls[0][3] == "aresample=dither_method=triangular", calls[0]
+
+        # Still over after its own measured correction: one re-encode is the
+        # budget, so this fails rather than looping or shipping the file.
+        try:
+            render([-0.75, -0.60])
+        except PostError as exc:
+            assert "not converging" in str(exc), exc
+        else:  # pragma: no cover - the assertion below is the failure report
+            raise AssertionError("a non-converging encoder must raise")
+
+        # Unmeasurable (ffmpeg returned no true-peak figure): left alone.
+        entry = render([None])
+        assert len(calls) == 1, calls
+        assert "encoderTrimDb" not in entry, entry
+    finally:
+        globals()["run_ffmpeg"], globals()["_verify_export"] = real_ffmpeg, real_verify
+
+
 def _selftest() -> int:
     rate = 48000
 
@@ -1593,6 +1694,11 @@ def _selftest() -> int:
             assert done["normalize"]["measuredOutput"]["truePeakDbtp"] <= TRUE_PEAK_CEILING_DBTP + 0.05
             assert done["outputs"] == ["post/master.wav", "post/selftest-loop.wav",
                                        "post/selftest-loop.ogg"], done["outputs"]
+            # Every shipped file honours the ceiling, the lossy one included:
+            # a master limited right up to the ceiling decodes above it out of
+            # libvorbis until _render_export measures and re-encodes it down.
+            for entry in done["normalize"]["exports"]:
+                assert entry["truePeakDbtp"] <= TRUE_PEAK_CEILING_DBTP + TRUE_PEAK_TOLERANCE_DB, entry
             asset = _common.output_dir("selftest-loop", workspace)
             processed = probe(asset / "post/master.wav")
             assert abs(processed["seconds"] - 15 * 60.0 * 4 / 140) < 0.001, processed
@@ -1747,6 +1853,39 @@ def _selftest() -> int:
                                    {"status": "done", "verdict": "pass"}, workspace)
             assert main(run) == _common.EXIT_OK
             assert _manifest.read("selftest-auto", workspace)["stages"]["review"]["verdict"] is None
+
+    # A lossy export made from a master sitting on the ceiling decodes above it.
+    # Sparse loud clicks are the material that produces that: high peak, low
+    # integrated loudness, so the normalize gain is capped by the ceiling and the
+    # master lands exactly on -1 dBTP. Measured here at -0.82 dBTP out of
+    # libvorbis before the correction, which is what `_render_export` re-encodes
+    # away. Assert on the invariant rather than that number.
+    with tempfile.TemporaryDirectory(prefix="post-selftest-tp-") as workspace_dir:
+        workspace = pathlib.Path(workspace_dir)
+        _manifest.init("selftest-clicks", "se", "auto",
+                       {"prompt": "selftest", "durationSeconds": 3.0,
+                        "formats": ["wav", "ogg"]}, workspace)
+        stage = _common.stage_dir("selftest-clicks", "generate", workspace)
+        clicks = r"0.9*sin(2*PI*1200*t)*lt(mod(t\,0.25)\,0.012)"
+        run_ffmpeg(["-f", "lavfi", "-i", f"aevalsrc={clicks}:s=44100:d=3",
+                    "-ac", "2", "-c:a", "pcm_f32le", "-y", str(stage / "cand-01.wav")])
+        _manifest.update_stage(
+            "selftest-clicks", "generate",
+            {"status": "done", "backend": "sa3",
+             "candidates": [_manifest.make_candidate("generate/cand-01.wav", 1, "sa3", {})]},
+            workspace,
+        )
+        assert main(["selftest-clicks", "--base", str(workspace)]) == _common.EXIT_OK
+        norm = _manifest.read("selftest-clicks", workspace)["stages"]["post"]["normalize"]
+        assert norm["measuredOutput"]["truePeakDbtp"] == TRUE_PEAK_CEILING_DBTP, norm
+        # Whether this libvorbis build overshoots at all is its business; what
+        # must hold on every build is that each shipped file honours the ceiling
+        # and that any file which needed a correction says so.
+        for entry in norm["exports"]:
+            assert entry["truePeakDbtp"] <= TRUE_PEAK_CEILING_DBTP + TRUE_PEAK_TOLERANCE_DB, entry
+            assert entry.get("encoderTrimDb", -1.0) < 0, entry
+
+    _selftest_reencode_rule()
 
     print("post_process selftest: ok")
     return _common.EXIT_OK

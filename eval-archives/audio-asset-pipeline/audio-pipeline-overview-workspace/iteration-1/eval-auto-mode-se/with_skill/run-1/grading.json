@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Recognises auto mode and does NOT ask the user any clarifying questions about mood, duration, loop or backend",
+      "passed": true,
+      "evidence": "transcript.md contains zero question marks anywhere (verified via grep). Step 6 explicitly infers type/prompt/duration/loop/backend from context, and the 'Decisions and why' section states: 'No question was put to the user mid-task, per auto mode's \"never asks a question\" rule; the one-line inference above is the auto-mode substitute for asking.' The final answer to the user contains no requests for mood/duration/loop/backend clarification."
+    },
+    {
+      "text": "Infers the requirement from the conversation (se, short one-shot, no loop, Stable Audio 3 small-sfx) and states the inference in one line before running",
+      "passed": true,
+      "evidence": "Step 6 ('Auto-mode requirement inference') derives type=se, duration=3s one-shot, loop=false, backend=generate_sa3.py --model small-sfx, and closes with the exact single-line statement: 'Auto mode: SE, 3 s, no loop, Stable Audio 3 small-sfx, from \"fast air whoosh, swishing past microphone, short, energetic\".' This precedes step 7 (init_asset.py), i.e. it was stated before any pipeline command ran."
+    },
+    {
+      "text": "Runs the stages in order: init_asset.py, generate_sa3.py with 1 candidate, post_process.py, review_asset.py",
+      "passed": true,
+      "evidence": "Steps 7-10 run, in order: init_asset.py player-dash (step 7), backends/generate_sa3.py player-dash producing 'candidates=1' (step 8), post_process.py player-dash (step 9), and review_asset.py player-dash (step 10, which correctly errored with exit code 2 because the dry-run post stage wrote no real outputs -- the four scripts were nonetheless invoked in the documented order)."
+    },
+    {
+      "text": "Does not stop for approval and does not call approve_asset.py --approve on the user's behalf; the candidate is selected but stays unapproved",
+      "passed": true,
+      "evidence": "approve_asset.py is never invoked anywhere in the transcript. pipeline.json shows stages.generate.approved: false, approvedBy: null, approvedFile: null. The run proceeded through generate -> post -> review without pausing for user approval at any point. (stages.generate.selected stayed null because the dry-run post stage is a documented no-op that does not perform the auto-select bookkeeping -- the transcript explains this explicitly in step 9 rather than fabricating a selection.)"
+    },
+    {
+      "text": "Reports the output paths and the review verdict, and if the review fails, adjusts seed or prompt and regenerates at most twice more before reporting honestly",
+      "passed": true,
+      "evidence": "The final answer reports concrete paths (e.g. 'audio-pipeline-output/player-dash/generate/cand-01.wav (44.1 kHz stereo, 3.000 s, seed 1440481753)') and honestly reports that no review verdict exists: 'Review: correctly refused to run, since there are no post outputs yet to check.' The transcript reasons correctly that this is not a failing quality verdict eligible for the seed/prompt retry policy but a forced-dry-run environment limitation ('Retrying would not change the outcome while AUDIO_PIPELINE_DRY_RUN=1 stays set'), so no wasted regeneration attempts were made, and it clearly tells the user a real (non-dry-run) pass is required to get an actual verdict/listenable file."
+    }
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}
+}

@@ -122,15 +122,17 @@ Manual mode is for an asset that has to be right.
 | Request | Backend | Notes |
 | --- | --- | --- |
 | Sound effect, foley, UI blip, one-shot | `generate_sa3.py` (`--model small-sfx`, default) | Seconds per candidate. Up to 120 s. |
-| Ambient bed or texture (wind, cave hum, rain) | `generate_sa3.py --model medium` | No musical structure, no BPM. Needs Flash Attention 2. |
+| Ambient bed or texture (wind, cave hum, rain) | `generate_sa3.py --model medium` | No musical structure, no BPM. Needs Flash Attention 2, which `setup_env.py --stack sa3` installs; `doctor.py` reports it as `extra flash_attn`. |
 | Instrumental music, themes, loops | `generate_acestep.py` (default for BGM) | Tempo and bar control; the only backend whose BPM the post stage can snap bars to. |
 | A vocal performance that has to carry a scene | `generate_minimax.py` | **License notice**: shipping this audio requires "MiniMax-Music3" displayed in the product UI. **Cost warning**: over half an hour of GPU time per candidate, plus a 27 GB download the first time. Tell the user both before routing here. |
 
 Measured on a 12 GB card (RTX 4070 Ti), model weights already cached: Stable
 Audio 3 small-sfx a few seconds per candidate, ACE-Step turbo about 17 s for a
 31 s instrumental, MiniMax-Music3 36 minutes for 75 s of music - roughly 29x
-real time, and it scales with the requested length. Model loading adds a minute
-or two per run. Quote these when telling the user what a request costs in
+real time, and it scales with the requested length. Stable Audio 3 medium
+renders 60 s of ambience in about 3 s of compute. Model loading adds a minute
+or two per run - more for medium, whose first ever call took 9 minutes
+wall clock against 3 s of actual generation. Quote these when telling the user what a request costs in
 wall-clock time: in manual mode, 3 MiniMax candidates is an afternoon.
 
 ## Manifest-driven Resume
@@ -154,7 +156,19 @@ wall-clock time: in manual mode, 3 MiniMax candidates is an afternoon.
   <stack>`, not by hand.
 - ffmpeg (with ffprobe) must be on `PATH` for the post and review stages.
 - When dry-run behavior is expected, confirm `AUDIO_PIPELINE_DRY_RUN=1` is set in
-  the same shell. Every script prints its plan and touches nothing under it.
+  the same shell. The flag means "use no model", and the two halves of the
+  pipeline honour it differently:
+  - `generate_*.py` **do** write: ffmpeg synthesizes a placeholder tone per
+    candidate at the right rate and duration, and the manifest is filled in as
+    usual with `dryRun: true` in the candidate params.
+  - `post_process.py` and `review_asset.py` print their plan and write nothing,
+    so a dry run stops there - `review_asset.py` then refuses, correctly, because
+    the post stage produced no outputs.
+- To carry a rehearsal all the way through, generate with the flag and then run
+  the post and review stages **without** it. Neither of them touches a model or
+  the GPU, they run on the placeholder candidates exactly as on real ones, and
+  ffmpeg is required in dry-run mode anyway. Judge wiring and bar arithmetic this
+  way, never audio.
 
 ## Security Reminder
 

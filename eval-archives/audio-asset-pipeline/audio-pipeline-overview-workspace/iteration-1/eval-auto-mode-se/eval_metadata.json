@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "auto-mode-se",
+  "prompt": "We're building a 2D platformer and the player just got a dash. Auto mode: give me the dash sound effect.",
+  "assertions": [
+    "Recognises auto mode and does NOT ask the user any clarifying questions about mood, duration, loop or backend",
+    "Infers the requirement from the conversation (se, short one-shot, no loop, Stable Audio 3 small-sfx) and states the inference in one line before running",
+    "Runs the stages in order: init_asset.py, generate_sa3.py with 1 candidate, post_process.py, review_asset.py",
+    "Does not stop for approval and does not call approve_asset.py --approve on the user's behalf; the candidate is selected but stays unapproved",
+    "Reports the output paths and the review verdict, and if the review fails, adjusts seed or prompt and regenerates at most twice more before reporting honestly"
+  ]
+}

@@ -165,6 +165,38 @@ def check_stack(checks: list[Check], stack: str) -> bool:
         )
         return False
 
+    # Optional extras gate one model inside a stack rather than the stack
+    # itself, so they get their own line and never fail the stack. An import
+    # alone is not evidence: a binary extension built against a different torch
+    # or CUDA imports fine and then fails in the kernel, so each extra also
+    # carries a probe that actually calls it.
+    for module, extra in spec.get("optional_imports", {}).items():
+        name = f"{label} extra {module}"
+        unlocks = extra["unlocks"]
+        if _common.run([python, "-c", f"import {module}"], timeout=180, env=env).returncode != 0:
+            _add(
+                checks,
+                name,
+                "warn",
+                f"not installed, so {unlocks} refuses to run rather than emit "
+                f"glitchy audio; re-run setup_env.py --stack {stack}",
+            )
+            continue
+        kernel = _common.run([python, "-c", extra["probe"]], timeout=300, env=env)
+        if kernel.returncode == 0:
+            _add(checks, name, "ok", f"present and functional, so {unlocks} can run")
+        else:
+            reason = (kernel.stderr.strip().splitlines() or [""])[-1][:200]
+            _add(
+                checks,
+                name,
+                "warn",
+                f"importable; kernel probe failed: {reason or 'no error output'}. "
+                f"{unlocks} cannot be trusted on this build - re-run "
+                f"setup_env.py --stack {stack} to reinstall a wheel matching "
+                "this torch and CUDA",
+            )
+
     if "torch" in spec["imports"]:
         # An import check alone passes on a CPU-only torch, which would make the
         # stack look healthy and then generate at unusable speeds.

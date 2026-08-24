@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Runs a single generate_sa3.py invocation with --candidates 5 rather than five separate runs",
+      "passed": false,
+      "evidence": "run_pipeline.sh and transcript section 7 show five completely separate slugs (footstep-gravel-01..05), each with its own init_asset.py + generate_sa3.py call, and none of the five `python backends/generate_sa3.py <slug> --seed <N> --base <ws>` invocations passes --candidates at all (auto mode defaults to --candidates 1). The transcript explicitly rejects the single-invocation approach in section 5: '`post_process.py` writes its finished export to a fixed name... The \"3 candidates to choose from\" mechanism inside a single slug is for picking one best take of the same sound, not for shipping several different variations. Since the user wants five distinct, independently usable in-game sounds, I created five separate slugs.'"
+    },
+    {
+      "text": "Explains that varying the seed on one prompt is what produces a usable variation set",
+      "passed": false,
+      "evidence": "The run does the opposite: it varies both the prompt wording and the seed across five separate slugs, and explicitly argues against seed-only variation on one prompt (section 5: the multi-candidate/seed mechanism is 'for picking one best take of the same sound, not for shipping several different variations'). No statement anywhere in the transcript credits seed variation on a shared prompt as producing a usable variation set; instead five distinct prompts were authored by design."
+    },
+    {
+      "text": "Includes 'single' in the prompt so the model produces one-shots rather than a walking sequence",
+      "passed": true,
+      "evidence": "Every one of the five prompts begins with 'single footstep on ...' and ends with '...video game sound effect one-shot' (transcript table in section 7 and run_pipeline.sh prompts array, e.g. 'single footstep on dry gravel, boot heel then toe, close-mic foley, crunchy pebbles shifting underfoot, no reverb, no music, video game sound effect one-shot'). Section 5 also notes the intent behind the short duration/one-shot framing ('a footstep is a short one-shot'). The wording achieves the one-shot-not-a-sequence goal even though the transcript doesn't spell out the 'walking sequence' failure mode by name."
+    },
+    {
+      "text": "Mentions that re-running appends new candidate files instead of overwriting earlier takes",
+      "passed": false,
+      "evidence": "No mention of append/overwrite semantics anywhere in transcript.md (grep for 'append', 'overwrit' returns zero matches in the body text). The run never revisits this because it never re-ran a generation for the same slug, and never discusses what happens if you re-run generate_sa3.py on an existing slug."
+    },
+    {
+      "text": "Tells the user to audition the candidates and record the keepers, rather than declaring them good unheard",
+      "passed": false,
+      "evidence": "The final answer to the user (section 'Final answer given to the user') presents all five slugs as a finished, ready-to-use set ('ready to drop into the game's gravel-footstep sound bank') once regenerated without dry-run, and never instructs the user to listen to the outputs and pick/keep favorites. It does honestly disclose the dry-run placeholder-audio caveat, but that is a disclosure about tooling state, not an instruction to audition and record keepers. The word 'listen' appears only once, in section 5, describing manual-mode's internal human-approval gate ('this benchmark run cannot pause to ask the user to listen to and approve manual-mode candidates')  -  not as guidance given to the end user in the final report. Additionally, because the design produced exactly one candidate per slug rather than multiple candidates per prompt, there was no auditioning step offered to the user at all."
+    }
+  ],
+  "summary": {"passed": 1, "failed": 4, "total": 5, "pass_rate": 0.2}
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "manual-mode-bgm",
+  "prompt": "I want a town theme for the game, and I want to pick the take myself. Set it up properly.",
+  "assertions": [
+    "Recognises this as manual mode and elicits the requirement first: purpose and scene, mood or genre, duration, loop, vocals, reference track (AskUserQuestion if available, otherwise plain questions, then waits for the reply)",
+    "Initializes with init_asset.py --mode manual and generates 3 candidates on ACE-Step",
+    "Presents each candidate with its file path, its leading and trailing silence figures (and loopViable when false), and a one-line description of its character, then waits for the user's choice",
+    "Does not run post_process.py before the user has chosen, and explains that the post stage refuses until the choice is approved",
+    "Records the choice with approve_asset.py <slug> --select generate/cand-NN.wav --approve, then runs the post and review stages and confirms the result with the user"
+  ]
+}
