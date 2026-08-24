@@ -1,0 +1,59 @@
+{
+  "description": "Evaluation scenarios for the audio-pipeline-overview skill (stage routing, the two modes, approval gates, and resume).",
+  "scenarios": [
+    {
+      "skill": "audio-pipeline-overview",
+      "query": "We're building a 2D platformer and the player just got a dash. Auto mode: give me the dash sound effect.",
+      "expected_behavior": [
+        "Recognises auto mode and does NOT ask the user any clarifying questions about mood, duration, loop or backend",
+        "Infers the requirement from the conversation (se, short one-shot, no loop, Stable Audio 3 small-sfx) and states the inference in one line before running",
+        "Runs the stages in order: init_asset.py, generate_sa3.py with 1 candidate, post_process.py, review_asset.py",
+        "Does not stop for approval and does not call approve_asset.py --approve on the user's behalf; the candidate is selected but stays unapproved",
+        "Reports the output paths and the review verdict, and if the review fails, adjusts seed or prompt and regenerates at most twice more before reporting honestly"
+      ]
+    },
+    {
+      "skill": "audio-pipeline-overview",
+      "query": "I want a town theme for the game, and I want to pick the take myself. Set it up properly.",
+      "expected_behavior": [
+        "Recognises this as manual mode and elicits the requirement first: purpose and scene, mood or genre, duration, loop, vocals, reference track (AskUserQuestion if available, otherwise plain questions, then waits for the reply)",
+        "Initializes with init_asset.py --mode manual and generates 3 candidates on ACE-Step",
+        "Presents each candidate with its file path, its leading and trailing silence figures (and loopViable when false), and a one-line description of its character, then waits for the user's choice",
+        "Does not run post_process.py before the user has chosen, and explains that the post stage refuses until the choice is approved",
+        "Records the choice with approve_asset.py <slug> --select generate/cand-NN.wav --approve, then runs the post and review stages and confirms the result with the user"
+      ]
+    },
+    {
+      "skill": "audio-pipeline-overview",
+      "query": "The boss theme asset failed partway through yesterday. Pick it back up.",
+      "expected_behavior": [
+        "Reads audio-pipeline-output/<slug>/pipeline.json before doing anything and reports the current stage statuses",
+        "Resumes from the first stage whose status is pending or failed instead of restarting the asset from the requirement stage",
+        "Uses stages.<stage>.failureKind (and stages.review.checks when the review failed) to explain what went wrong, rather than guessing",
+        "Respects the manifest's mode when resuming: manual mode still needs the approval gate, auto mode does not",
+        "Does not re-run an already completed stage or overwrite existing candidates, and notes that re-generating appends new candidate files instead of replacing them"
+      ]
+    },
+    {
+      "skill": "audio-pipeline-overview",
+      "query": "Just run the post stage on the town theme, I'm in a hurry.",
+      "expected_behavior": [
+        "Checks the manifest mode, and for a manual-mode asset explains that post_process.py refuses until stages.generate is approved",
+        "Points the user at approve_asset.py (or /audio-asset-pipeline:approve) with the candidate listing rather than editing pipeline.json by hand to set approved: true",
+        "Does not switch the asset to auto mode, pass a flag, or otherwise work around the gate to save time",
+        "Offers the legitimate shortcut instead: play the candidates now, or re-create the asset in auto mode if approval is genuinely not wanted"
+      ]
+    },
+    {
+      "skill": "audio-pipeline-overview",
+      "query": "Give me an ending theme with proper sung vocals, and I need it in the next few minutes.",
+      "expected_behavior": [
+        "Routes sung vocals to generate_minimax.py per the backend routing table",
+        "States the MiniMax-Music3 license obligation (the product UI must display 'MiniMax-Music3') before starting the run, not afterwards",
+        "Warns that the render takes over half an hour of GPU time per candidate (measured: 36 minutes for 75 s of music on a 12 GB card) plus a 27 GB first-run download, so the stated deadline is not achievable",
+        "Offers the honest alternative: an ACE-Step vocal take in seconds, or accepting the wait",
+        "Runs doctor.py --stack minimax before committing to the long run"
+      ]
+    }
+  ]
+}

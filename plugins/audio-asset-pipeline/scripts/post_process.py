@@ -541,13 +541,32 @@ def resolve_source(
         return wanted, by_file[wanted]
 
     selected = generate.get("selected")
-    if selected:
+    auto_unapproved = manifest.get("mode") == "auto" and generate.get("approved") is not True
+    if selected and not (auto_unapproved and len(candidates) > 1):
         if selected not in by_file:
             raise user_error(
                 f"stages.generate.selected points at {selected!r}, which is not in "
                 "stages.generate.candidates. Fix the manifest or pass --candidate."
             )
         return selected, by_file[selected]
+
+    if selected and auto_unapproved:
+        # An auto-mode selection is a machine decision over the candidate set as
+        # it stood. Re-generating appends candidates, so the recorded choice can
+        # be stale by the time this runs; recomputing over the full set is the
+        # only way the "best candidate" claim stays true. A HUMAN approval is
+        # never overridden - that path returned above.
+        best = auto_select(candidates)
+        if best["file"] != selected:
+            LOGGER.info(
+                "auto mode: re-selected %s over the recorded %s now that there are %d "
+                "candidates (%s)",
+                best["file"],
+                selected,
+                len(candidates),
+                _selection_reason(best),
+            )
+        return best["file"], best
 
     if len(candidates) == 1:
         return candidates[0]["file"], candidates[0]
@@ -557,6 +576,20 @@ def resolve_source(
             "This asset has no candidates yet. Run the generate stage first "
             "(generate_acestep.py, generate_minimax.py or generate_sa3.py)."
         )
+
+    if manifest.get("mode") == "auto":
+        # Auto mode never stops for a human, so the choice is made here by the
+        # same figures a human would look at. It is recorded as `selected`, not
+        # as an approval: approving is a human act (see approve_asset.py).
+        best = auto_select(candidates)
+        LOGGER.info(
+            "auto mode: picked %s of %d candidates (%s)",
+            best["file"],
+            len(candidates),
+            _selection_reason(best),
+        )
+        return best["file"], best
+
     raise user_error(
         f"{len(candidates)} candidates and no stages.generate.selected. Listen to them, "
         "then re-run with --candidate <file> (or record the choice in the manifest).\n"
@@ -564,22 +597,66 @@ def resolve_source(
     )
 
 
-def resolve_inside(asset_dir: pathlib.Path, relative: str) -> pathlib.Path:
-    """Resolve a manifest-relative path and prove it landed inside the asset dir.
+def _total_silence(candidate: dict[str, Any]) -> float:
+    """Dead air a candidate carries, in seconds; inf when nothing was measured.
 
-    `relative_artifact_path` already rejected drive letters, leading separators
-    and '..' in the string. This checks where the path actually LANDS, which is
-    the only thing that catches a symlink or junction sitting inside the asset
-    directory and pointing out of it.
+    An unmeasured candidate must not outrank a measured one that really has no
+    silence, so absence of a figure sorts last rather than as zero.
     """
-    root = asset_dir.resolve()
-    resolved = (asset_dir / relative).resolve()
-    if root not in resolved.parents:
-        raise user_error(
-            f"the selected candidate resolves outside the asset directory: "
-            f"{resolved.as_posix()} is not under {root.as_posix()}"
-        )
-    return resolved
+    params = candidate.get("params") or {}
+    values = [params.get(key) for key in backend.SILENCE_KEYS]
+    usable = [
+        float(value)
+        for value in values
+        if isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and value >= 0
+    ]
+    # `_manifest.validate` rejects a non-finite or negative figure outright, so
+    # this only fires on a candidate that carries none at all - but the ranking
+    # must not depend on that being true: a NaN reaching min() would make the
+    # answer depend on iteration order.
+    if not usable:
+        return math.inf
+    return sum(usable)
+
+
+def auto_select(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """The candidate auto mode ships, by the measurements the workers recorded.
+
+    In order: a loop-viable take beats one with a gap the loop would play on
+    every wrap; then the least dead air, because everything the post stage has
+    to trim is music the model did not write; then the lowest seed, purely so
+    the same candidate set always yields the same answer.
+    """
+    return min(
+        candidates,
+        key=lambda entry: (
+            (entry.get("params") or {}).get("loopViable") is False,
+            _total_silence(entry),
+            int(entry.get("seed") or 0),
+        ),
+    )
+
+
+def _selection_reason(candidate: dict[str, Any]) -> str:
+    silence = _total_silence(candidate)
+    loop_viable = (candidate.get("params") or {}).get("loopViable")
+    parts = []
+    if loop_viable is not None:
+        parts.append("loop-viable" if loop_viable else "NOT loop-viable")
+    parts.append("silence unmeasured" if math.isinf(silence) else f"{silence:.2f}s total silence")
+    parts.append(f"seed {candidate.get('seed')}")
+    return ", ".join(parts)
+
+
+def resolve_inside(asset_dir: pathlib.Path, relative: str) -> pathlib.Path:
+    """`_common.resolve_inside`, reported as this stage's structured failure."""
+    try:
+        return _common.resolve_inside(asset_dir, relative, "the selected candidate")
+    except ValueError as exc:
+        raise user_error(str(exc)) from exc
 
 
 def _candidate_listing(candidates: Iterable[dict[str, Any]]) -> str:
@@ -1043,6 +1120,38 @@ def process(args: argparse.Namespace, manifest: dict[str, Any], base: pathlib.Pa
             f"Supported: {list(SUPPORTED_FORMATS)}."
         )
 
+    # The manual mode gate is mechanical, not advisory: manual mode exists so a
+    # human hears the candidates before one of them is finished and shipped, and
+    # a stage that ran anyway would make the mode a comment. Auto mode has no
+    # gate by design - it only needs a candidate it can resolve.
+    if manifest["mode"] == "manual":
+        if not _manifest.generation_approved(manifest):
+            raise user_error(
+                f"'{slug}' is a manual-mode asset and its generate stage is not approved. "
+                "Play the candidates, then record the choice:\n"
+                "  python approve_asset.py "
+                f"{slug} --select generate/cand-NN.wav --approve\n"
+                + _candidate_listing(
+                    [
+                        entry
+                        for entry in (manifest["stages"]["generate"].get("candidates") or [])
+                        if isinstance(entry, dict)
+                    ]
+                )
+            )
+        approved_selection = manifest["stages"]["generate"].get("selected")
+        if args.candidate is not None and (
+            _common.relative_artifact_path(args.candidate, "--candidate") != approved_selection
+        ):
+            # Otherwise --candidate is a silent override of the gate: the asset
+            # would ship a take nobody approved while the manifest records an
+            # approval for a different one.
+            raise user_error(
+                f"--candidate {args.candidate!r} is not the approved selection "
+                f"({approved_selection}). Approve the take you actually want first:\n"
+                f"  python approve_asset.py {slug} --select {args.candidate} --approve"
+            )
+
     relative, candidate = resolve_source(manifest, args.candidate)
     asset_dir = _common.output_dir(slug, base)
     source = resolve_inside(asset_dir, relative)
@@ -1070,6 +1179,22 @@ def process(args: argparse.Namespace, manifest: dict[str, Any], base: pathlib.Pa
         return _common.EXIT_OK
 
     print_plan(plan, source, formats, target_lufs, args.target_rate, normalize)
+    # Persist an auto-mode choice so the manifest says which take was finished.
+    # `approved` is deliberately left alone: nobody has listened to it yet.
+    if manifest["stages"]["generate"].get("selected") != relative:
+        _manifest.update_stage(slug, "generate", {"selected": relative}, base)
+    # Every run of this stage overwrites post/, so any recorded review describes
+    # files that are about to stop existing - whether or not the selection
+    # moved. Clearing it here is the same rule the post stage applies to its own
+    # record below: never leave a result standing for inputs that changed.
+    if manifest["stages"]["review"].get("status") != "pending":
+        _manifest.update_stage(
+            slug,
+            "review",
+            {"status": "pending", "checks": None, "verdict": None, "clapScore": None,
+             "spectrograms": [], "measurements": None},
+            base,
+        )
     # Everything below is about to be recomputed, so the previous run's results
     # are cleared here rather than overwritten at the end. If this run fails, the
     # manifest must not still describe the last successful one - a reader would
@@ -1246,6 +1371,37 @@ def _tone(path: pathlib.Path, frequency: float, seconds: float, rate: int, pad: 
 
 def _selftest() -> int:
     rate = 48000
+
+    # Auto-mode selection policy: loop viability first, then dead air, then seed.
+    def _fake(name: str, seed: int, **params: Any) -> dict[str, Any]:
+        return {"file": f"generate/{name}.wav", "seed": seed, "backend": "acestep", "params": params}
+
+    viable = _fake("cand-02", 9, loopViable=True, leadingSilenceSeconds=2.0,
+                   trailingSilenceSeconds=2.0)
+    quiet_but_broken = _fake("cand-01", 1, loopViable=False, leadingSilenceSeconds=0.0,
+                             trailingSilenceSeconds=0.0)
+    # Loop viability outranks silence even when the broken take is spotless.
+    assert auto_select([quiet_but_broken, viable]) is viable
+    tighter = _fake("cand-03", 7, loopViable=True, leadingSilenceSeconds=0.0,
+                    trailingSilenceSeconds=0.4)
+    assert auto_select([viable, tighter]) is tighter
+    # Equal on both figures: the lowest seed wins, so the answer is stable.
+    tie = _fake("cand-04", 3, loopViable=True, leadingSilenceSeconds=0.0,
+                trailingSilenceSeconds=0.4)
+    assert auto_select([tighter, tie]) is tie and auto_select([tie, tighter]) is tie
+    # An unmeasured candidate does not outrank a measured silent-free one.
+    assert auto_select([_fake("cand-05", 0), tighter]) is tighter
+    # All broken: still deterministic, still the least dead air.
+    worse = _fake("cand-06", 0, loopViable=False, leadingSilenceSeconds=1.0,
+                  trailingSilenceSeconds=3.0)
+    assert auto_select([worse, quiet_but_broken]) is quiet_but_broken
+    # A figure the manifest validator would have rejected must not be able to
+    # win the ranking by comparing false against everything.
+    for poison in (float("nan"), -5.0, "0.0", None):
+        rogue = _fake("cand-07", 0, loopViable=True, leadingSilenceSeconds=poison,
+                      trailingSilenceSeconds=poison)
+        assert auto_select([rogue, tighter]) is tighter, poison
+        assert auto_select([tighter, rogue]) is tighter, poison
 
     # Bar math: a 140 BPM 4/4 bar is 1.714285...s, which is never a whole number
     # of samples. Boundaries must come from the exact length, not an accumulated
@@ -1502,6 +1658,95 @@ def _selftest() -> int:
             assert main(["selftest-tiny", "--base", str(workspace)]) == _common.EXIT_USER_ERROR
             tiny = _manifest.read("selftest-tiny", workspace)["stages"]["post"]
             assert tiny["status"] == "failed" and tiny["failureKind"] == backend.FAILURE_USER_ERROR
+
+        # The approval gate, end to end on real files.
+        with tempfile.TemporaryDirectory(prefix="post-selftest-gate-") as workspace_dir:
+            workspace = pathlib.Path(workspace_dir)
+
+            def _seed(slug: str, mode: str, entries: Sequence[dict[str, Any]],
+                      files: int | None = None) -> None:
+                _manifest.init(slug, "bgm", mode,
+                               {"prompt": "selftest", "durationSeconds": 8.0, "bpm": 120,
+                                "formats": ["wav"]}, workspace)
+                stage = _common.stage_dir(slug, "generate", workspace)
+                for index in range(1, (files or len(entries)) + 1):
+                    _tone(stage / f"cand-{index:02d}.wav", 220.0 + 40 * index, 8.0, rate)
+                _manifest.update_stage(slug, "generate",
+                                       {"status": "done", "backend": "acestep",
+                                        "candidates": list(entries)}, workspace)
+
+            def _candidate(index: int, seed: int, **params: Any) -> dict[str, Any]:
+                return _manifest.make_candidate(
+                    f"generate/cand-{index:02d}.wav", seed, "acestep",
+                    {"bpm": 120, "beatsPerBar": 4, **params})
+
+            # --- manual mode -------------------------------------------------
+            first, second = _candidate(1, 10), _candidate(2, 11)
+            _seed("selftest-manual", "manual", [first, second])
+            run = ["selftest-manual", "--base", str(workspace)]
+            # No approval: refused, and nothing was written.
+            assert main(run) == _common.EXIT_USER_ERROR
+            assert _manifest.read("selftest-manual", workspace)["stages"]["post"]["outputs"] == []
+
+            approve = {"selected": first["file"], "approved": True,
+                       "approvedAt": _common.iso_now(), "approvedBy": "user",
+                       "approvedFile": first["file"]}
+            _manifest.update_stage("selftest-manual", "generate", approve, workspace)
+            assert main(run) == _common.EXIT_OK
+
+            # Moving the selection without re-approving closes the gate again,
+            # even though `approved` is still true.
+            _manifest.update_stage("selftest-manual", "generate",
+                                   {"selected": second["file"]}, workspace)
+            assert main(run) == _common.EXIT_USER_ERROR
+
+            # --candidate is not a way around the gate.
+            _manifest.update_stage("selftest-manual", "generate",
+                                   {"approvedFile": second["file"]}, workspace)
+            assert main([*run, "--candidate", first["file"]]) == _common.EXIT_USER_ERROR
+            assert main([*run, "--candidate", second["file"]]) == _common.EXIT_OK
+
+            # --- auto mode ---------------------------------------------------
+            gapped = _candidate(1, 10, loopViable=False, leadingSilenceSeconds=0.0,
+                                trailingSilenceSeconds=2.0)
+            _seed("selftest-auto", "auto", [gapped], files=2)  # cand-02 arrives later
+            run = ["selftest-auto", "--base", str(workspace)]
+            assert main(run) == _common.EXIT_OK
+            generate = _manifest.read("selftest-auto", workspace)["stages"]["generate"]
+            assert generate["selected"] == gapped["file"] and generate["approved"] is False
+
+            # A review verdict for the take that was just finished. Re-running
+            # the post stage at all must clear it - the files it measured are
+            # about to be overwritten - and here a better candidate arrives too,
+            # so the machine selection is recomputed on top.
+            _manifest.update_stage("selftest-auto", "review",
+                                   {"status": "done", "verdict": "pass",
+                                    "checks": {"duration": {"pass": True, "detail": "x"}}},
+                                   workspace)
+            clean = _candidate(2, 11, loopViable=True, leadingSilenceSeconds=0.0,
+                               trailingSilenceSeconds=0.0)
+            _manifest.update_stage("selftest-auto", "generate",
+                                   {"candidates": [gapped, clean]}, workspace)
+            assert main(run) == _common.EXIT_OK
+            after = _manifest.read("selftest-auto", workspace)["stages"]
+            assert after["generate"]["selected"] == clean["file"], after["generate"]
+            assert after["review"]["status"] == "pending", after["review"]
+            assert after["review"]["verdict"] is None and after["review"]["checks"] is None
+
+            # A HUMAN approval is never re-chosen, however good the newcomer is.
+            _manifest.update_stage(
+                "selftest-auto", "generate",
+                {"selected": gapped["file"], "approved": True, "approvedAt": _common.iso_now(),
+                 "approvedBy": "user", "approvedFile": gapped["file"]}, workspace)
+            assert main(run) == _common.EXIT_OK
+            held = _manifest.read("selftest-auto", workspace)["stages"]["generate"]
+            assert held["selected"] == gapped["file"], held
+
+            # A stale verdict is cleared even when the selection did not move.
+            _manifest.update_stage("selftest-auto", "review",
+                                   {"status": "done", "verdict": "pass"}, workspace)
+            assert main(run) == _common.EXIT_OK
+            assert _manifest.read("selftest-auto", workspace)["stages"]["review"]["verdict"] is None
 
     print("post_process selftest: ok")
     return _common.EXIT_OK

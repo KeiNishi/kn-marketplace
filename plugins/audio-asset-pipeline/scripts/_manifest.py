@@ -81,6 +81,10 @@ def _stage_skeleton() -> dict[str, dict[str, Any]]:
             "approved": False,
             "approvedAt": None,
             "approvedBy": None,
+            # The file the approval was given FOR. An approval is a judgement
+            # about one take, so it stops applying the moment the selection
+            # moves to a different one.
+            "approvedFile": None,
             "failureKind": None,
         },
         "post": {
@@ -107,6 +111,7 @@ def make_candidate(
 ) -> dict[str, Any]:
     """Build one entry for stages.generate.candidates."""
     _check_backend(backend, "candidate backend")
+    _check_silence_metrics(dict(params or {}), 0)
     return {
         "file": _common.relative_artifact_path(file, "candidate file"),
         "seed": int(seed),
@@ -305,6 +310,7 @@ def _validate_generate(generate: dict[str, Any]) -> None:
                 f"stages.generate.candidates[{index}].params must be an object, "
                 f"got {candidate['params']!r}"
             )
+        _check_silence_metrics(candidate.get("params") or {}, index)
 
     backend = generate.get("backend")
     if backend is not None:
@@ -314,15 +320,54 @@ def _validate_generate(generate: dict[str, Any]) -> None:
     if selected is not None:
         _common.relative_artifact_path(selected, "stages.generate.selected")
 
+    approved_file = generate.get("approvedFile")
+    if approved_file is not None:
+        _common.relative_artifact_path(approved_file, "stages.generate.approvedFile")
+
+
+def _check_silence_metrics(params: dict[str, Any], index: int) -> None:
+    """Dead-air figures must be finite and non-negative, or absent.
+
+    The auto-mode selector ranks candidates by these. A NaN makes `min()`
+    non-deterministic (it compares false against everything, so the answer
+    depends on iteration order) and a negative number would rank a hand-edited
+    candidate ahead of a genuinely gapless one. Both are rejected here, at the
+    boundary, rather than defended against in every reader.
+    """
+    for key in _common.SILENCE_PARAM_KEYS:
+        if key not in params or params[key] is None:
+            continue
+        value = params[key]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value < 0
+        ):
+            raise ValueError(
+                f"stages.generate.candidates[{index}].params.{key} must be a finite "
+                f"number of seconds >= 0, got {value!r}"
+            )
+
 
 def generation_approved(manifest: dict[str, Any]) -> bool:
-    """True only when an existing candidate is selected AND explicitly approved."""
+    """True only when the SELECTED candidate is the one that was approved.
+
+    `approvedFile` binds the approval to a file name, so moving the selection to
+    a different take closes the gate again without anything having to remember
+    to clear the flag. Manifests written before the field existed have no
+    binding to check, so they fall back to "approved and selected", which is
+    what they meant at the time.
+    """
     generate = manifest.get("stages", {}).get("generate", {})
     if generate.get("approved") is not True:
         return False
     selected = generate.get("selected")
     candidates = generate.get("candidates")
     if not selected or not isinstance(candidates, list):
+        return False
+    approved_file = generate.get("approvedFile")
+    if approved_file is not None and approved_file != selected:
         return False
     return any(
         isinstance(candidate, dict) and candidate.get("file") == selected
@@ -374,6 +419,56 @@ def _selftest() -> None:
         forged = read("boss-battle-theme", base)
         forged["stages"]["generate"]["selected"] = "generate/never-generated.wav"
         assert generation_approved(forged) is False
+
+        # Approval is bound to the file it was given for: selecting a different
+        # take closes the gate again, even though `approved` is still true.
+        second = make_candidate("generate/cand-02.wav", 124, "acestep", {"steps": 30})
+        bound = update_stage(
+            "boss-battle-theme",
+            "generate",
+            {"candidates": [candidate, second], "approvedFile": candidate["file"]},
+            base,
+        )
+        assert generation_approved(bound) is True
+        moved = update_stage("boss-battle-theme", "generate", {"selected": second["file"]}, base)
+        assert moved["stages"]["generate"]["approved"] is True  # nothing cleared it
+        assert generation_approved(moved) is False  # ...and the gate is still shut
+        assert generation_approved(
+            update_stage("boss-battle-theme", "generate",
+                        {"approvedFile": second["file"]}, base)
+        ) is True
+        # Restore the single-candidate state the rest of the selftest expects.
+        update_stage(
+            "boss-battle-theme",
+            "generate",
+            {"candidates": [candidate], "selected": candidate["file"],
+             "approvedFile": candidate["file"]},
+            base,
+        )
+
+        # Silence figures are ranked on, so they are type-checked here.
+        for bad_metric in (float("nan"), float("inf"), -0.5, "0.5", True, [0.5]):
+            try:
+                make_candidate("generate/ok.wav", 1, "acestep",
+                               {"leadingSilenceSeconds": bad_metric})
+            except ValueError:
+                continue
+            raise AssertionError(f"expected a rejected silence metric for {bad_metric!r}")
+        # Absent, null and a real measurement all stay legal.
+        for good_metric in (None, 0, 0.0, 3.05):
+            make_candidate("generate/ok.wav", 1, "acestep",
+                           {"trailingSilenceSeconds": good_metric})
+        # ...and a hand-edited manifest carrying one is rejected on read, too.
+        hand_edited = read("boss-battle-theme", base)
+        hand_edited["stages"]["generate"]["candidates"][0]["params"][
+            "trailingSilenceSeconds"
+        ] = float("nan")
+        try:
+            validate(hand_edited)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("expected validate to reject a NaN silence metric")
 
         for bad in (
             lambda: init("boss-battle-theme", "bgm", "auto", base=base),  # duplicate

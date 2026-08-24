@@ -1,6 +1,6 @@
 ---
 name: se-generation
-description: This skill should be used when the user asks to "generate a sound effect", "SFX", "SE", "footstep sound", "UI sound", "impact sound", "sword whoosh", "magical chime", "ambience", or as the generate stage of the audio asset pipeline on the Stable Audio 3 backend. Covers model routing between the small-sfx and medium checkpoints, prompt recipes for realistic foley and stylized SFX, reference-audio conditioning, seeded variation batches for games, and short-SE trimming. Also triggers on "/audio:se" and on mentions of audio-pipeline-output, pipeline.json, generate_sa3.py, or Stable Audio 3.
+description: This skill should be used when the user asks to "generate a sound effect", "SFX", "SE", "footstep sound", "UI sound", "impact sound", "sword whoosh", "magical chime", "ambience", or as the generate stage of the audio asset pipeline on the Stable Audio 3 backend. Covers model routing between the small-sfx and medium checkpoints, prompt recipes for realistic foley and stylized SFX, reference-audio conditioning, seeded variation batches for games, and short-SE trimming. Also triggers on "/audio-asset-pipeline:se" and on mentions of audio-pipeline-output, pipeline.json, generate_sa3.py, or Stable Audio 3.
 ---
 
 # Sound Effect Generation (Stable Audio 3)

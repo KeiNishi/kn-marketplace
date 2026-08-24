@@ -54,7 +54,7 @@ PARTIAL_INFIX = ".tmp"
 CANDIDATES_BY_MODE = {"manual": 3, "auto": 1}
 
 # Per-candidate measurements the workers report alongside their own params.
-SILENCE_KEYS = ("leadingSilenceSeconds", "trailingSilenceSeconds")
+SILENCE_KEYS = _common.SILENCE_PARAM_KEYS
 CANDIDATE_METRIC_KEYS = ("generationSeconds", "actualDurationSeconds", *SILENCE_KEYS)
 
 # Dead air a looping asset can carry before the seam is audible in engine. Under

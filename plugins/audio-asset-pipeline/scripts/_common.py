@@ -31,6 +31,10 @@ OUTPUT_ROOT = "audio-pipeline-output"
 STAGE_DIRS = ("generate", "post", "review")
 # Generation stacks, each with its own venv under <data_dir>/venvs/<name>.
 STACKS = ("sa3", "acestep", "minimax")
+# Per-candidate dead-air measurements recorded by the generation workers. They
+# live here rather than in the backend package because the manifest validator
+# (stdlib-only, never imports a backend) has to type-check them too.
+SILENCE_PARAM_KEYS = ("leadingSilenceSeconds", "trailingSilenceSeconds")
 
 # A slug becomes a directory name, so it is validated at the trust boundary.
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
@@ -119,6 +123,24 @@ def assert_inside(path: pathlib.Path, directory: pathlib.Path, field: str = "pat
         raise ValueError(
             f"{field} must live directly inside {pathlib.Path(directory).as_posix()}, "
             f"got {resolved.as_posix()}"
+        )
+    return resolved
+
+
+def resolve_inside(asset_dir: pathlib.Path, relative: str, field: str = "path") -> pathlib.Path:
+    """Resolve a manifest-relative path and prove it landed inside the asset dir.
+
+    `relative_artifact_path` rejects drive letters, leading separators and '..'
+    in the STRING. This checks where the path actually LANDS, which is the only
+    thing that catches a symlink or junction sitting inside the asset directory
+    and pointing out of it.
+    """
+    root = pathlib.Path(asset_dir).resolve()
+    resolved = (pathlib.Path(asset_dir) / relative_artifact_path(relative, field)).resolve()
+    if root not in resolved.parents:
+        raise ValueError(
+            f"{field} resolves outside the asset directory: "
+            f"{resolved.as_posix()} is not under {root.as_posix()}"
         )
     return resolved
 
