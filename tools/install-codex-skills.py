@@ -185,8 +185,7 @@ def main() -> None:
     for entry in plugins:
         plugin_dir = (REPO_ROOT / entry["source"]).resolve()
         if not plugin_dir.is_dir():
-            print(f"  {entry['name']}: skipped (source not found: "
-                  f"{plugin_dir} - did you run 'git submodule update --init'?)")
+            print(f"  {entry['name']}: skipped (source not found: {plugin_dir})")
             continue
         for target, status in install_plugin(plugin_dir, dest, args.flatten,
                                              args.dry_run, args.force):

@@ -46,7 +46,7 @@ Claude Codeの公式プラグイン機能を使用する方法です。
 ```bash
 cd /path/to/your-new-project
 git submodule add <このリポジトリのURL> .claude/marketplace
-git submodule update --init --recursive
+git submodule update --init
 ```
 
 ### 2. ローカルマーケットプレイスとして登録
@@ -284,8 +284,10 @@ cp /path/to/SKILL.md plugins/my-new-plugin/skills/my-skill/
 
 ### サブモジュールが空の場合
 
+方法2でこのマーケットプレイスをサブモジュールとして追加した場合:
+
 ```bash
-git submodule update --init --recursive
+git submodule update --init
 ```
 
 ### シンボリックリンクが機能しない場合（Windows）

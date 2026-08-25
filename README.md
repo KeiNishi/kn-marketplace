@@ -23,15 +23,7 @@ ClaudeCode用の個人Pluginマーケットプレイスです。全スキルは 
 kn-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json       # マーケットプレイスの設定ファイル
-├── upstream/
-│   └── claude-plugins-official/  # git submodule (anthropics/claude-plugins-official)
-│       └── plugins/               # sparse-checkout: skill-creator のみ取得
-│           └── skill-creator/
-│               ├── .claude-plugin/
-│               │   └── plugin.json
-│               └── skills/
 ├── plugins/                    # プラグインを配置するディレクトリ
-│   ├── skill-creator -> ../upstream/claude-plugins-official/plugins/skill-creator  # symlink
 │   ├── example/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json    # プラグインメタデータ
@@ -46,27 +38,6 @@ kn-marketplace/
 │           └── plugin.json
 ├── INSTALL.md                 # インストールガイド
 └── README.md
-```
-
-### submodule について
-
-`plugins/skill-creator` は [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) の `plugins/skill-creator/` を git submodule + シンボリックリンクで参照しています。ローカルでは編集せず、upstream の変更のみを取り込みます。
-
-**クローン時の注意:**
-
-```bash
-git clone --recurse-submodules <repo-url>
-# または既存クローン後に
-git submodule update --init
-```
-
-**skill-creator を upstream の最新版に更新する方法:**
-
-```bash
-git submodule update --remote upstream/claude-plugins-official
-git add upstream/claude-plugins-official
-git commit -m "sync: update skill-creator from upstream"
-git push
 ```
 
 ## 📦 Plugin構造について
