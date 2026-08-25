@@ -91,7 +91,7 @@ def atomic_write_json(path: pathlib.Path | str, obj: Any) -> None:
     target = pathlib.Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_name(f"{target.name}.tmp")
-    with tmp.open("w", encoding="utf-8") as handle:
+    with tmp.open("w", encoding="utf-8", newline="\n") as handle:
         json.dump(obj, handle, indent=2, sort_keys=False, ensure_ascii=False)
         handle.write("\n")
     os.replace(tmp, target)
