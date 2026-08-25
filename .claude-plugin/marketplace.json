@@ -25,20 +25,6 @@
       ]
     },
     {
-      "name": "create-pr",
-      "source": "./plugins/create-pr",
-      "description": "Create a pull request on GitHub with conventional commit-style titles",
-      "version": "1.2.0",
-      "author": {
-        "name": "KN"
-      },
-      "tags": [
-        "github",
-        "pull-request",
-        "conventional-commits"
-      ]
-    },
-    {
       "name": "unity-gamedev-standards",
       "source": "./plugins/unity-gamedev-standards",
       "description": "Unity 6 game development standards and testing - project structure, C# conventions, MonoBehaviour patterns, UniTask async, performance optimization, MVC character design, plus Unity Test Framework EditMode/PlayMode testing in batchmode",
